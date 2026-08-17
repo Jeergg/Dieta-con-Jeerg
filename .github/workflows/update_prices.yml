@@ -1,0 +1,34 @@
+name: Actualizar precios mensuales
+
+on:
+  schedule:
+    - cron: '0 6 1 * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Actualizar precios con IA (Gemini, capa gratuita)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/update_prices.py
+
+      - name: Guardar cambios en el repositorio
+        run: |
+          git config user.name "bot-precios"
+          git config user.email "actions@github.com"
+          git add prices.json update_log.md
+          git diff --quiet --cached || git commit -m "Actualización automática de precios $(date +'%Y-%m-%d')"
+          git push
