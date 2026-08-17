@@ -1,0 +1,894 @@
+{
+  "_readme": "Este archivo lo actualiza automáticamente scripts/update_prices.py una vez al mes vía GitHub Actions. Puedes editarlo a mano: pon \"locked\": true en un alimento para que el robot nunca lo sobreescriba.",
+  "updated_at": "2026-08-16",
+  "countries": {
+    "DO": {
+      "symbol": "RD$",
+      "items": {
+        "pollo": {
+          "value": 163,
+          "unit": "lb",
+          "source": "Expatistan (Santo Domingo)",
+          "updated_at": "2026-01-18",
+          "locked": false
+        },
+        "carne": {
+          "value": 129,
+          "unit": "lb",
+          "source": "Supermercados Bravo",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "huevo": {
+          "value": 6.5,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "atun": {
+          "value": 95,
+          "unit": "lata",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "arroz": {
+          "value": 45,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "papa": {
+          "value": 45,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "batata": {
+          "value": 27,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "avena": {
+          "value": 160,
+          "unit": "kg",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "pasta": {
+          "value": 150,
+          "unit": "paquete400g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "aguacate": {
+          "value": 55,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "aceite": {
+          "value": 480,
+          "unit": "botella750",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "frutos_secos": {
+          "value": 450,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "semillas": {
+          "value": 310,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "tomate": {
+          "value": 45,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "cebolla": {
+          "value": 45,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "berenjena": {
+          "value": 30,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ajiRojo": {
+          "value": 74,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "remolacha": {
+          "value": 45,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "manzana": {
+          "value": 30,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "naranja": {
+          "value": 28,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "piña": {
+          "value": 110,
+          "unit": "unidad_grande",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "sandia": {
+          "value": 120,
+          "unit": "unidad_grande",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "fresas": {
+          "value": 120,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ciruelasPasas": {
+          "value": 180,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "guineoMaduro": {
+          "value": 15,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ajo": {
+          "value": 59,
+          "unit": "paquete100g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "canela": {
+          "value": 119,
+          "unit": "frasco50g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "sal": {
+          "value": 149,
+          "unit": "paquete1kg",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "cafe": {
+          "value": 218,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "limon": {
+          "value": 15,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "zanahoria": {
+          "value": 35,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        }
+      }
+    },
+    "MX": {
+      "symbol": "MX$",
+      "items": {
+        "pollo": {
+          "value": 66,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "carne": {
+          "value": 112,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "huevo": {
+          "value": 3.5,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "atun": {
+          "value": 22,
+          "unit": "lata",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "arroz": {
+          "value": 22,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "papa": {
+          "value": 16,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "batata": {
+          "value": 14,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "avena": {
+          "value": 35,
+          "unit": "kg",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "pasta": {
+          "value": 20,
+          "unit": "paquete400g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "aguacate": {
+          "value": 35,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "aceite": {
+          "value": 130,
+          "unit": "botella750",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "frutos_secos": {
+          "value": 110,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "semillas": {
+          "value": 90,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "tomate": {
+          "value": 18,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "cebolla": {
+          "value": 15,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "berenjena": {
+          "value": 16,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ajiRojo": {
+          "value": 20,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "remolacha": {
+          "value": 14,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "manzana": {
+          "value": 15,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "naranja": {
+          "value": 10,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "piña": {
+          "value": 25,
+          "unit": "unidad_grande",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "sandia": {
+          "value": 35,
+          "unit": "unidad_grande",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "fresas": {
+          "value": 30,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ciruelasPasas": {
+          "value": 55,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "guineoMaduro": {
+          "value": 4,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ajo": {
+          "value": 14,
+          "unit": "paquete100g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "canela": {
+          "value": 28,
+          "unit": "frasco50g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "sal": {
+          "value": 12,
+          "unit": "paquete1kg",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "cafe": {
+          "value": 75,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "limon": {
+          "value": 3,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "zanahoria": {
+          "value": 12,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        }
+      }
+    },
+    "ES": {
+      "symbol": "€",
+      "items": {
+        "pollo": {
+          "value": 6.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "carne": {
+          "value": 7.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "huevo": {
+          "value": 0.28,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "atun": {
+          "value": 1.6,
+          "unit": "lata",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "arroz": {
+          "value": 1.3,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "papa": {
+          "value": 1.1,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "batata": {
+          "value": 1.4,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "avena": {
+          "value": 2.1,
+          "unit": "kg",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "pasta": {
+          "value": 1.2,
+          "unit": "paquete400g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "aguacate": {
+          "value": 1.5,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "aceite": {
+          "value": 6.5,
+          "unit": "botella750",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "frutos_secos": {
+          "value": 8.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "semillas": {
+          "value": 6.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "tomate": {
+          "value": 1.9,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "cebolla": {
+          "value": 1.1,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "berenjena": {
+          "value": 1.8,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ajiRojo": {
+          "value": 2.2,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "remolacha": {
+          "value": 1.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "manzana": {
+          "value": 1.9,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "naranja": {
+          "value": 1.6,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "piña": {
+          "value": 2.8,
+          "unit": "unidad_grande",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "sandia": {
+          "value": 1.2,
+          "unit": "unidad_grande",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "fresas": {
+          "value": 2.8,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ciruelasPasas": {
+          "value": 4.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "guineoMaduro": {
+          "value": 0.25,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ajo": {
+          "value": 0.9,
+          "unit": "paquete100g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "canela": {
+          "value": 1.8,
+          "unit": "frasco50g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "sal": {
+          "value": 0.6,
+          "unit": "paquete1kg",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "cafe": {
+          "value": 5.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "limon": {
+          "value": 0.3,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "zanahoria": {
+          "value": 1.0,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        }
+      }
+    },
+    "GEN": {
+      "symbol": "$",
+      "items": {
+        "pollo": {
+          "value": 3.2,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "carne": {
+          "value": 4.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "huevo": {
+          "value": 0.25,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "atun": {
+          "value": 1.3,
+          "unit": "lata",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "arroz": {
+          "value": 1.1,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "papa": {
+          "value": 0.9,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "batata": {
+          "value": 1.2,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "avena": {
+          "value": 2.5,
+          "unit": "kg",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "pasta": {
+          "value": 1.3,
+          "unit": "paquete400g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "aguacate": {
+          "value": 1.0,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "aceite": {
+          "value": 8.5,
+          "unit": "botella750",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "frutos_secos": {
+          "value": 6.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "semillas": {
+          "value": 5.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "tomate": {
+          "value": 1.6,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "cebolla": {
+          "value": 1.0,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "berenjena": {
+          "value": 1.4,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ajiRojo": {
+          "value": 1.8,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "remolacha": {
+          "value": 1.2,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "manzana": {
+          "value": 1.2,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "naranja": {
+          "value": 0.9,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "piña": {
+          "value": 2.2,
+          "unit": "unidad_grande",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "sandia": {
+          "value": 1.0,
+          "unit": "unidad_grande",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "fresas": {
+          "value": 2.5,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ciruelasPasas": {
+          "value": 4.0,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "guineoMaduro": {
+          "value": 0.2,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "ajo": {
+          "value": 0.8,
+          "unit": "paquete100g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "canela": {
+          "value": 1.5,
+          "unit": "frasco50g",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "sal": {
+          "value": 0.5,
+          "unit": "paquete1kg",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "cafe": {
+          "value": 5.0,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "limon": {
+          "value": 0.25,
+          "unit": "unidad",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        },
+        "zanahoria": {
+          "value": 0.9,
+          "unit": "lb",
+          "source": "estimado inicial",
+          "updated_at": "2026-08-16",
+          "locked": false
+        }
+      }
+    }
+  }
+}

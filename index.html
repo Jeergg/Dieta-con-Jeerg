@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan Nutricional Personalizado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     GOOGLE ADSENSE — actívalo cuando Google apruebe tu sitio.
+     1) Reemplaza ca-pub-XXXXXXXXXXXXXXXX por tu ID real de AdSense.
+     2) Quita el comentario <!-- y --> que envuelve este bloque.
+     Mientras no lo actives, no carga ningún script de terceros
+     (la página sigue funcionando 100% normal, sin publicidad).
+     ============================================================ -->
+<!--
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+-->
+<style>
+  :root{
+    --bg:#0e1512; --surface:#161f1a; --surface2:#1d2a22;
+    --line:#2a372e; --text:#f2f1ea; --muted:#95a396;
+    --accent:#8fbf6f; --accent-dim:#5f8a4a; --amber:#e3ac4f;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Inter',system-ui,sans-serif; line-height:1.5;
+    padding-bottom:60px;
+  }
+  h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0 0 6px; }
+  .wrap{ max-width:640px; margin:0 auto; padding:0 18px; }
+  header.hero{
+    padding:38px 18px 26px; text-align:left; border-bottom:1px solid var(--line);
+    background:radial-gradient(120% 140% at 10% 0%, #1c2a1f 0%, var(--bg) 60%);
+  }
+  .eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:10px; }
+  header.hero h1{ font-size:28px; line-height:1.15; max-width:480px; }
+  header.hero p{ color:var(--muted); max-width:440px; margin-top:10px; font-size:14.5px;}
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:20px; margin-top:18px; }
+  label{ display:block; font-size:12.5px; color:var(--muted); margin:14px 0 6px; font-weight:500;}
+  label:first-child{margin-top:0;}
+  input, select{
+    width:100%; background:var(--surface2); border:1px solid var(--line); color:var(--text);
+    padding:11px 12px; border-radius:9px; font-size:15px; font-family:'Inter',sans-serif;
+  }
+  input:focus, select:focus{ outline:2px solid var(--accent); border-color:var(--accent); }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;}
+  .chip{ border:1px solid var(--line); background:var(--surface2); color:var(--muted);
+    padding:8px 12px; border-radius:20px; font-size:13px; cursor:pointer; user-select:none;}
+  .chip.active{ background:var(--accent-dim); color:#0e1512; border-color:var(--accent); font-weight:600;}
+  fieldset{border:none; padding:0; margin:0;}
+  .segmented{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:4px;}
+  .seg-btn{ border:1px solid var(--line); background:var(--surface2); color:var(--muted);
+    padding:10px 6px; border-radius:9px; font-size:12.5px; text-align:center; cursor:pointer;}
+  .seg-btn.active{ border-color:var(--accent); color:var(--accent); background:#1a2b1d; font-weight:600;}
+  button.primary{
+    width:100%; margin-top:22px; background:var(--accent); color:#0e1512; border:none;
+    padding:15px; border-radius:10px; font-size:15.5px; font-weight:700; cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  button.primary:active{ transform:translateY(1px); }
+  button.secondary{
+    background:transparent; border:1px solid var(--line); color:var(--text);
+    padding:11px 14px; border-radius:9px; font-size:13.5px; cursor:pointer; font-weight:600;
+  }
+  .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
+  .hidden{ display:none !important; }
+
+  /* Results */
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;}
+  .stat{ background:var(--surface2); border-radius:10px; padding:12px 14px; border:1px solid var(--line);}
+  .stat .k{ font-family:'IBM Plex Mono',monospace; font-size:20px; color:var(--accent); }
+  .stat .l{ font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .total-cost{ background:linear-gradient(135deg,#1a2b1d,#20301f); border:1px solid var(--accent-dim);
+    border-radius:12px; padding:18px; margin-top:16px; text-align:center;}
+  .total-cost .amt{ font-family:'Fraunces',serif; font-size:34px; color:var(--amber); font-weight:700;}
+  .total-cost .lbl{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; margin-top:4px;}
+  .day-card{ border:1px solid var(--line); border-radius:10px; padding:14px; margin-top:10px; background:var(--surface2);}
+  .day-card h4{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--accent); margin:0 0 8px; letter-spacing:.05em;}
+  .meal{ font-size:13.5px; margin-bottom:6px; }
+  .meal b{ color:var(--text); }
+  .meal span{ color:var(--muted); }
+  .day-totals{ margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); font-size:12px; color:var(--muted);
+    display:flex; gap:12px; flex-wrap:wrap;}
+  table.buy{ width:100%; border-collapse:collapse; margin-top:10px; font-size:12.5px;}
+  table.buy th{ text-align:left; color:var(--muted); font-weight:500; padding:6px 4px; border-bottom:1px solid var(--line); font-size:11px; text-transform:uppercase;}
+  table.buy td{ padding:7px 4px; border-bottom:1px solid var(--line); }
+  table.buy td.num{ text-align:right; font-family:'IBM Plex Mono',monospace; }
+  canvas.render-canvas{ width:100%; border-radius:10px; margin-top:12px; border:1px solid var(--line); }
+  .badge{ display:inline-block; font-size:10.5px; padding:3px 8px; border-radius:20px; margin-left:6px;
+    background:#3a2c14; color:var(--amber); font-family:'IBM Plex Mono',monospace;}
+  .note{ font-size:12.5px; color:var(--muted); background:var(--surface2); border-left:3px solid var(--accent-dim);
+    padding:10px 12px; border-radius:6px; margin-top:14px;}
+  .footer-note{ text-align:center; color:var(--muted); font-size:11.5px; margin-top:30px; padding:0 20px;}
+
+  /* Publicidad y afiliados */
+  .ad-slot{ margin-top:18px; border:1px dashed var(--line); border-radius:10px; padding:14px;
+    text-align:center; color:var(--muted); font-size:11px; font-family:'IBM Plex Mono',monospace; }
+  .affiliate-card{ display:flex; gap:12px; align-items:center; background:var(--surface2);
+    border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:10px; text-decoration:none; color:var(--text);}
+  .affiliate-card .emoji{ font-size:26px; }
+  .affiliate-card .info b{ display:block; font-size:14px; }
+  .affiliate-card .info span{ font-size:12px; color:var(--muted); }
+  .affiliate-tag{ font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;
+    margin:16px 0 4px; font-family:'IBM Plex Mono',monospace;}
+  .privacy-link{ color:var(--muted); text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Plan nutricional · calculado, no adivinado</div>
+    <h1>Tu dieta y su costo real este mes, en un minuto.</h1>
+    <p>Cálculo hecho con fórmulas estándar de nutrición y precios de referencia por país — sin IA de por medio en los números, así no hay margen de error de cálculo.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- FORM -->
+  <form id="dietForm" class="card">
+    <h3>1. Tus datos</h3>
+
+    <label for="nombre">Nombre</label>
+    <input id="nombre" type="text" placeholder="Tu nombre" required>
+
+    <div class="row2">
+      <div>
+        <label for="edad">Edad</label>
+        <input id="edad" type="number" min="15" max="90" placeholder="27" required>
+      </div>
+      <div>
+        <label>Sexo</label>
+        <div class="segmented" id="sexoSeg">
+          <div class="seg-btn active" data-val="hombre">Hombre</div>
+          <div class="seg-btn" data-val="mujer">Mujer</div>
+          <div class="seg-btn" data-val="otro">Otro</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label for="peso">Peso (kg)</label>
+        <input id="peso" type="number" step="0.1" placeholder="68" required>
+      </div>
+      <div>
+        <label for="altura">Altura (cm)</label>
+        <input id="altura" type="number" placeholder="175" required>
+      </div>
+    </div>
+
+    <label for="pais">País (define moneda y precios de referencia)</label>
+    <select id="pais">
+      <option value="DO">República Dominicana — RD$</option>
+      <option value="MX">México — MX$</option>
+      <option value="ES">España — €</option>
+      <option value="GEN">Otro país — USD (genérico, revisa precios)</option>
+    </select>
+    <div class="hint" id="priceHint"></div>
+
+    <label>Nivel de actividad</label>
+    <div class="segmented" id="actSeg">
+      <div class="seg-btn" data-val="1.2">Sedentario</div>
+      <div class="seg-btn active" data-val="1.55">Moderado</div>
+      <div class="seg-btn" data-val="1.9">Muy alto</div>
+    </div>
+
+    <label>Objetivo</label>
+    <div class="segmented" id="goalSeg">
+      <div class="seg-btn active" data-val="bulk">Ganar masa</div>
+      <div class="seg-btn" data-val="cut">Perder grasa</div>
+      <div class="seg-btn" data-val="recomp">Recomposición</div>
+    </div>
+
+    <label>Restricciones (toca para excluir)</label>
+    <div class="chips" id="allergyChips"></div>
+
+    <button type="submit" class="primary">Generar mi plan y el costo del mes</button>
+  </form>
+
+  <!-- RESULTS -->
+  <div id="results" class="hidden"></div>
+
+  <div class="footer-note">
+    Guía orientativa calculada con la fórmula Mifflin-St Jeor. No sustituye la evaluación de un nutricionista o médico, especialmente si tienes alguna condición de salud.
+    <br><br>
+    Esta página puede mostrar publicidad y enlaces de afiliado — si compras a través de ellos, podemos recibir una comisión, sin costo extra para ti.
+    <br>
+    <a class="privacy-link" href="privacy-policy.html">Política de privacidad</a>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   1) BASE DE DATOS DE ALIMENTOS (macros por 100g, categoría)
+   ============================================================ */
+const FOODS = {
+  // --- proteínas ---
+  pollo:      { name:"Pechuga de pollo",   cat:"protein", kcal:165, p:31, c:0,  f:3.6, unit:"lb", gPerUnit:453.6 },
+  carne:      { name:"Carne molida 90/10", cat:"protein", kcal:176, p:20, c:0,  f:10,  unit:"lb", gPerUnit:453.6 },
+  huevo:      { name:"Huevo entero",       cat:"protein", kcal:155, p:13, c:1.1,f:11,  unit:"unidad", gPerUnit:50 },
+  atun:       { name:"Atún en agua",       cat:"protein", kcal:116, p:26, c:0,  f:1,   unit:"lata", gPerUnit:120 },
+  // --- carbohidratos ---
+  arroz:      { name:"Arroz blanco (seco)",cat:"carb", kcal:365, p:7.1,c:79, f:0.7, unit:"lb", gPerUnit:453.6 },
+  papa:       { name:"Papa",               cat:"carb", kcal:77,  p:2,  c:17, f:0.1, unit:"lb", gPerUnit:453.6 },
+  batata:     { name:"Batata",             cat:"carb", kcal:86,  p:1.6,c:20, f:0.1, unit:"lb", gPerUnit:453.6 },
+  avena:      { name:"Avena",              cat:"carb", kcal:389, p:17, c:66, f:7,   unit:"kg", gPerUnit:1000 },
+  pasta:      { name:"Pasta (seca)",       cat:"carb", kcal:371, p:13, c:75, f:1.5, unit:"paquete400g", gPerUnit:400 },
+  // --- grasas ---
+  aguacate:   { name:"Aguacate",           cat:"fat", kcal:160, p:2,  c:9,  f:15,  unit:"unidad", gPerUnit:200 },
+  aceite:     { name:"Aceite de oliva",    cat:"fat", kcal:884, p:0,  c:0,  f:100, unit:"botella750", gPerUnit:750 },
+  frutos_secos:{ name:"Frutos secos (mix)",cat:"fat", kcal:607, p:20, c:21, f:54,  unit:"lb", gPerUnit:453.6 },
+  semillas:   { name:"Semillas (chía/lino)",cat:"fat",kcal:534, p:19, c:34, f:42,  unit:"lb", gPerUnit:453.6 },
+  // --- vegetales ---
+  tomate:     { name:"Tomate",             cat:"veg", kcal:18,  p:0.9,c:3.9,f:0.2, unit:"lb", gPerUnit:453.6 },
+  cebolla:    { name:"Cebolla",            cat:"veg", kcal:40,  p:1.1,c:9.3,f:0.1, unit:"lb", gPerUnit:453.6 },
+  berenjena:  { name:"Berenjena",          cat:"veg", kcal:25,  p:1,  c:6,  f:0.2, unit:"lb", gPerUnit:453.6 },
+  ajiRojo:    { name:"Ají rojo",           cat:"veg", kcal:31,  p:1,  c:6,  f:0.3, unit:"lb", gPerUnit:453.6 },
+  remolacha:  { name:"Remolacha",          cat:"veg", kcal:43,  p:1.6,c:10, f:0.2, unit:"lb", gPerUnit:453.6 },
+  zanahoria:  { name:"Zanahoria",          cat:"veg", kcal:41,  p:0.9,c:10, f:0.2, unit:"lb", gPerUnit:453.6 },
+  // --- frutas ---
+  manzana:    { name:"Manzana",            cat:"fruit", kcal:52, p:0.3,c:14, f:0.2, unit:"unidad", gPerUnit:180 },
+  naranja:    { name:"Naranja",            cat:"fruit", kcal:47, p:0.9,c:12, f:0.1, unit:"unidad", gPerUnit:180 },
+  piña:       { name:"Piña",               cat:"fruit", kcal:50, p:0.5,c:13, f:0.1, unit:"unidad_grande", gPerUnit:900 },
+  sandia:     { name:"Sandía",             cat:"fruit", kcal:30, p:0.6,c:8,  f:0.2, unit:"unidad_grande", gPerUnit:2000 },
+  fresas:     { name:"Fresas",             cat:"fruit", kcal:32, p:0.7,c:7.7,f:0.3, unit:"lb", gPerUnit:453.6 },
+  ciruelasPasas:{ name:"Ciruelas pasas",   cat:"fruit", kcal:240,p:2.2,c:64, f:0.4, unit:"lb", gPerUnit:453.6 },
+  guineoMaduro:{ name:"Guineo maduro",     cat:"fruit", kcal:89, p:1.1,c:23, f:0.3, unit:"unidad", gPerUnit:120 },
+  // --- condimentos / especias (porciones fijas, no se escalan) ---
+  ajo:        { name:"Ajo",                cat:"season", kcal:149, p:6.4,c:33, f:0.5, unit:"paquete100g", gPerUnit:100 },
+  canela:     { name:"Canela",             cat:"season", kcal:247, p:4,  c:81, f:1.2, unit:"frasco50g", gPerUnit:50 },
+  sal:        { name:"Sal",                cat:"season", kcal:0,   p:0,  c:0,  f:0,   unit:"paquete1kg", gPerUnit:1000 },
+  cafe:       { name:"Café (molido)",      cat:"season", kcal:2,   p:0.1,c:0.3,f:0,   unit:"lb", gPerUnit:453.6 },
+  limon:      { name:"Limón",              cat:"season", kcal:29,  p:1.1,c:9.3,f:0.3, unit:"unidad", gPerUnit:60 },
+};
+
+const MEAL_KEYS = ["desayuno","almuerzo","merienda","cena","condimentos"];
+function allDayItems(tmpl){ return [].concat(...MEAL_KEYS.map(k=>tmpl[k])); }
+
+/* Precios: se cargan desde prices.json (actualizado automáticamente una vez
+   al mes por scripts/update_prices.py vía GitHub Actions — ver README_SETUP.md).
+   Este objeto es solo un RESPALDO por si el archivo no carga (ej. al abrir
+   el HTML directamente desde el disco sin servidor, donde fetch() no funciona). */
+let PRICES = {
+  DO: { symbol:"RD$", pollo:163, carne:129, huevo:6.5, atun:95, arroz:45, papa:45, batata:27, avena:160, pasta:150,
+        aguacate:55, aceite:480, frutos_secos:450, semillas:310, tomate:45, cebolla:45, berenjena:30, ajiRojo:74,
+        remolacha:45, zanahoria:35, manzana:30, naranja:28, piña:110, sandia:120, fresas:120, ciruelasPasas:180, guineoMaduro:15,
+        ajo:59, canela:119, sal:149, cafe:218, limon:15,
+        _fuente:"Respaldo local (sin conexión a prices.json)" },
+  MX: { symbol:"MX$", pollo:66, carne:112, huevo:3.5, atun:22, arroz:22, papa:16, batata:14, avena:35, pasta:20,
+        aguacate:35, aceite:130, frutos_secos:110, semillas:90, tomate:18, cebolla:15, berenjena:16, ajiRojo:20,
+        remolacha:14, zanahoria:12, manzana:15, naranja:10, piña:25, sandia:35, fresas:30, ciruelasPasas:55, guineoMaduro:4,
+        ajo:14, canela:28, sal:12, cafe:75, limon:3 },
+  ES: { symbol:"€", pollo:6.5, carne:7.5, huevo:0.28, atun:1.6, arroz:1.3, papa:1.1, batata:1.4, avena:2.1, pasta:1.2,
+        aguacate:1.5, aceite:6.5, frutos_secos:8.5, semillas:6.5, tomate:1.9, cebolla:1.1, berenjena:1.8, ajiRojo:2.2,
+        remolacha:1.5, zanahoria:1.0, manzana:1.9, naranja:1.6, piña:2.8, sandia:1.2, fresas:2.8, ciruelasPasas:4.5, guineoMaduro:0.25,
+        ajo:0.9, canela:1.8, sal:0.6, cafe:5.5, limon:0.3 },
+  GEN:{ symbol:"$", pollo:3.2, carne:4.5, huevo:0.25, atun:1.3, arroz:1.1, papa:0.9, batata:1.2, avena:2.5, pasta:1.3,
+        aguacate:1.0, aceite:8.5, frutos_secos:6.5, semillas:5.5, tomate:1.6, cebolla:1.0, berenjena:1.4, ajiRojo:1.8,
+        remolacha:1.2, zanahoria:0.9, manzana:1.2, naranja:0.9, piña:2.2, sandia:1.0, fresas:2.5, ciruelasPasas:4.0, guineoMaduro:0.2,
+        ajo:0.8, canela:1.5, sal:0.5, cafe:5.0, limon:0.25 },
+};
+let pricesLoadedLive = false;
+
+async function loadLivePrices(){
+  try{
+    const res = await fetch('prices.json', {cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const data = await res.json();
+    const rebuilt = {};
+    Object.keys(data.countries).forEach(code=>{
+      const c = data.countries[code];
+      rebuilt[code] = { symbol: c.symbol, _fuente: `Actualizado ${data.updated_at}` };
+      Object.keys(c.items).forEach(foodId=>{
+        rebuilt[code][foodId] = c.items[foodId].value;
+      });
+    });
+    PRICES = rebuilt;
+    pricesLoadedLive = true;
+    console.log("Precios cargados desde prices.json (" + data.updated_at + ")");
+  }catch(e){
+    console.warn("No se pudo cargar prices.json — usando respaldo local.", e);
+    pricesLoadedLive = false;
+  }
+}
+loadLivePrices();
+
+/* ============================================================
+   2) PLANTILLA DE CICLO DE 7 DÍAS (determinístico, sin IA)
+   Cada slot referencia un alimento por categoría; rota variantes.
+   Los condimentos van en porciones fijas, no se escalan con las calorías.
+   ============================================================ */
+const PROTEIN_ROT = ["pollo","carne","atun","pollo","huevo","pollo","carne"];
+const CARB_ROT     = ["arroz","papa","batata","pasta","arroz","papa","avena"];
+const VEG_ROT       = ["tomate","cebolla","berenjena","ajiRojo","remolacha","zanahoria","tomate"];
+const FRUIT_ROT     = ["manzana","naranja","piña","sandia","fresas","guineoMaduro","manzana"];
+const FAT_ROT        = ["aguacate","frutos_secos","aguacate","semillas","aguacate","frutos_secos","semillas"];
+
+function buildDayTemplate(dayIdx){
+  const d = dayIdx % 7;
+  return {
+    desayuno: [ {id:"huevo", baseG:100}, {id:CARB_ROT[d], baseG:60}, {id:FRUIT_ROT[d], baseG:150} ],
+    almuerzo: [ {id:PROTEIN_ROT[d], baseG:150}, {id:CARB_ROT[d], baseG:150}, {id:VEG_ROT[d], baseG:100}, {id:"aceite", baseG:8} ],
+    merienda: [ {id:FAT_ROT[d], baseG:40}, {id:(d%3===0?"ciruelasPasas":FRUIT_ROT[(d+1)%7]), baseG: d%3===0?30:120} ],
+    cena:     [ {id:PROTEIN_ROT[(d+3)%7], baseG:140}, {id:VEG_ROT[(d+2)%7], baseG:120}, {id:"aceite", baseG:6} ],
+    condimentos: [ {id:"cafe", baseG:10}, {id:"sal", baseG:3}, {id:"ajo", baseG:5},
+                   {id:"canela", baseG: d%2===0?2:0}, {id:"limon", baseG:20} ].filter(it=>it.baseG>0),
+  };
+}
+
+function macrosOf(foodId, grams){
+  const f = FOODS[foodId];
+  const factor = grams/100;
+  return { kcal:f.kcal*factor, p:f.p*factor, c:f.c*factor, f:f.f*factor };
+}
+
+/* Escala las porciones de un día para acercarse al objetivo de kcal,
+   priorizando alcanzar la proteína objetivo primero. Los condimentos
+   (categoría "season") nunca se escalan — son porciones fijas de uso real. */
+function scaleDayToTarget(template, targetKcal, targetProtein){
+  const allItems = allDayItems(template);
+
+  // Paso 1: proteína total en base
+  let baseP = 0;
+  allItems.forEach(it=>{ baseP += macrosOf(it.id, it.baseG).p; });
+  let proteinScale = baseP>0 ? targetProtein/baseP : 1;
+  proteinScale = Math.max(0.6, Math.min(proteinScale, 2.2)); // límites prácticos
+
+  allItems.forEach(it=>{
+    if(FOODS[it.id].cat === "protein"){ it.g = Math.round((it.baseG*proteinScale)/5)*5; }
+    else { it.g = it.baseG; }
+  });
+
+  // Paso 2: con proteína fija, escala carbohidratos/grasas para acercar kcal totales
+  // (los condimentos, cat "season", quedan excluidos — se sirven en su cantidad real de uso)
+  let currentKcal = allItems.reduce((s,it)=> s + macrosOf(it.id, it.g).kcal, 0);
+  let remainingKcalTarget = targetKcal - currentKcal;
+  const flexItems = allItems.filter(it=> FOODS[it.id].cat==="carb" || FOODS[it.id].cat==="fat");
+  let flexKcalBase = flexItems.reduce((s,it)=> s + macrosOf(it.id, it.g).kcal, 0);
+  let flexScale = flexKcalBase>0 ? Math.max(0.4, Math.min((flexKcalBase+remainingKcalTarget)/flexKcalBase, 2.5)) : 1;
+  flexItems.forEach(it=>{ it.g = Math.max(5, Math.round((it.g*flexScale)/5)*5); });
+
+  return template;
+}
+
+function dayTotals(template){
+  const allItems = allDayItems(template);
+  let t = {kcal:0,p:0,c:0,f:0};
+  allItems.forEach(it=>{ const m = macrosOf(it.id, it.g); t.kcal+=m.kcal; t.p+=m.p; t.c+=m.c; t.f+=m.f; });
+  return t;
+}
+
+/* ============================================================
+   3) UI: selección de campos
+   ============================================================ */
+function setupSegmented(id){
+  document.querySelectorAll('#'+id+' .seg-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('#'+id+' .seg-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+}
+setupSegmented('sexoSeg'); setupSegmented('actSeg'); setupSegmented('goalSeg');
+
+const allergyList = [
+  {id:"pollo", label:"Pollo"}, {id:"huevo", label:"Huevo"}, {id:"atun", label:"Atún/pescado"},
+  {id:"aguacate", label:"Aguacate"}, {id:"pasta", label:"Gluten (pasta)"},
+  {id:"frutos_secos", label:"Frutos secos"}, {id:"semillas", label:"Semillas"},
+];
+const allergyChipsEl = document.getElementById('allergyChips');
+allergyList.forEach(a=>{
+  const c = document.createElement('div');
+  c.className='chip'; c.textContent=a.label; c.dataset.id=a.id;
+  c.addEventListener('click', ()=> c.classList.toggle('active'));
+  allergyChipsEl.appendChild(c);
+});
+
+const priceHint = document.getElementById('priceHint');
+function updatePriceHint(){
+  const country = document.getElementById('pais').value;
+  priceHint.innerHTML = country === "GEN"
+    ? "Precios genéricos de referencia — reemplázalos con precios reales de tu país en el código antes de publicar."
+    : "Precios de referencia cargados para este país — <b>verifica y actualiza</b> antes de publicar (ver nota al final).";
+}
+document.getElementById('pais').addEventListener('change', updatePriceHint);
+updatePriceHint();
+
+/* ============================================================
+   4) CÁLCULO PRINCIPAL AL ENVIAR EL FORMULARIO
+   ============================================================ */
+document.getElementById('dietForm').addEventListener('submit', function(e){
+  e.preventDefault();
+
+  const nombre = document.getElementById('nombre').value.trim() || "Tu";
+  const edad = parseFloat(document.getElementById('edad').value);
+  const peso = parseFloat(document.getElementById('peso').value);
+  const altura = parseFloat(document.getElementById('altura').value);
+  const sexo = document.querySelector('#sexoSeg .seg-btn.active').dataset.val;
+  const actFactor = parseFloat(document.querySelector('#actSeg .seg-btn.active').dataset.val);
+  const goal = document.querySelector('#goalSeg .seg-btn.active').dataset.val;
+  const country = document.getElementById('pais').value;
+  const excluded = Array.from(document.querySelectorAll('#allergyChips .chip.active')).map(c=>c.dataset.id);
+
+  // --- BMR (Mifflin-St Jeor) ---
+  let bmr;
+  if(sexo === "hombre") bmr = 10*peso + 6.25*altura - 5*edad + 5;
+  else if(sexo === "mujer") bmr = 10*peso + 6.25*altura - 5*edad - 161;
+  else bmr = 10*peso + 6.25*altura - 5*edad - 78; // promedio, transparente
+
+  const tdee = bmr * actFactor;
+
+  let calorieTarget;
+  if(goal === "bulk") calorieTarget = tdee * 1.08;
+  else if(goal === "cut") calorieTarget = tdee * 0.82;
+  else calorieTarget = tdee * 0.98;
+
+  const proteinPerKg = goal === "cut" ? 2.0 : 1.8;
+  const proteinTarget = peso * proteinPerKg;
+  const fatTarget = peso * 0.8;
+  const carbTarget = Math.max(0, (calorieTarget - (proteinTarget*4 + fatTarget*9)) / 4);
+
+  // --- Generar 30 días desde el ciclo de 7, respetando exclusiones ---
+  function pickAlt(id){
+    if(!excluded.includes(id)) return id;
+    const cat = FOODS[id].cat;
+    const alts = Object.keys(FOODS).filter(k=> FOODS[k].cat===cat && !excluded.includes(k));
+    return alts.length ? alts[0] : id;
+  }
+
+  const days = [];
+  const monthlyConsumptionG = {}; // foodId -> gramos totales del mes
+
+  for(let d=0; d<30; d++){
+    let tmpl = buildDayTemplate(d);
+    MEAL_KEYS.forEach(meal=>{
+      tmpl[meal].forEach(it=>{ it.id = pickAlt(it.id); });
+    });
+    tmpl = scaleDayToTarget(tmpl, calorieTarget, proteinTarget);
+    const totals = dayTotals(tmpl);
+    days.push({ idx:d+1, tmpl, totals });
+
+    allDayItems(tmpl).forEach(it=>{
+      monthlyConsumptionG[it.id] = (monthlyConsumptionG[it.id]||0) + it.g;
+    });
+  }
+
+  // --- Consumo -> compra comercial -> costo ---
+  const priceSet = PRICES[country];
+  const purchase = Object.keys(monthlyConsumptionG).map(id=>{
+    const f = FOODS[id];
+    const gramsNeeded = monthlyConsumptionG[id];
+    const unitsNeeded = Math.ceil(gramsNeeded / f.gPerUnit);
+    const price = priceSet[id] || 0;
+    const subtotal = unitsNeeded * price;
+    return { id, name:f.name, gramsNeeded, unitsNeeded, unit:f.unit, price, subtotal };
+  }).sort((a,b)=> b.subtotal - a.subtotal);
+
+  const totalCost = purchase.reduce((s,p)=> s+p.subtotal, 0);
+
+  // --- Promedio real del mes ---
+  const avg = days.reduce((s,d)=>({kcal:s.kcal+d.totals.kcal, p:s.p+d.totals.p, c:s.c+d.totals.c, f:s.f+d.totals.f}),
+                           {kcal:0,p:0,c:0,f:0});
+  Object.keys(avg).forEach(k=> avg[k] = avg[k]/30);
+
+  renderResults({nombre, edad, sexo, peso, altura, bmr, tdee, calorieTarget, proteinTarget, carbTarget, fatTarget,
+                  country, priceSet, days, purchase, totalCost, avg, goal});
+});
+
+/* ============================================================
+   5) RENDER DE RESULTADOS (texto)
+   ============================================================ */
+function fmt(n, d=0){ return n.toLocaleString('es', {maximumFractionDigits:d, minimumFractionDigits:d}); }
+
+function renderResults(R){
+  const el = document.getElementById('results');
+  el.classList.remove('hidden');
+
+  let html = `
+  <div class="card">
+    <h3>2. Tu ficha calculada</h3>
+    <div class="stat-grid">
+      <div class="stat"><div class="k">${fmt(R.bmr)}</div><div class="l">BMR (kcal en reposo)</div></div>
+      <div class="stat"><div class="k">${fmt(R.tdee)}</div><div class="l">TDEE (gasto total/día)</div></div>
+      <div class="stat"><div class="k">${fmt(R.calorieTarget)}</div><div class="l">Objetivo calórico/día</div></div>
+      <div class="stat"><div class="k">${fmt(R.proteinTarget)} g</div><div class="l">Proteína objetivo/día</div></div>
+      <div class="stat"><div class="k">${fmt(R.carbTarget)} g</div><div class="l">Carbohidratos objetivo/día</div></div>
+      <div class="stat"><div class="k">${fmt(R.fatTarget)} g</div><div class="l">Grasas objetivo/día</div></div>
+    </div>
+    <div class="note">Promedio real logrado en los 30 días: ${fmt(R.avg.kcal)} kcal · P ${fmt(R.avg.p)} g · C ${fmt(R.avg.c)} g · G ${fmt(R.avg.f)} g — calculado sumando cada día generado, no asumido.</div>
+  </div>
+
+  <!-- ADSENSE SLOT 1 — se activa solo cuando pegues tu <ins class="adsbygoogle"> real aquí -->
+  <div class="ad-slot" id="adSlot1">[ espacio de publicidad ]</div>
+
+  <div class="card">
+    <div class="total-cost">
+      <div class="amt">${R.priceSet.symbol} ${fmt(R.totalCost)}</div>
+      <div class="lbl">Costo total de alimentación · 30 días
+        <span class="badge">${pricesLoadedLive ? 'Precios actualizados automáticamente' : 'Precios de respaldo (revisar conexión)'}</span>
+      </div>
+    </div>
+    ${R.priceSet._fuente ? `<div class="note">Fuente de precios: ${R.priceSet._fuente}</div>` : ''}
+    <table class="buy">
+      <tr><th>Alimento</th><th>Consumo mes</th><th>Comprar</th><th class="num">Subtotal</th></tr>
+      ${R.purchase.map(p=>`
+        <tr>
+          <td>${p.name}</td>
+          <td>${fmt(p.gramsNeeded)} g</td>
+          <td>${p.unitsNeeded} ${p.unit.replace(/[0-9]+$/,'')}</td>
+          <td class="num">${R.priceSet.symbol}${fmt(p.subtotal)}</td>
+        </tr>`).join('')}
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="affiliate-tag">Recomendados · enlaces de afiliado</div>
+    ${renderAffiliates()}
+  </div>
+
+  <div class="card">
+    <h3>3. Tu semana base (se repite con variaciones a lo largo del mes)</h3>
+    ${R.days.slice(0,7).map(d=>`
+      <div class="day-card">
+        <h4>DÍA ${d.idx}</h4>
+        ${renderMeal("Desayuno", d.tmpl.desayuno)}
+        ${renderMeal("Almuerzo", d.tmpl.almuerzo)}
+        ${renderMeal("Merienda", d.tmpl.merienda)}
+        ${renderMeal("Cena", d.tmpl.cena)}
+        ${d.tmpl.condimentos.length ? renderMeal("Condimentos", d.tmpl.condimentos) : ''}
+        <div class="day-totals">
+          <span>🔥 ${fmt(d.totals.kcal)} kcal</span>
+          <span>💪 ${fmt(d.totals.p)} g P</span>
+          <span>🌾 ${fmt(d.totals.c)} g C</span>
+          <span>🥑 ${fmt(d.totals.f)} g G</span>
+        </div>
+      </div>
+    `).join('')}
+  </div>
+
+  <!-- ADSENSE SLOT 2 -->
+  <div class="ad-slot" id="adSlot2">[ espacio de publicidad ]</div>
+
+  <div class="card">
+    <h3>4. Imagen para guardar/compartir</h3>
+    <canvas id="summaryCanvas" class="render-canvas" width="1080" height="1350"></canvas>
+    <button class="secondary" id="downloadBtn" style="margin-top:10px;">Descargar imagen (PNG)</button>
+    <div class="hint">Esta imagen se dibuja con código a partir de estos mismos números — no la genera un modelo de IA, así que nunca muestra una cifra distinta a la calculada arriba.</div>
+  </div>
+  `;
+  el.innerHTML = html;
+  drawSummaryCanvas(R);
+  document.getElementById('downloadBtn').addEventListener('click', ()=>{
+    const canvas = document.getElementById('summaryCanvas');
+    const link = document.createElement('a');
+    link.download = `dieta_${R.nombre.replace(/\s+/g,'_')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+  el.scrollIntoView({behavior:'smooth'});
+}
+
+function renderMeal(label, items){
+  const parts = items.map(it=> `${FOODS[it.id].name} ${it.g} g`).join(', ');
+  return `<div class="meal"><b>${label}:</b> <span>${parts}</span></div>`;
+}
+
+/* ============================================================
+   PRODUCTOS AFILIADOS — reemplaza "href" por tu link real de
+   Amazon Afiliados / la marca que uses. El texto "Enlace de
+   afiliado" debe quedarse SIEMPRE visible (transparencia obligatoria).
+   ============================================================ */
+const AFFILIATE_PRODUCTS = [
+  { emoji:"⚖️", name:"Báscula de cocina digital", desc:"Para pesar tus porciones exactas", href:"#" },
+  { emoji:"🍱", name:"Set de recipientes meal prep", desc:"Organiza tus 30 días de comida", href:"#" },
+  { emoji:"🥤", name:"Proteína en polvo", desc:"Complemento si te cuesta llegar a la meta", href:"#" },
+];
+function renderAffiliates(){
+  return AFFILIATE_PRODUCTS.map(p=>`
+    <a class="affiliate-card" href="${p.href}" target="_blank" rel="noopener sponsored">
+      <div class="emoji">${p.emoji}</div>
+      <div class="info"><b>${p.name}</b><span>${p.desc}</span></div>
+    </a>`).join('');
+}
+
+/* ============================================================
+   6) IMAGEN FINAL DIBUJADA POR CÓDIGO (Canvas) — no IA de arte
+   ============================================================ */
+function drawSummaryCanvas(R){
+  const canvas = document.getElementById('summaryCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+
+  // bg
+  ctx.fillStyle = "#0e1512"; ctx.fillRect(0,0,W,H);
+  const grad = ctx.createRadialGradient(W*0.1,0,0,W*0.1,0,W*1.3);
+  grad.addColorStop(0,"#1c2a1f"); grad.addColorStop(1,"#0e1512");
+  ctx.fillStyle = grad; ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle = "#8fbf6f";
+  ctx.font = "600 22px 'IBM Plex Mono', monospace";
+  ctx.fillText("PLAN NUTRICIONAL · 30 DÍAS", 60, 90);
+
+  ctx.fillStyle = "#f2f1ea";
+  ctx.font = "700 46px Georgia, serif";
+  ctx.fillText(R.nombre, 60, 150);
+
+  // stats grid
+  const stats = [
+    ["BMR", fmt(R.bmr)+" kcal"],
+    ["TDEE", fmt(R.tdee)+" kcal"],
+    ["OBJETIVO", fmt(R.calorieTarget)+" kcal/día"],
+    ["PROTEÍNA", fmt(R.proteinTarget)+" g/día"],
+    ["CARBOHIDRATOS", fmt(R.carbTarget)+" g/día"],
+    ["GRASAS", fmt(R.fatTarget)+" g/día"],
+  ];
+  let sy = 220;
+  stats.forEach((s,i)=>{
+    const col = i % 2, row = Math.floor(i/2);
+    const x = 60 + col*510;
+    const y = sy + row*95;
+    ctx.fillStyle = "#1d2a22"; roundRect(ctx, x, y, 470, 78, 10); ctx.fill();
+    ctx.fillStyle = "#95a396"; ctx.font = "500 15px Inter, sans-serif"; ctx.fillText(s[0], x+20, y+28);
+    ctx.fillStyle = "#8fbf6f"; ctx.font = "700 28px 'IBM Plex Mono', monospace"; ctx.fillText(s[1], x+20, y+58);
+  });
+
+  // total cost block
+  const costY = sy + 3*95 + 30;
+  ctx.fillStyle = "#20301f"; roundRect(ctx, 60, costY, 960, 150, 14); ctx.fill();
+  ctx.strokeStyle = "#5f8a4a"; ctx.lineWidth = 2; roundRect(ctx, 60, costY, 960, 150, 14); ctx.stroke();
+  ctx.fillStyle = "#95a396"; ctx.font="500 16px Inter, sans-serif";
+  ctx.fillText("COSTO TOTAL DE ALIMENTACIÓN · 30 DÍAS (estimado)", 90, costY+45);
+  ctx.fillStyle = "#e3ac4f"; ctx.font="700 56px Georgia, serif";
+  ctx.fillText(R.priceSet.symbol + " " + fmt(R.totalCost), 90, costY+115);
+
+  // top purchase items
+  let py = costY + 200;
+  ctx.fillStyle = "#f2f1ea"; ctx.font = "600 20px Inter, sans-serif";
+  ctx.fillText("LISTA DE COMPRA (top alimentos por costo)", 60, py);
+  py += 30;
+  R.purchase.slice(0,10).forEach(p=>{
+    ctx.fillStyle = "#1d2a22"; roundRect(ctx, 60, py, 960, 46, 8); ctx.fill();
+    ctx.fillStyle = "#f2f1ea"; ctx.font = "500 17px Inter, sans-serif";
+    ctx.fillText(p.name, 80, py+29);
+    ctx.fillStyle = "#95a396"; ctx.font = "400 14px Inter, sans-serif";
+    ctx.fillText(`${p.unitsNeeded} ${p.unit.replace(/[0-9]+$/,'')}`, 560, py+29);
+    ctx.fillStyle = "#e3ac4f"; ctx.font = "600 17px 'IBM Plex Mono', monospace"; ctx.textAlign="right";
+    ctx.fillText(R.priceSet.symbol+fmt(p.subtotal), 990, py+29);
+    ctx.textAlign="left";
+    py += 54;
+  });
+
+  ctx.fillStyle = "#95a396"; ctx.font="italic 13px Inter, sans-serif";
+  ctx.fillText("Guía orientativa · Mifflin-St Jeor · precios de referencia, verificar localmente", 60, H-40);
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+</script>
+</body>
+</html>
