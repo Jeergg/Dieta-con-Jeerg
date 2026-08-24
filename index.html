@@ -3801,10 +3801,15 @@ function drawBrandHeader(ctx, C, nombre, subtitle){
   // Franja blanca de cabecera
   ctx.fillStyle = C.card; ctx.fillRect(0, 0, W, 150);
 
-  // Logo real de COME PRO (se dibuja si ya se cargo; si no, la placa de texto)
+  /* Logo sobre placa oscura: en la imagen descargada la cabecera es
+     clara, así que el logo de letras blancas se perdía. La placa lo
+     hace resaltar igual que en la app. */
   if(LOGO_IMG && LOGO_IMG.complete && LOGO_IMG.naturalWidth){
-    const lh = 96, lw = LOGO_IMG.naturalWidth / LOGO_IMG.naturalHeight * lh;
-    ctx.drawImage(LOGO_IMG, 50, 27, lw, lh);
+    const lh = 84, lw = LOGO_IMG.naturalWidth / LOGO_IMG.naturalHeight * lh;
+    ctx.fillStyle = "#141a11";
+    roundRectPath(ctx, 44, 26, lw + 28, lh + 20, 14);
+    ctx.fill();
+    ctx.drawImage(LOGO_IMG, 58, 36, lw, lh);
   } else {
     ctx.fillStyle = "#141a11"; roundRectPath(ctx, 50, 30, 210, 58, 12); ctx.fill();
     ctx.fillStyle = "#ffffff"; ctx.font = "700 28px Fraunces, Georgia, serif";
@@ -3897,7 +3902,11 @@ function downloadCanvasAsPNG(canvas, filename){
     try{
       const file = new File([blob], filename, {type:'image/png'});
       if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
-        navigator.share({ files:[file], title:'COME PRO' })
+        /* Solo se pasa el archivo, sin texto ni titulo: si se incluye
+           texto, iOS interpreta el contenido como "enlace o nota" y
+           esconde la opcion "Guardar en Fotos" detras del menu. Con
+           solo la imagen, Fotos aparece entre las primeras opciones. */
+        navigator.share({ files:[file] })
           .then(limpiar)
           .catch(function(err){
             // Si el usuario cancela, no se hace nada más (no es un error)
@@ -4141,7 +4150,21 @@ function drawPurchaseImage(R){
   ctx.fillText("COME PRO", 950, y);
   ctx.textAlign = "left";
 
-  return canvas;
+  /* La altura se calcula por adelantado con una estimación, así que casi
+     siempre sobra espacio en blanco al final. Aquí se recorta el lienzo
+     a la altura realmente usada. */
+  return recortarCanvas(canvas, y + 34);
+}
+
+/* Devuelve una copia del lienzo cortada a la altura indicada */
+function recortarCanvas(canvas, alturaReal){
+  const alto = Math.min(canvas.height, Math.max(200, Math.round(alturaReal)));
+  if(alto >= canvas.height - 2) return canvas;   // no sobra nada
+  const salida = document.createElement('canvas');
+  salida.width = canvas.width;
+  salida.height = alto;
+  salida.getContext('2d').drawImage(canvas, 0, 0);
+  return salida;
 }
 
 function drawWeeklyAverageImage(R){
