@@ -3,32 +3,82 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Política de Privacidad</title>
+<title>COME PRO — Política de Privacidad y Avisos Legales</title>
 <style>
-  body{ background:#0e1512; color:#f2f1ea; font-family:system-ui,sans-serif; line-height:1.6;
-        max-width:640px; margin:0 auto; padding:30px 20px 60px; }
-  h1{ font-size:24px; } h2{ font-size:17px; margin-top:28px; color:#8fbf6f; }
-  p, li{ color:#c9d1ca; font-size:14.5px; }
-  a{ color:#8fbf6f; }
+  :root{ --bg:#f5f7f3; --text:#1c231a; --muted:#5a6356; --accent:#3fa628; --line:#e0e5db; --card:#fff; }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0e1512; --text:#f2f1ea; --muted:#c9d1ca; --accent:#8fbf6f; --line:#26301f; --card:#141a11; }
+  }
+  body{ background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif;
+        line-height:1.65; max-width:680px; margin:0 auto; padding:28px 20px 70px; }
+  h1{ font-size:23px; margin-bottom:4px; }
+  h2{ font-size:16.5px; margin-top:30px; color:var(--accent); }
+  p, li{ color:var(--muted); font-size:14.5px; }
+  li{ margin-bottom:6px; }
+  a{ color:var(--accent); }
+  .fecha{ font-size:13px; color:var(--muted); margin-top:0; }
+  .destacado{ background:var(--card); border-left:4px solid var(--accent); border-radius:8px;
+              padding:14px 16px; margin:18px 0; }
+  .destacado p{ margin:0; }
+  .volver{ display:inline-block; margin-bottom:22px; font-size:14px; text-decoration:none; }
 </style>
 </head>
 <body>
-  <h1>Política de Privacidad</h1>
-  <p>Última actualización: 16 de agosto de 2026.</p>
+  <a class="volver" href="index.html">← Volver a COME PRO</a>
 
-  <h2>Qué datos recogemos</h2>
-  <p>Esta página te pide datos como nombre, edad, sexo, peso, altura, país y nivel de actividad para calcular tu plan nutricional personalizado. Estos datos se procesan <b>directamente en tu navegador</b> — no se envían ni se guardan en ningún servidor nuestro. Cuando cierras o recargas la página, esos datos desaparecen.</p>
+  <h1>Política de Privacidad y Avisos Legales</h1>
+  <p class="fecha">Última actualización: 22 de agosto de 2026</p>
 
-  <h2>Publicidad</h2>
-  <p>Esta página puede mostrar anuncios a través de Google AdSense. Google puede usar cookies para mostrar anuncios basados en tus visitas a este y otros sitios. Puedes gestionar tus preferencias de anuncios personalizados en <a href="https://adssettings.google.com" target="_blank" rel="noopener">adssettings.google.com</a>.</p>
+  <h2>1. Qué datos recogemos y dónde se procesan</h2>
+  <p>COME PRO te pide nombre, edad, sexo, peso, altura, país, nivel de actividad y, opcionalmente, condición médica y alimentos que prefieres evitar, con el único fin de calcular tu plan nutricional y tu presupuesto.</p>
+  <div class="destacado">
+    <p><b>Estos datos se procesan directamente en tu navegador.</b> No se envían ni se almacenan en ningún servidor nuestro. Al cerrar o recargar la página desaparecen.</p>
+  </div>
 
-  <h2>Enlaces de afiliado</h2>
-  <p>Algunos enlaces de esta página son de afiliado (por ejemplo, a Amazon u otras tiendas). Si compras un producto a través de ellos, podemos recibir una pequeña comisión, sin costo adicional para ti.</p>
+  <h2>2. Qué guarda tu navegador</h2>
+  <p>Para que la aplicación funcione como esperas, se guardan localmente en tu dispositivo (no en nuestros servidores):</p>
+  <ul>
+    <li><b>Idioma y tema</b> (claro/oscuro) que elijas, para recordarlos la próxima vez.</li>
+    <li><b>Un identificador de sesión anónimo</b> y un registro de eventos de uso (por ejemplo: se generó un presupuesto, se pulsó descargar). No incluye tu nombre, peso, altura ni ningún dato de salud.</li>
+  </ul>
+  <p>Puedes borrar todo esto en cualquier momento limpiando los datos del sitio desde los ajustes de tu navegador.</p>
 
-  <h2>Aviso importante de salud</h2>
-  <p>El plan generado es una guía orientativa basada en fórmulas estándar (Mifflin-St Jeor) y precios de referencia. No sustituye la evaluación de un nutricionista, médico o profesional de la salud — especialmente si tienes alguna condición médica, estás embarazada, en lactancia, o eres menor de edad.</p>
+  <h2>3. Enlaces de afiliado</h2>
+  <p>COME PRO participa en programas de afiliación. Algunos enlaces de esta página —en particular los de suplementos y accesorios— son enlaces de afiliado.</p>
+  <div class="destacado">
+    <p><b>Como Afiliado de Amazon, obtengo ingresos por las compras adscritas que cumplen los requisitos aplicables.</b> Si compras a través de esos enlaces, podemos recibir una comisión <b>sin costo adicional para ti</b>.</p>
+  </div>
+  <p>Las recomendaciones de productos son opcionales: puedes usar la aplicación y descargar tu plan completo sin comprar nada. La comisión no afecta el precio que pagas ni influye en los cálculos nutricionales, que se hacen con fórmulas fijas independientes de cualquier producto.</p>
 
-  <h2>Contacto</h2>
-  <p>Si tienes preguntas sobre esta política, puedes escribirnos a través de nuestras redes sociales.</p>
+  <h2>4. Precios mostrados</h2>
+  <p>Los precios de alimentos son <b>estimaciones de referencia</b>, no valores exactos. Varían según el supermercado, la ciudad y la fecha de compra. La aplicación indica en cada caso si un precio está verificado o estimado. No garantizamos que coincidan con lo que pagues realmente.</p>
+
+  <h2>5. Aviso de salud</h2>
+  <div class="destacado">
+    <p>El plan generado es una <b>guía orientativa</b> calculada con la fórmula Mifflin-St Jeor y estándares de nutrición deportiva (ISSN). <b>No es un tratamiento médico ni sustituye la evaluación de un profesional de la salud.</b></p>
+  </div>
+  <p>Consulta a un médico o nutricionista antes de seguir este plan, especialmente si:</p>
+  <ul>
+    <li>Tienes alguna condición médica (diabetes, hipertensión, enfermedad renal, colesterol alto u otra).</li>
+    <li>Tomas medicación de cualquier tipo.</li>
+    <li>Estás embarazada o en período de lactancia.</li>
+    <li>Tienes o has tenido un trastorno de la conducta alimentaria.</li>
+    <li>Eres menor de edad o mayor de 65 años.</li>
+  </ul>
+  <p>Esta aplicación está pensada para personas adultas sanas. Si experimentas malestar siguiendo el plan, suspéndelo y consulta a un profesional.</p>
+
+  <h2>6. Servicios de terceros</h2>
+  <p>Al pulsar botones de compra puedes salir de COME PRO hacia sitios de terceros (Amazon, Instacart u otros). Una vez allí se aplican <b>sus</b> políticas de privacidad y condiciones, no las nuestras. No compartimos tus datos personales con ellos: el enlace solo indica que llegaste desde COME PRO.</p>
+
+  <h2>7. Menores de edad</h2>
+  <p>Esta aplicación no está dirigida a menores de 18 años y no recopilamos datos de forma consciente de personas menores de esa edad.</p>
+
+  <h2>8. Cambios en esta política</h2>
+  <p>Podemos actualizar esta política cuando añadamos funciones nuevas. La fecha de la última actualización aparece al inicio de esta página.</p>
+
+  <h2>9. Contacto</h2>
+  <p>Si tienes preguntas sobre esta política o sobre el tratamiento de tus datos, escríbenos a través de nuestras redes sociales o al correo indicado en la sección "Únete a COME PRO" de la aplicación.</p>
+
+  <a class="volver" href="index.html" style="margin-top:30px;">← Volver a COME PRO</a>
 </body>
 </html>
