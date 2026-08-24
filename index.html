@@ -565,6 +565,8 @@
    ============================================================ */
 const STR = {
   es: {
+    r_verImagen:"Ver imagen para guardar",
+    r_guardarImagen:"Mantén pulsada la imagen y elige \"Guardar en Fotos\"",
     r_notaSemanaMes:"Consumo = lo que comes. Comprar = paquetes enteros del supermercado, siempre redondeados hacia arriba.",
     r_dias30:"días",
     r_planDe:"Plan de",
@@ -657,6 +659,8 @@ const STR = {
     errPeso:"Peso no válido", errAltura:"Altura no válida", errCombinacion:"Revisa el peso y la altura: esa combinación no parece posible",
   },
   en: {
+    r_verImagen:"View image to save",
+    r_guardarImagen:"Press and hold the image and choose \"Save to Photos\"",
     r_notaSemanaMes:"Consumption = what you eat. Buy = whole packs from the store, always rounded up.",
     r_dias30:"days",
     r_planDe:"Plan for",
@@ -749,6 +753,8 @@ const STR = {
     errPeso:"Invalid weight", errAltura:"Invalid height", errCombinacion:"Check weight and height: that combination does not look possible",
   },
   pt: {
+    r_verImagen:"Ver imagem para salvar",
+    r_guardarImagen:"Toque e segure a imagem e escolha \"Salvar em Fotos\"",
     r_notaSemanaMes:"Cada coluna arredonda para pacotes inteiros: semanal x4 não dá exatamente o mensal (o mês tem 4,3 semanas).",
     r_dias30:"dias",
     r_planDe:"Plano de",
@@ -932,6 +938,8 @@ const STR = {
     errAltura:"Altura inválida", errCombinacion:"Verifique peso e altura: essa combinação não parece possível",
   },
   fr: {
+    r_verImagen:"Voir l'image pour enregistrer",
+    r_guardarImagen:"Appuyez longuement sur l'image et choisissez \"Enregistrer\"",
     r_notaSemanaMes:"Chaque colonne arrondit à des paquets entiers : hebdo x4 ne donne pas exactement le mensuel (4,3 semaines par mois).",
     r_dias30:"jours",
     r_planDe:"Plan de",
@@ -1115,6 +1123,8 @@ const STR = {
     errAltura:"Taille non valide", errCombinacion:"Vérifiez le poids et la taille : cette combinaison semble impossible",
   },
   de: {
+    r_verImagen:"Bild zum Speichern ansehen",
+    r_guardarImagen:"Halte das Bild gedrückt und wähle \"Sichern\"",
     r_notaSemanaMes:"Jede Spalte rundet auf ganze Packungen: wöchentlich x4 ergibt nicht genau den Monat (4,3 Wochen).",
     r_dias30:"Tage",
     r_planDe:"Plan von",
@@ -1298,6 +1308,8 @@ const STR = {
     errAltura:"Ungültige Größe", errCombinacion:"Prüfe Gewicht und Größe: diese Kombination scheint nicht möglich",
   },
   it: {
+    r_verImagen:"Vedi immagine per salvare",
+    r_guardarImagen:"Tieni premuta l'immagine e scegli \"Salva\"",
     r_notaSemanaMes:"Ogni colonna arrotonda a confezioni intere: settimanale x4 non dà esattamente il mensile (4,3 settimane).",
     r_dias30:"giorni",
     r_planDe:"Piano di",
@@ -3815,9 +3827,106 @@ function drawBrandHeader(ctx, C, nombre, subtitle){
   ctx.strokeStyle = C.line; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(50,150); ctx.lineTo(W-50,150); ctx.stroke();
 }
+/* ============================================================
+   DESCARGA / GUARDADO DE LA IMAGEN — universal
+   Cada plataforma tiene su vía preferida y ninguna funciona en todas:
+     · Android e iOS moderno  -> menú nativo de compartir (Web Share)
+       permite guardar en la galería, mandar por WhatsApp, etc.
+     · Escritorio             -> descarga directa del archivo
+     · iOS antiguo / bloqueos -> se abre la imagen en pestaña nueva
+       para guardarla con un toque largo
+   Se intentan en orden y siempre queda un camino disponible, así que
+   nunca ocurre que el usuario pulse y no pase nada.
+   ============================================================ */
 function downloadCanvasAsPNG(canvas, filename){
-  const link = document.createElement('a');
-  link.download = filename; link.href = canvas.toDataURL('image/png'); link.click();
+
+  // Último recurso: mostrar la imagen para guardarla manualmente
+  function mostrarParaGuardar(url){
+    const w = window.open('', '_blank');
+    if(w && w.document){
+      w.document.write(
+        '<html><head><title>' + filename + '</title>' +
+        '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<style>body{margin:0;background:#0e1512;color:#f2f1ea;' +
+        'font-family:system-ui,-apple-system,sans-serif;text-align:center}' +
+        'p{padding:16px;font-size:15px;margin:0;line-height:1.5}' +
+        'img{width:100%;height:auto;display:block}</style></head><body>' +
+        '<p>' + t('r_guardarImagen') + '</p>' +
+        '<img src="' + url + '" alt="' + filename + '"></body></html>');
+      w.document.close();
+      return true;
+    }
+    // Si el navegador bloqueó la ventana, se muestra un enlace en la propia página
+    let aviso = document.getElementById('avisoDescarga');
+    if(aviso) aviso.remove();
+    aviso = document.createElement('div');
+    aviso.id = 'avisoDescarga';
+    aviso.className = 'warn-box';
+    aviso.style.cssText = 'position:fixed;left:12px;right:12px;bottom:80px;z-index:9999;text-align:center;';
+    aviso.innerHTML = '<a href="' + url + '" target="_blank" rel="noopener" download="' + filename +
+                      '" style="color:var(--accent);font-weight:700;">' + t('r_verImagen') + '</a>';
+    document.body.appendChild(aviso);
+    setTimeout(function(){ if(aviso) aviso.remove(); }, 15000);
+    return false;
+  }
+
+  // Descarga clásica: la vía normal en ordenadores y Android
+  function descargaDirecta(blob, url){
+    const link = document.createElement('a');
+    const soportaDownload = 'download' in link;
+    if(!soportaDownload) return false;
+    link.download = filename;
+    link.href = url;
+    link.rel = 'noopener';
+    link.style.display = 'none';
+    document.body.appendChild(link);      // iOS exige que esté en el documento
+    link.click();
+    setTimeout(function(){
+      if(link.parentNode) document.body.removeChild(link);
+    }, 100);
+    return true;
+  }
+
+  function conBlob(blob){
+    if(!blob){ mostrarParaGuardar(canvas.toDataURL('image/png')); return; }
+    const url = URL.createObjectURL(blob);
+    const limpiar = function(){ setTimeout(function(){ URL.revokeObjectURL(url); }, 30000); };
+
+    // 1) Menú nativo de compartir: es lo que permite "Guardar en Fotos"
+    //    en iPhone y guardar en la galería en Android.
+    try{
+      const file = new File([blob], filename, {type:'image/png'});
+      if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+        navigator.share({ files:[file], title:'COME PRO' })
+          .then(limpiar)
+          .catch(function(err){
+            // Si el usuario cancela, no se hace nada más (no es un error)
+            if(err && err.name === 'AbortError'){ limpiar(); return; }
+            if(!descargaDirecta(blob, url)) mostrarParaGuardar(url);
+            limpiar();
+          });
+        return;
+      }
+    }catch(e){ /* sin soporte: se sigue con la descarga normal */ }
+
+    // 2) Descarga directa
+    if(descargaDirecta(blob, url)){ limpiar(); return; }
+
+    // 3) Mostrar la imagen para guardarla a mano
+    mostrarParaGuardar(url);
+    limpiar();
+  }
+
+  try{
+    if(canvas.toBlob){
+      canvas.toBlob(conBlob, 'image/png');
+    } else {
+      mostrarParaGuardar(canvas.toDataURL('image/png'));
+    }
+  }catch(e){
+    if(typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE) console.warn('COME PRO: fallo al guardar la imagen', e);
+    try{ mostrarParaGuardar(canvas.toDataURL('image/png')); }catch(e2){}
+  }
 }
 
 /* Dibuja un anillo de proporciones (dona) igual al de la pantalla */
