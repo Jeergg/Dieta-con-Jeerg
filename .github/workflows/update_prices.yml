@@ -2,8 +2,10 @@ name: Actualizar precios mensuales
 
 on:
   schedule:
-    - cron: '0 6 1 * *'
-  workflow_dispatch: {}
+    # Cada lunes a las 6:00 UTC. Con 71 países no cabe todo en una sola
+    # corrida sin exceder el límite gratuito de Gemini, por eso va por lotes.
+    - cron: '0 6 * * 1'
+  workflow_dispatch: {}   # también se puede correr a mano desde "Actions"
 
 permissions:
   contents: write
@@ -20,15 +22,51 @@ jobs:
         with:
           python-version: '3.11'
 
+      # Comprueba la clave ANTES de nada y lo dice claramente.
+      # Antes, si faltaba, el fallo aparecía dos pasos más adelante
+      # con un mensaje de git que no explicaba la causa real.
+      - name: Comprobar que la clave está configurada
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::Falta el secreto GEMINI_API_KEY."
+            echo "Ve a Settings -> Secrets and variables -> Actions"
+            echo "y crea un secreto llamado exactamente GEMINI_API_KEY."
+            exit 1
+          fi
+          echo "Clave encontrada (longitud: ${#GEMINI_API_KEY} caracteres)"
+
       - name: Actualizar precios con IA (Gemini, capa gratuita)
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python scripts/update_prices.py
+        run: |
+          echo "--- Ejecutando el robot de precios ---"
+          python -u scripts/update_prices.py
+          echo "--- Terminado. Archivos generados: ---"
+          ls -la prices.json update_log.md 2>&1 || true
 
       - name: Guardar cambios en el repositorio
         run: |
           git config user.name "bot-precios"
           git config user.email "actions@github.com"
-          git add prices.json update_log.md
-          git diff --quiet --cached || git commit -m "Actualización automática de precios $(date +'%Y-%m-%d')"
-          git push
+
+          # Se añaden solo los archivos que existan: antes, si el robot no
+          # llegaba a crear update_log.md, git abortaba con un error que
+          # ocultaba el problema de fondo.
+          for f in prices.json update_log.md; do
+            if [ -f "$f" ]; then
+              git add "$f"
+              echo "Añadido: $f"
+            else
+              echo "Aviso: $f no existe, se omite"
+            fi
+          done
+
+          if git diff --quiet --cached; then
+            echo "No hubo cambios que guardar."
+          else
+            git commit -m "Actualización automática de precios $(date +'%Y-%m-%d')"
+            git push
+            echo "Cambios guardados."
+          fi
