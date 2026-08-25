@@ -565,6 +565,7 @@
    ============================================================ */
 const STR = {
   es: {
+    r_comprarEn:"Comprar los ingredientes en",
     r_alimentosLista:"alimentos",
     r_listaCompra:"Lista de compra",
     r_verImagen:"Ver imagen para guardar",
@@ -661,6 +662,7 @@ const STR = {
     errPeso:"Peso no válido", errAltura:"Altura no válida", errCombinacion:"Revisa el peso y la altura: esa combinación no parece posible",
   },
   en: {
+    r_comprarEn:"Buy the ingredients at",
     r_alimentosLista:"items",
     r_listaCompra:"Shopping list",
     r_verImagen:"View image to save",
@@ -757,6 +759,7 @@ const STR = {
     errPeso:"Invalid weight", errAltura:"Invalid height", errCombinacion:"Check weight and height: that combination does not look possible",
   },
   pt: {
+    r_comprarEn:"Comprar os ingredientes em",
     r_alimentosLista:"alimentos",
     r_listaCompra:"Lista de compras",
     r_verImagen:"Ver imagem para salvar",
@@ -944,6 +947,7 @@ const STR = {
     errAltura:"Altura inválida", errCombinacion:"Verifique peso e altura: essa combinação não parece possível",
   },
   fr: {
+    r_comprarEn:"Acheter les ingrédients chez",
     r_alimentosLista:"aliments",
     r_listaCompra:"Liste de courses",
     r_verImagen:"Voir l'image pour enregistrer",
@@ -1131,6 +1135,7 @@ const STR = {
     errAltura:"Taille non valide", errCombinacion:"Vérifiez le poids et la taille : cette combinaison semble impossible",
   },
   de: {
+    r_comprarEn:"Zutaten kaufen bei",
     r_alimentosLista:"Lebensmittel",
     r_listaCompra:"Einkaufsliste",
     r_verImagen:"Bild zum Speichern ansehen",
@@ -1318,6 +1323,7 @@ const STR = {
     errAltura:"Ungültige Größe", errCombinacion:"Prüfe Gewicht und Größe: diese Kombination scheint nicht möglich",
   },
   it: {
+    r_comprarEn:"Compra gli ingredienti su",
     r_alimentosLista:"alimenti",
     r_listaCompra:"Lista della spesa",
     r_verImagen:"Vedi immagine per salvare",
@@ -2187,6 +2193,54 @@ const IMPERIAL_COUNTRIES = ["US","PR"]; // libras y pies/pulgadas por defecto
    3. Pon la direccion de esa funcion en CART_API_ENDPOINT.
    Mientras este vacio, el boton NO se muestra.
    ============================================================ */
+
+/* ============================================================
+   SUPERMERCADOS POR PAÍS
+   Cada país muestra el botón de su propio supermercado con TU enlace
+   de afiliado. Las comisiones van siempre a tu cuenta; al influencer
+   se le paga su porcentaje aparte.
+
+   *** CÓMO ACTIVAR CADA UNO ***
+   Pega tu enlace en "url" y cambia "activo" a true. Mientras esté en
+   false, el botón no aparece en ese país: es preferible no mostrar
+   nada a mostrar un botón que no genera comisión.
+
+   El enlace puede llevar {q} donde quieras que se inserte la búsqueda
+   del alimento; si no lo lleva, se abre la página principal.
+   ============================================================ */
+const SUPERMERCADOS = {
+  US: { nombre:"Instacart",     url:"", activo:false, nota:"pendiente de aprobación" },
+  DE: { nombre:"REWE",          url:"", activo:false, nota:"pendiente" },
+  NL: { nombre:"Picnic",        url:"", activo:false, nota:"pendiente" },
+  GB: { nombre:"Iceland Foods", url:"", activo:false, nota:"pendiente" },
+  FR: { nombre:"Jow",           url:"", activo:false, nota:"pendiente" },
+  ES: { nombre:"Carrefour",     url:"", activo:false, nota:"pendiente" },
+};
+
+/* Devuelve el supermercado del país si está activo y con enlace */
+function supermercadoDe(codigoPais){
+  const s = SUPERMERCADOS[codigoPais];
+  if(!s || !s.activo || !s.url) return null;
+  return s;
+}
+
+/* Abre el supermercado del país con la lista de la compra */
+function abrirSupermercado(R){
+  const s = supermercadoDe(R.country);
+  if(!s) return;
+  enviarEvento('supermercado', Object.assign(datosPerfil(R), {detalle: s.nombre}));
+  let url = s.url;
+  if(url.indexOf('{q}') !== -1){
+    // Buscar el primer alimento de la lista, en inglés si existe
+    const primero = R.purchase[0];
+    const termino = primero ? (CART_SEARCH[primero.id] || primero.name) : '';
+    url = url.replace('{q}', encodeURIComponent(termino));
+  }
+  const w = window.open(url, '_blank', 'noopener');
+  if(!w) mostrarEnlaceRespaldo(url);
+}
+
+
 const CART_API_ENDPOINT = "";        // <-- URL de tu funcion serverless
 
 /* ============================================================
@@ -2216,6 +2270,9 @@ const CART_SEARCH = {
 };
 
 function showCartButton(countryCode){
+  /* El botón aparece si el país tiene supermercado configurado, o si
+     sigue activo el modo prueba de Instacart. */
+  if(supermercadoDe(countryCode)) return true;
   return (!!CART_API_ENDPOINT || CART_MODO_PRUEBA) && CART_COUNTRIES.includes(countryCode);
 }
 
@@ -3026,7 +3083,10 @@ document.getElementById('dietForm').addEventListener('submit', function(e){
 
   renderResults({nombre, edad, sexo, peso, altura, bmi, bmr, tdee, calorieTarget, proteinTarget, carbTarget, fatTarget,
                   floorApplied, objetivoMuyAlto, esGestante, embarazo, country, priceSet, usedFallbackCountry, days, purchase, totalCost, avg, goal, condicion,
-                  diasEntreno, minutosSesion, tipoEntreno});
+                  diasEntreno, minutosSesion, tipoEntreno,
+                  // Para la analitica: nivel real de actividad y costo comparable
+                  actEfectivo, pesoKg: peso,
+                  costoUsd: costoEnDolares(totalCost, country)});
 });
 
 /* ============================================================
@@ -3151,7 +3211,146 @@ document.addEventListener('click', function(e){
   if(btn) openSwapPicker(btn);
 });
 
+
+/* ============================================================
+   ANALÍTICA
+   Envía eventos a tu propia hoja de cálculo (Google Apps Script).
+   *** PARA ACTIVARLA ***  pega abajo la URL que termina en /exec.
+   Mientras esté vacía no se envía nada: la app funciona igual.
+
+   PRIVACIDAD: se mandan solo datos AGREGADOS — rango de edad,
+   no la edad exacta; rango de peso, no el peso. Nunca se envía
+   nombre, peso, altura ni condición médica.
+   ============================================================ */
+const ANALYTICS_URL = "";
+
+/* Paso en el que está la persona: si cierra la app aquí, sabremos
+   en qué punto del formulario se pierde la gente. */
+let PASO_ACTUAL = 1;
+
+/* Identificador anónimo de sesión y contador de visitas, para poder
+   distinguir a alguien que vuelve de alguien nuevo. */
+let SESION_ID = "";
+let VISITA_NUM = 1;
+let INICIO_APP = Date.now();
+try{
+  SESION_ID = sessionStorage.getItem('comepro_sesion') || '';
+  if(!SESION_ID){
+    SESION_ID = Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+    sessionStorage.setItem('comepro_sesion', SESION_ID);
+  }
+  VISITA_NUM = parseInt(localStorage.getItem('comepro_visitas') || '0', 10) + 1;
+  localStorage.setItem('comepro_visitas', String(VISITA_NUM));
+}catch(e){
+  SESION_ID = 'anon' + Date.now();
+}
+
+/* Convierte valores exactos en rangos: así el dato sirve para
+   estadística sin identificar a nadie. */
+function rangoEdad(n){
+  if(!n) return '';
+  if(n < 18) return '<18';
+  if(n < 25) return '18-24';
+  if(n < 35) return '25-34';
+  if(n < 45) return '35-44';
+  if(n < 55) return '45-54';
+  if(n < 65) return '55-64';
+  return '65+';
+}
+function rangoPeso(kg){
+  if(!kg) return '';
+  if(kg < 50) return '<50';
+  if(kg < 60) return '50-59';
+  if(kg < 70) return '60-69';
+  if(kg < 80) return '70-79';
+  if(kg < 90) return '80-89';
+  if(kg < 100) return '90-99';
+  if(kg < 120) return '100-119';
+  return '120+';
+}
+function nivelActividad(f){
+  if(f >= 1.9) return 'extremo';
+  if(f >= 1.725) return 'muy_activo';
+  if(f >= 1.55) return 'moderado';
+  if(f >= 1.375) return 'ligero';
+  return 'sedentario';
+}
+/* De dónde llega el visitante (Instagram, TikTok...), sin la
+   dirección completa para no guardar rastros de navegación. */
+function origenVisita(){
+  try{
+    const r = document.referrer || '';
+    if(!r) return 'directo';
+    const host = new URL(r).hostname.replace('www.', '');
+    return host.split('.')[0];
+  }catch(e){ return 'directo'; }
+}
+
+function enviarEvento(evento, extra){
+  if(!ANALYTICS_URL) return;
+  try{
+    const cuerpo = Object.assign({
+      evento: evento,
+      influencer: (typeof ACTIVE_INFLUENCER !== 'undefined' && ACTIVE_INFLUENCER)
+                    ? ACTIVE_INFLUENCER.influencerId : 'directo',
+      sesion: SESION_ID,
+      idioma: CURRENT_LANG,
+      visitaNum: VISITA_NUM,
+      segundos: Math.round((Date.now() - INICIO_APP) / 1000),
+    }, extra || {});
+    // keepalive permite que el evento salga aunque se cierre la página
+    fetch(ANALYTICS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      keepalive: true,
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(cuerpo),
+    }).catch(function(){});
+  }catch(e){}
+}
+
+/* Datos del perfil, ya convertidos a rangos */
+function datosPerfil(R){
+  if(!R) return {};
+  return {
+    pais: R.country || '',
+    sexo: R.sexo || '',
+    rangoEdad: rangoEdad(R.edad),
+    rangoPeso: rangoPeso(R.pesoKg),
+    objetivo: R.goal || '',
+    actividad: nivelActividad(R.actEfectivo || 1.2),
+    diasEntreno: R.diasEntreno || 0,
+    costoUsd: R.costoUsd || 0,
+  };
+}
+
+// Visita inicial
+enviarEvento('visita', { referente: origenVisita() });
+
+// Tiempo total al salir
+window.addEventListener('pagehide', function(){
+  enviarEvento('salida', { paso: (typeof PASO_ACTUAL !== 'undefined' ? 'paso' + PASO_ACTUAL : '') });
+});
+
+
+/* Convierte el costo mensual a dólares aproximados para poder comparar
+   entre países. Se usa el precio del arroz como referencia porque es el
+   alimento más estable y presente en los 71 países. No es un tipo de
+   cambio oficial: sirve para comparar entre sí, no para contabilidad. */
+function costoEnDolares(costoLocal, codigoPais){
+  try{
+    const local = PRICES[codigoPais] && PRICES[codigoPais].arroz;
+    const usa   = PRICES.US && PRICES.US.arroz;
+    if(!local || !usa) return 0;
+    const factor = local / usa;
+    return factor > 0 ? Math.round(costoLocal / factor) : 0;
+  }catch(e){ return 0; }
+}
+
 function renderResults(R, opts){
+  // Evento principal: aquí es donde la visita se convierte en dieta
+  enviarEvento('dieta_generada', datosPerfil(R));
+
   opts = opts || {};
   CURRENT_RESULT = R;
   document.getElementById('placeholderSummary').classList.add('hidden');
@@ -3605,15 +3804,30 @@ async function descargarYComprar(R, target, btn){
     downloadCanvasAsPNG(drawPurchaseImage(R), 'COMEPRO_plan_' + safeName + '.png');
   }
   trackEvent('budget_downloaded', {type: target.type});
+  enviarEvento('descarga', Object.assign(datosPerfil(R), {detalle: target.type}));
 
   // --- 2. Instacart con la lista completa ---
   if(showCartButton(R.country)){
-    // MODO PRUEBA: abre Instacart directamente, sin llamar a la API
+    // Si el país tiene su propio supermercado configurado, va primero
+    const superPais = supermercadoDe(R.country);
+    if(superPais){
+      // Igual que arriba: enlace visible en vez de abrir a la fuerza
+      enviarEvento('supermercado', Object.assign(datosPerfil(R), {detalle: superPais.nombre}));
+      mostrarPantallaFinal(R);
+      mostrarEnlaceSupermercado(R, superPais);
+      return;
+    }
+    /* MODO PRUEBA: abre Instacart.
+       Los navegadores solo permiten UNA ventana nueva por cada toque del
+       usuario. Como la descarga ya pudo abrir una, aquí no se abre otra
+       de inmediato: se muestra un enlace en la pantalla final para que
+       la persona lo pulse cuando quiera. Antes se abría a la fuerza y
+       salía una página en blanco. */
     if(CART_MODO_PRUEBA && !CART_API_ENDPOINT){
       trackEvent('cart_link_opened', {modo:'prueba', items: R.purchase.length});
-      const winP = window.open(CART_URL_PRUEBA, '_blank', 'noopener');
-      if(!winP) mostrarEnlaceRespaldo(CART_URL_PRUEBA);
+      enviarEvento('instacart', datosPerfil(R));
       mostrarPantallaFinal(R);
+      mostrarEnlaceRespaldo(CART_URL_PRUEBA);
       return;
     }
     if(btn){ btn.disabled = true; btn.textContent = t('r_generandoLista'); }
@@ -3649,14 +3863,41 @@ async function descargarYComprar(R, target, btn){
 }
 
 /* Enlace de respaldo si el navegador bloquea la pestana nueva */
+/* Botón visible con el nombre del supermercado del país */
+function mostrarEnlaceSupermercado(R, s){
+  let url = s.url;
+  if(url.indexOf('{q}') !== -1){
+    const primero = R.purchase[0];
+    const termino = primero ? (CART_SEARCH[primero.id] || primero.name) : '';
+    url = url.replace('{q}', encodeURIComponent(termino));
+  }
+  let caja = document.getElementById('cajaSuper');
+  if(caja) caja.remove();
+  caja = document.createElement('div');
+  caja.id = 'cajaSuper';
+  caja.className = 'card';
+  caja.style.cssText = 'text-align:center;border-color:var(--accent);';
+  caja.innerHTML =
+    '<div class="hint" style="margin:0 0 8px;">' + t('r_comprarEn') + '</div>' +
+    '<a href="' + url + '" target="_blank" rel="noopener" ' +
+    'style="display:inline-block;background:var(--accent);color:#fff;text-decoration:none;' +
+    'font-weight:800;font-size:15px;padding:13px 26px;border-radius:24px;">🛒 ' + s.nombre + '</a>';
+  const el = document.getElementById('results');
+  if(el) el.prepend(caja);
+}
+
 function mostrarEnlaceRespaldo(url){
   let box = document.getElementById('cartFallback');
   if(box) box.remove();
   box = document.createElement('div');
   box.id = 'cartFallback';
-  box.className = 'warn-box';
-  box.style.marginTop = '10px';
-  box.innerHTML = '<a href="' + url + '" target="_blank" rel="noopener" style="color:var(--accent); font-weight:700;">' + t('r_abrirLista') + '</a>';
+  /* Botón grande y visible: ahora es la vía principal para llegar a la
+     tienda, no un simple respaldo, así que tiene que verse bien. */
+  box.className = 'card';
+  box.style.cssText = 'text-align:center;border-color:var(--accent);margin-bottom:12px;';
+  box.innerHTML = '<a href="' + url + '" target="_blank" rel="noopener" ' +
+    'style="display:inline-block;background:var(--accent);color:#fff;text-decoration:none;' +
+    'font-weight:800;font-size:15px;padding:13px 26px;border-radius:24px;">' + t('r_abrirLista') + '</a>';
   const el = document.getElementById('results');
   if(el) el.prepend(box);
 }
@@ -3750,6 +3991,7 @@ function mostrarPantallaFinal(R){
   const wa = document.getElementById('finalWhatsappBtn');
   if(wa) wa.addEventListener('click', function(){
     trackEvent('whatsapp_clicked', {influencerId: inf.influencerId});
+    enviarEvento('whatsapp', datosPerfil(R));
     if(!inf.whatsapp) return;
     const msg = encodeURIComponent('Hola, llegue desde COME PRO y estoy interesado en conocer tus servicios.');
     window.open('https://wa.me/' + inf.whatsapp + '?text=' + msg, '_blank', 'noopener');
@@ -3759,6 +4001,7 @@ function mostrarPantallaFinal(R){
       const s = SUPPLEMENT_CATALOG.find(function(x){ return x.productId === card.dataset.product; });
       if(!s || !s.active || !s.affiliateUrl) return;
       trackEvent('affiliate_product_clicked', {productId: s.productId});
+      enviarEvento('amazon', Object.assign(datosPerfil(R), {detalle: s.productId}));
       window.open(s.affiliateUrl, '_blank', 'noopener');
     });
   });
@@ -3860,22 +4103,15 @@ function drawBrandHeader(ctx, C, nombre, subtitle){
 function downloadCanvasAsPNG(canvas, filename){
 
   // Último recurso: mostrar la imagen para guardarla manualmente
+  /* Muestra la imagen para guardarla a mano.
+     Antes se abría una ventana vacía y luego se escribía HTML dentro;
+     en iPhone eso dejaba la página en "about:blank" muy a menudo.
+     Ahora se abre directamente la URL de la imagen, que el navegador
+     ya sabe mostrar, y se puede guardar con un toque largo. */
   function mostrarParaGuardar(url){
-    const w = window.open('', '_blank');
-    if(w && w.document){
-      w.document.write(
-        '<html><head><title>' + filename + '</title>' +
-        '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-        '<style>body{margin:0;background:#0e1512;color:#f2f1ea;' +
-        'font-family:system-ui,-apple-system,sans-serif;text-align:center}' +
-        'p{padding:16px;font-size:15px;margin:0;line-height:1.5}' +
-        'img{width:100%;height:auto;display:block}</style></head><body>' +
-        '<p>' + t('r_guardarImagen') + '</p>' +
-        '<img src="' + url + '" alt="' + filename + '"></body></html>');
-      w.document.close();
-      return true;
-    }
-    // Si el navegador bloqueó la ventana, se muestra un enlace en la propia página
+    const w = window.open(url, '_blank');
+    if(w) return true;
+    // Si el navegador bloqueó la ventana, se deja un enlace visible
     let aviso = document.getElementById('avisoDescarga');
     if(aviso) aviso.remove();
     aviso = document.createElement('div');
@@ -3885,7 +4121,7 @@ function downloadCanvasAsPNG(canvas, filename){
     aviso.innerHTML = '<a href="' + url + '" target="_blank" rel="noopener" download="' + filename +
                       '" style="color:var(--accent);font-weight:700;">' + t('r_verImagen') + '</a>';
     document.body.appendChild(aviso);
-    setTimeout(function(){ if(aviso) aviso.remove(); }, 15000);
+    setTimeout(function(){ if(aviso) aviso.remove(); }, 20000);
     return false;
   }
 
@@ -4722,6 +4958,7 @@ function validateStep1(){
 }
 
 function goToStep(n){
+  PASO_ACTUAL = n;
   if(n === 2 && currentStep === 1 && !validateStep1()) return;
   currentStep = n;
   document.querySelectorAll('.step-pane').forEach(p=>{
