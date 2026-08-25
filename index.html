@@ -565,6 +565,8 @@
    ============================================================ */
 const STR = {
   es: {
+    r_alimentosLista:"alimentos",
+    r_listaCompra:"Lista de compra",
     r_verImagen:"Ver imagen para guardar",
     r_guardarImagen:"Mantén pulsada la imagen y elige \"Guardar en Fotos\"",
     r_notaSemanaMes:"Consumo = lo que comes. Comprar = paquetes enteros del supermercado, siempre redondeados hacia arriba.",
@@ -659,6 +661,8 @@ const STR = {
     errPeso:"Peso no válido", errAltura:"Altura no válida", errCombinacion:"Revisa el peso y la altura: esa combinación no parece posible",
   },
   en: {
+    r_alimentosLista:"items",
+    r_listaCompra:"Shopping list",
     r_verImagen:"View image to save",
     r_guardarImagen:"Press and hold the image and choose \"Save to Photos\"",
     r_notaSemanaMes:"Consumption = what you eat. Buy = whole packs from the store, always rounded up.",
@@ -753,6 +757,8 @@ const STR = {
     errPeso:"Invalid weight", errAltura:"Invalid height", errCombinacion:"Check weight and height: that combination does not look possible",
   },
   pt: {
+    r_alimentosLista:"alimentos",
+    r_listaCompra:"Lista de compras",
     r_verImagen:"Ver imagem para salvar",
     r_guardarImagen:"Toque e segure a imagem e escolha \"Salvar em Fotos\"",
     r_notaSemanaMes:"Cada coluna arredonda para pacotes inteiros: semanal x4 não dá exatamente o mensal (o mês tem 4,3 semanas).",
@@ -938,6 +944,8 @@ const STR = {
     errAltura:"Altura inválida", errCombinacion:"Verifique peso e altura: essa combinação não parece possível",
   },
   fr: {
+    r_alimentosLista:"aliments",
+    r_listaCompra:"Liste de courses",
     r_verImagen:"Voir l'image pour enregistrer",
     r_guardarImagen:"Appuyez longuement sur l'image et choisissez \"Enregistrer\"",
     r_notaSemanaMes:"Chaque colonne arrondit à des paquets entiers : hebdo x4 ne donne pas exactement le mensuel (4,3 semaines par mois).",
@@ -1123,6 +1131,8 @@ const STR = {
     errAltura:"Taille non valide", errCombinacion:"Vérifiez le poids et la taille : cette combinaison semble impossible",
   },
   de: {
+    r_alimentosLista:"Lebensmittel",
+    r_listaCompra:"Einkaufsliste",
     r_verImagen:"Bild zum Speichern ansehen",
     r_guardarImagen:"Halte das Bild gedrückt und wähle \"Sichern\"",
     r_notaSemanaMes:"Jede Spalte rundet auf ganze Packungen: wöchentlich x4 ergibt nicht genau den Monat (4,3 Wochen).",
@@ -1308,6 +1318,8 @@ const STR = {
     errAltura:"Ungültige Größe", errCombinacion:"Prüfe Gewicht und Größe: diese Kombination scheint nicht möglich",
   },
   it: {
+    r_alimentosLista:"alimenti",
+    r_listaCompra:"Lista della spesa",
     r_verImagen:"Vedi immagine per salvare",
     r_guardarImagen:"Tieni premuta l'immagine e scegli \"Salva\"",
     r_notaSemanaMes:"Ogni colonna arrotonda a confezioni intere: settimanale x4 non dà esattamente il mensile (4,3 settimane).",
@@ -3590,7 +3602,7 @@ async function descargarYComprar(R, target, btn){
   } else if(target.type === 'semanalPromedio'){
     downloadCanvasAsPNG(drawWeeklyAverageImage(R), 'COMEPRO_semanal_' + safeName + '.png');
   } else {
-    downloadCanvasAsPNG(drawPurchaseImage(R), 'COMEPRO_presupuesto_' + safeName + '.png');
+    downloadCanvasAsPNG(drawPurchaseImage(R), 'COMEPRO_plan_' + safeName + '.png');
   }
   trackEvent('budget_downloaded', {type: target.type});
 
@@ -3818,19 +3830,21 @@ function drawBrandHeader(ctx, C, nombre, subtitle){
   }
 
   // Nombre de la persona, destacado arriba
-  ctx.fillStyle = C.text; ctx.font = "700 30px Fraunces, Georgia, serif";
-  ctx.fillText(t('r_planDe') + " " + nombre, 285, 68);
+  /* En 820 px no cabe el nombre al lado del logo sin quedar apretado:
+     va a la derecha con menos margen y algo mas pequeño. */
+  ctx.fillStyle = C.text; ctx.font = "700 27px Fraunces, Georgia, serif";
+  ctx.fillText(t('r_planDe') + " " + nombre, 264, 66);
   ctx.fillStyle = C.muted; ctx.font = "500 15px Inter, sans-serif";
-  ctx.fillText("30 " + t('r_dias30'), 287, 92);
+  ctx.fillText("30 " + t('r_dias30'), 266, 92);
 
   // Subtítulo de la sección, a la derecha
   ctx.fillStyle = C.accent; ctx.font = "700 14px Inter, sans-serif";
   ctx.textAlign = "right";
-  ctx.fillText(subtitle.toUpperCase(), W-50, 68);
+  ctx.fillText(subtitle.toUpperCase(), W-46, 66);
   ctx.textAlign = "left";
 
   ctx.strokeStyle = C.line; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(50,150); ctx.lineTo(W-50,150); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(46,150); ctx.lineTo(W-46,150); ctx.stroke();
 }
 /* ============================================================
    DESCARGA / GUARDADO DE LA IMAGEN — universal
@@ -3954,212 +3968,450 @@ function drawDonut(ctx, cx, cy, radio, grosor, partes){
   });
 }
 
+/* ============================================================
+   DOS IMÁGENES EN VEZ DE UNA
+   Con los 34 alimentos en la misma imagen, el resultado era una tira
+   de casi 2400 px: ilegible en el teléfono e imposible de compartir.
+   Ahora se generan dos:
+     1. RESUMEN  — casi cuadrado: macros, distribución y costos.
+        Es el que la gente comparte.
+     2. LISTA    — la compra completa, con columnas claras de SEMANA
+        y MES tanto en cantidad como en precio.
+   ============================================================ */
+
+/* ============================================================
+   IMAGEN ÚNICA
+   El resumen ocupa todo el ancho arriba (macros y costo grandes, que
+   es lo primero que se mira) y debajo va la lista en dos columnas.
+   Con la lista en una sola columna la imagen salía como una tira de
+   2400 px, ilegible en el teléfono; en dos columnas se lee de un
+   vistazo sin girar el móvil, que es como se usa en el supermercado.
+   ============================================================ */
 function drawPurchaseImage(R){
   const C = themeColors();
-  const rowH = 42;
-  /* Imagen completa del plan: replica lo que se ve en la app —
-     objetivo diario, distribución de macros en anillo, promedio real,
-     presupuesto mensual Y semanal, y la lista agrupada. */
+  const W = 1120;
+  const rowH = 46;
   const nGrupos = new Set(R.purchase.map(p=>p.group)).size;
-  const H = 1650 + R.purchase.length*rowH + nGrupos*34;
+  const filasPorCol = Math.ceil((R.purchase.length + nGrupos) / 2);
+  const H = 1000 + filasPorCol*rowH + 300;
+
   const canvas = document.createElement('canvas');
-  canvas.width = 1000; canvas.height = H;
+  canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = C.bg; ctx.fillRect(0,0,1000,H);
+  ctx.fillStyle = C.bg; ctx.fillRect(0,0,W,H);
   drawBrandHeader(ctx, C, R.nombre, t('r_tuObjetivoDiario'));
-
   const SERIF = "Fraunces, Georgia, serif";
+  const M = 46;                       // margen lateral
+  const ANCHO = W - M*2;
 
-  // ---------- 1. OBJETIVO DIARIO ----------
+  // ---------- MACROS: 4 en línea, ahora sí caben ----------
   const macros = [
     [fmt(R.calorieTarget), t('r_objkcal'), C.orange],
     [fmt(R.proteinTarget)+"g", t('r_objp'), C.pink],
     [fmt(R.carbTarget)+"g", t('r_objc'), C.purple],
     [fmt(R.fatTarget)+"g", t('r_objf'), C.amber],
   ];
-  let x = 50; const cardW = 212, gap = 12;
-  macros.forEach(function(m){
-    ctx.fillStyle = C.card2; roundRectPath(ctx, x, 175, cardW, 110, 14); ctx.fill();
-    ctx.strokeStyle = C.line; ctx.lineWidth = 1; roundRectPath(ctx, x, 175, cardW, 110, 14); ctx.stroke();
-    ctx.fillStyle = m[2]; ctx.font = "800 34px " + SERIF; ctx.textAlign = "center";
-    ctx.fillText(m[0], x + cardW/2, 230);
-    ctx.fillStyle = C.muted; ctx.font = "500 13px Inter, sans-serif";
-    ctx.fillText(m[1], x + cardW/2, 258);
+  const cW = (ANCHO - 3*14) / 4;
+  macros.forEach(function(m, i){
+    const cx = M + i*(cW + 14);
+    ctx.fillStyle = C.card2; roundRectPath(ctx, cx, 175, cW, 116, 16); ctx.fill();
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1; roundRectPath(ctx, cx, 175, cW, 116, 16); ctx.stroke();
+    ctx.fillStyle = m[2]; ctx.font = "800 40px " + SERIF; ctx.textAlign = "center";
+    ctx.fillText(m[0], cx + cW/2, 234);
+    ctx.fillStyle = C.muted; ctx.font = "500 15px Inter, sans-serif";
+    ctx.fillText(m[1], cx + cW/2, 268);
     ctx.textAlign = "left";
-    x += cardW + gap;
   });
 
-  // ---------- 2. DISTRIBUCION DE MACROS (anillo) ----------
+  // ---------- DONA + PROMEDIO, uno al lado del otro ----------
   let y = 315;
-  ctx.fillStyle = C.text; ctx.font = "700 20px " + SERIF;
-  ctx.fillText(t('r_distribucion'), 50, y);
-  y += 28;
-  ctx.fillStyle = C.card2; roundRectPath(ctx, 50, y, 900, 190, 16); ctx.fill();
+  const mitad = (ANCHO - 16) / 2;
+  ctx.fillStyle = C.text; ctx.font = "700 21px " + SERIF;
+  ctx.fillText(t('r_distribucion'), M, y);
+  ctx.fillText(t('r_promedio'), M + mitad + 16, y);
+  y += 26;
 
-  const kcalP = R.proteinTarget*4, kcalC = R.carbTarget*4, kcalF = R.fatTarget*9;
-  const totalKcal = kcalP + kcalC + kcalF || 1;
-  drawDonut(ctx, 175, y+95, 72, 26, [
-    {valor:kcalP, color:C.pink},
-    {valor:kcalC, color:C.purple},
-    {valor:kcalF, color:C.orange},
+  // Dona (izquierda)
+  ctx.fillStyle = C.card2; roundRectPath(ctx, M, y, mitad, 178, 16); ctx.fill();
+  const kP = R.proteinTarget*4, kC2 = R.carbTarget*4, kF = R.fatTarget*9;
+  const tot = kP + kC2 + kF || 1;
+  drawDonut(ctx, M + 100, y + 89, 64, 24, [
+    {valor:kP, color:C.pink}, {valor:kC2, color:C.purple}, {valor:kF, color:C.orange},
   ]);
-  // Porcentajes dentro del anillo
   ctx.textAlign = "center";
   ctx.fillStyle = C.muted; ctx.font = "500 12px Inter, sans-serif";
-  ctx.fillText(t('r_objkcal').split(' ')[0], 175, y+90);
+  ctx.fillText("kcal", M + 100, y + 84);
   ctx.fillStyle = C.text; ctx.font = "800 26px " + SERIF;
-  ctx.fillText(fmt(R.calorieTarget), 175, y+118);
+  ctx.fillText(fmt(R.calorieTarget), M + 100, y + 112);
   ctx.textAlign = "left";
-
-  // Leyenda
-  const leyenda = [
-    [t('r_proteinas'), fmt(R.proteinTarget)+"g", Math.round(kcalP/totalKcal*100), C.pink],
-    [t('r_carbohidratos'), fmt(R.carbTarget)+"g", Math.round(kcalC/totalKcal*100), C.purple],
-    [t('r_grasas'), fmt(R.fatTarget)+"g", Math.round(kcalF/totalKcal*100), C.orange],
-  ];
-  let ly = y + 52;
-  leyenda.forEach(function(l){
-    ctx.fillStyle = l[3]; roundRectPath(ctx, 320, ly-13, 15, 15, 4); ctx.fill();
-    ctx.fillStyle = C.text; ctx.font = "500 17px Inter, sans-serif";
-    ctx.fillText(l[0], 350, ly);
-    ctx.font = "700 17px " + SERIF; ctx.textAlign = "right";
-    ctx.fillText(l[1], 790, ly);
-    ctx.fillStyle = C.muted; ctx.font = "500 15px Inter, sans-serif";
-    ctx.fillText("(" + l[2] + "%)", 900, ly);
+  let ly = y + 48;
+  [[t('r_proteinas'), fmt(R.proteinTarget)+"g", Math.round(kP/tot*100), C.pink],
+   [t('r_carbohidratos'), fmt(R.carbTarget)+"g", Math.round(kC2/tot*100), C.purple],
+   [t('r_grasas'), fmt(R.fatTarget)+"g", Math.round(kF/tot*100), C.orange]].forEach(function(l){
+    ctx.fillStyle = l[3]; roundRectPath(ctx, M + 186, ly-12, 14, 14, 4); ctx.fill();
+    ctx.fillStyle = C.text; ctx.font = "500 16px Inter, sans-serif";
+    ctx.fillText(l[0], M + 208, ly);
+    ctx.font = "700 16px " + SERIF; ctx.textAlign = "right";
+    ctx.fillText(l[1], M + mitad - 74, ly);
+    ctx.fillStyle = C.muted; ctx.font = "500 14px Inter, sans-serif";
+    ctx.fillText("(" + l[2] + "%)", M + mitad - 16, ly);
     ctx.textAlign = "left";
-    ly += 46;
+    ly += 42;
   });
 
-  // ---------- 3. PROMEDIO REAL ----------
-  y += 214;
-  ctx.fillStyle = C.text; ctx.font = "700 20px " + SERIF;
-  ctx.fillText(t('r_promedio'), 50, y);
-  y += 28;
-  ctx.fillStyle = C.card2; roundRectPath(ctx, 50, y, 900, 82, 14); ctx.fill();
+  // Promedio real (derecha)
+  const xD = M + mitad + 16;
+  ctx.fillStyle = C.card2; roundRectPath(ctx, xD, y, mitad, 178, 16); ctx.fill();
   const reales = [
     [fmt(R.avg.kcal), t('r_kcaldia'), C.accent],
     [fmt(R.avg.p)+"g", t('r_proteina'), C.pink],
     [fmt(R.avg.c)+"g", t('r_carbohidratos'), C.purple],
     [fmt(R.avg.f)+"g", t('r_grasasLbl'), C.orange],
   ];
-  let rx = 50 + 112;
-  reales.forEach(function(v){
-    ctx.fillStyle = v[2]; ctx.font = "800 26px " + SERIF; ctx.textAlign = "center";
-    ctx.fillText(v[0], rx, y+40);
-    ctx.fillStyle = C.muted; ctx.font = "400 12px Inter, sans-serif";
-    ctx.fillText(v[1], rx, y+62);
+  reales.forEach(function(v, i){
+    const px = xD + (i % 2) * (mitad/2) + mitad/4;
+    const py = y + 46 + Math.floor(i/2) * 84;
+    ctx.fillStyle = v[2]; ctx.font = "800 30px " + SERIF; ctx.textAlign = "center";
+    ctx.fillText(v[0], px, py);
+    ctx.fillStyle = C.muted; ctx.font = "400 13px Inter, sans-serif";
+    ctx.fillText(v[1], px, py + 24);
     ctx.textAlign = "left";
-    rx += 225;
   });
 
-  // ---------- 4. SECUNDARIOS ----------
-  y += 104;
+  // ---------- SECUNDARIOS Y COSTOS ----------
+  y += 202;
+  ctx.fillStyle = C.muted; ctx.font = "400 15px Inter, sans-serif";
+  ctx.fillText(t('r_bmr') + ": " + fmt(R.bmr) + "   ·   " + t('r_tdee') + ": " + fmt(R.tdee) +
+               "   ·   " + t('r_bmi') + ": " + fmt(R.bmi,1), M, y);
+  y += 22;
+  ctx.fillStyle = C.card2; roundRectPath(ctx, M, y, mitad, 116, 16); ctx.fill();
+  ctx.strokeStyle = C.accent; ctx.lineWidth = 2; roundRectPath(ctx, M, y, mitad, 116, 16); ctx.stroke();
+  ctx.fillStyle = C.muted; ctx.font = "600 13px Inter, sans-serif";
+  ctx.fillText(t('r_costotitle').toUpperCase(), M + 24, y + 30);
+  ctx.fillStyle = C.accent; ctx.font = "800 40px " + SERIF;
+  ctx.fillText(R.priceSet.symbol + " " + fmtMoney(R.totalCost), M + 24, y + 80);
   ctx.fillStyle = C.muted; ctx.font = "400 13px Inter, sans-serif";
-  ctx.fillText(t('r_bmr') + ": " + fmt(R.bmr) + "     ·     " + t('r_tdee') + ": " + fmt(R.tdee) +
-               "     ·     " + t('r_bmi') + ": " + fmt(R.bmi,1), 50, y);
+  ctx.fillText(t('r_promediodiario') + ": " + R.priceSet.symbol + " " + fmtMoney(R.totalCost/30), M + 24, y + 104);
 
-  // ---------- 5. PRESUPUESTO MENSUAL Y SEMANAL ----------
+  ctx.fillStyle = C.card2; roundRectPath(ctx, xD, y, mitad, 116, 16); ctx.fill();
+  ctx.strokeStyle = C.line; ctx.lineWidth = 2; roundRectPath(ctx, xD, y, mitad, 116, 16); ctx.stroke();
+  ctx.fillStyle = C.muted; ctx.font = "600 13px Inter, sans-serif";
+  ctx.fillText(t('r_presupuestoSemanal').toUpperCase(), xD + 24, y + 30);
+  ctx.fillStyle = C.amber; ctx.font = "800 40px " + SERIF;
+  // Mismo criterio que la lista: el mes dividido entre 4 semanas
+  ctx.fillText(R.priceSet.symbol + " " + fmtMoney(R.totalCost/4), xD + 24, y + 80);
+  ctx.fillStyle = C.muted; ctx.font = "400 13px Inter, sans-serif";
+  ctx.fillText(R.purchase.length + " " + t('r_alimentosLista'), xD + 24, y + 104);
+
+  // ---------- LISTA EN DOS COLUMNAS ----------
+  y += 148;
+  ctx.fillStyle = C.text; ctx.font = "700 21px " + SERIF;
+  ctx.fillText(t('r_listaCompra'), M, y);
+  y += 22;
+
+  const colW = (ANCHO - 24) / 2;
+  const COL_X = [M, M + colW + 24];
+  // Cabecera de cada columna
+  COL_X.forEach(function(cx){
+    ctx.fillStyle = C.card2; roundRectPath(ctx, cx, y, colW, 44, 10); ctx.fill();
+    ctx.fillStyle = C.text; ctx.font = "700 13px Inter, sans-serif";
+    ctx.fillText(t('r_alimento').toUpperCase(), cx + 14, y + 27);
+    ctx.textAlign = "center";
+    ctx.fillStyle = C.muted; ctx.font = "700 11px Inter, sans-serif";
+    ctx.fillText(t('r_semanaN').toUpperCase(), cx + colW - 190, y + 19);
+    ctx.fillText(t('r_dlPlan').toUpperCase(), cx + colW - 66, y + 19);
+    ctx.font = "500 10px Inter, sans-serif";
+    ctx.fillText(t('r_comprar').toLowerCase() + " / " + t('r_subtotal').toLowerCase(), cx + colW - 190, y + 34);
+    ctx.fillText(t('r_comprar').toLowerCase() + " / " + t('r_subtotal').toLowerCase(), cx + colW - 66, y + 34);
+    ctx.textAlign = "left";
+  });
+  y += 52;
+
+  // Repartir alimentos y cabeceras de grupo en dos columnas
+  const filas = [];
+  let gAct = null;
+  R.purchase.forEach(function(p){
+    if(p.group !== gAct){ gAct = p.group; filas.push({tipo:'grupo', group:p.group}); }
+    filas.push({tipo:'item', p:p});
+  });
+  let corte = Math.ceil(filas.length / 2);
+  while(corte > 0 && corte < filas.length && filas[corte-1].tipo === 'grupo') corte--;
+  const columnas = [filas.slice(0, corte), filas.slice(corte)];
+
+  let altoMax = y;
+  columnas.forEach(function(col, ci){
+    const cx = COL_X[ci];
+    let yy = y;
+    let n = 0;
+    col.forEach(function(f){
+      if(f.tipo === 'grupo'){
+        ctx.fillStyle = C.muted; ctx.font = "700 11px Inter, sans-serif";
+        ctx.fillText(shopGroupLabel(f.group).toUpperCase(), cx, yy + 22);
+        yy += 30;
+        return;
+      }
+      const p = f.p;
+      if(n % 2 === 0){ ctx.fillStyle = C.card; ctx.fillRect(cx, yy, colW, rowH); }
+      n++;
+      ctx.fillStyle = C.text; ctx.font = "500 15px Inter, sans-serif";
+      ctx.fillText(foodEmoji(p.id) + "  " + p.name, cx + 12, yy + 28);
+
+      /* La columna SEMANA se deriva de la MENSUAL dividiendo entre 4,
+         no se calcula por separado. Antes cada una redondeaba hacia
+         arriba por su cuenta: 2,0 lb pasaba a 3 y 8,6 a 9, así que la
+         semana x4 daba 12 y no cuadraba con las 9 del mes.
+         Ahora el mes SIEMPRE es la semana x4, y el precio va en la
+         misma proporción, de modo que las dos cifras concuerdan. */
+      const semC = p.unitsNeeded / 4;
+      const semP = p.subtotal / 4;
+      ctx.textAlign = "center";
+      // SEMANA
+      ctx.fillStyle = C.text; ctx.font = "600 13px Inter, sans-serif";
+      ctx.fillText(fmt(semC, semC < 10 ? 1 : 0) + " " + unitLabel(p.unit, semC, CURRENT_LANG), cx + colW - 190, yy + 21);
+      ctx.fillStyle = C.muted; ctx.font = "500 12px 'IBM Plex Mono', monospace";
+      ctx.fillText(R.priceSet.symbol + fmtMoney(semP), cx + colW - 190, yy + 38);
+      // MES
+      ctx.fillStyle = C.text; ctx.font = "700 13px Inter, sans-serif";
+      ctx.fillText(p.unitsNeeded + " " + unitLabel(p.unit, p.unitsNeeded, CURRENT_LANG), cx + colW - 66, yy + 21);
+      ctx.fillStyle = C.amber; ctx.font = "700 13px 'IBM Plex Mono', monospace";
+      ctx.fillText(R.priceSet.symbol + fmtMoney(p.subtotal), cx + colW - 66, yy + 38);
+      ctx.textAlign = "left";
+      yy += rowH;
+    });
+    if(yy > altoMax) altoMax = yy;
+  });
+  y = altoMax;
+
+  // ---------- PIE ----------
   y += 24;
-  // Mensual
-  ctx.fillStyle = C.card2; roundRectPath(ctx, 50, y, 440, 128, 16); ctx.fill();
-  ctx.strokeStyle = C.accent; ctx.lineWidth = 2; roundRectPath(ctx, 50, y, 440, 128, 16); ctx.stroke();
-  ctx.fillStyle = C.muted; ctx.font = "600 13px Inter, sans-serif";
-  ctx.fillText(t('r_costotitle').toUpperCase(), 78, y+32);
-  ctx.fillStyle = C.accent; ctx.font = "800 38px " + SERIF;
-  ctx.fillText(R.priceSet.symbol + " " + fmtMoney(R.totalCost), 78, y+82);
-  ctx.fillStyle = C.muted; ctx.font = "400 13px Inter, sans-serif";
-  ctx.fillText(t('r_promediodiario') + ": " + R.priceSet.symbol + " " + fmtMoney(R.totalCost/30), 78, y+108);
-  // Semanal
-  ctx.fillStyle = C.card2; roundRectPath(ctx, 510, y, 440, 128, 16); ctx.fill();
-  ctx.strokeStyle = C.line; ctx.lineWidth = 2; roundRectPath(ctx, 510, y, 440, 128, 16); ctx.stroke();
-  ctx.fillStyle = C.muted; ctx.font = "600 13px Inter, sans-serif";
-  ctx.fillText(t('r_presupuestoSemanal').toUpperCase(), 538, y+32);
-  ctx.fillStyle = C.amber; ctx.font = "800 38px " + SERIF;
-  ctx.fillText(R.priceSet.symbol + " " + fmtMoney(R.totalCost/30*7), 538, y+82);
-  ctx.fillStyle = C.muted; ctx.font = "400 13px Inter, sans-serif";
-  ctx.fillText(t('r_consumoPromedioSemanal'), 538, y+108);
+  ctx.fillStyle = C.muted; ctx.font = "italic 13px Inter, sans-serif";
+  const pais = (COUNTRIES.find(function(c){ return c.code === R.country; }) || {})[CURRENT_LANG==='en'?'en':'es'] || R.country;
+  ctx.fillText(pais + " · " + R.priceSet.symbol + " · " + (R.priceSet._fuente || t('r_estimado')) +
+               "   ·   " + t('r_notaSemanaMes').slice(0, 80), M, y);
+  y += 32;
+  ctx.fillStyle = C.text; ctx.font = "700 21px " + SERIF;
+  ctx.fillText(t('r_planDe') + " " + R.nombre, M, y);
+  ctx.fillStyle = C.accent; ctx.font = "700 15px Inter, sans-serif";
+  ctx.textAlign = "right"; ctx.fillText("COME PRO", W - M, y); ctx.textAlign = "left";
 
-  // ---------- 6. LISTA: consumo mensual Y semanal ----------
-  y += 168;
-  ctx.fillStyle = C.text; ctx.font = "700 20px " + SERIF;
-  ctx.fillText(t('r_alimento'), 50, y);
-  ctx.fillStyle = C.muted; ctx.font = "700 11px Inter, sans-serif";
-  /* Cuatro columnas: cantidad y precio de la SEMANA, y luego del MES,
-     para que sirva tanto a quien compra semanal como mensual. */
+  return recortarCanvas(canvas, y + 30);
+}
+
+/* ---------- IMAGEN 1: RESUMEN ---------- */
+function drawResumenImage(R){
+  const C = themeColors();
+  const W = 820;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = 1180;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = C.bg; ctx.fillRect(0,0,W,1180);
+  drawBrandHeader(ctx, C, R.nombre, t('r_tuObjetivoDiario'));
+  const SERIF = "Fraunces, Georgia, serif";
+
+  // Macros en 2x2
+  const macros = [
+    [fmt(R.calorieTarget), t('r_objkcal'), C.orange],
+    [fmt(R.proteinTarget)+"g", t('r_objp'), C.pink],
+    [fmt(R.carbTarget)+"g", t('r_objc'), C.purple],
+    [fmt(R.fatTarget)+"g", t('r_objf'), C.amber],
+  ];
+  const cardW = 355, cardH = 118, gapX = 14, gapY = 12;
+  macros.forEach(function(m, i){
+    const cx = 46 + (i % 2) * (cardW + gapX);
+    const cy = 175 + Math.floor(i / 2) * (cardH + gapY);
+    ctx.fillStyle = C.card2; roundRectPath(ctx, cx, cy, cardW, cardH, 16); ctx.fill();
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1; roundRectPath(ctx, cx, cy, cardW, cardH, 16); ctx.stroke();
+    ctx.fillStyle = m[2]; ctx.font = "800 44px " + SERIF; ctx.textAlign = "center";
+    ctx.fillText(m[0], cx + cardW/2, cy + 62);
+    ctx.fillStyle = C.muted; ctx.font = "500 16px Inter, sans-serif";
+    ctx.fillText(m[1], cx + cardW/2, cy + 94);
+    ctx.textAlign = "left";
+  });
+
+  // Distribución con anillo
+  let y = 175 + 2*(cardH+gapY) + 24;
+  ctx.fillStyle = C.text; ctx.font = "700 23px " + SERIF;
+  ctx.fillText(t('r_distribucion'), 46, y);
+  y += 30;
+  ctx.fillStyle = C.card2; roundRectPath(ctx, 46, y, 728, 200, 16); ctx.fill();
+  const kcalP = R.proteinTarget*4, kcalC = R.carbTarget*4, kcalF = R.fatTarget*9;
+  const totalKcal = kcalP + kcalC + kcalF || 1;
+  drawDonut(ctx, 156, y+100, 74, 27, [
+    {valor:kcalP, color:C.pink}, {valor:kcalC, color:C.purple}, {valor:kcalF, color:C.orange},
+  ]);
   ctx.textAlign = "center";
-  ctx.fillText(t('r_consumo').toUpperCase(), 640, y-14);
-  ctx.textAlign = "right";
-  ctx.fillText(t('r_semanaN').toUpperCase(), 570, y+4);
-  ctx.fillText(t('r_dlPlan').toUpperCase(), 710, y+4);
-  ctx.fillText(t('r_comprar').toUpperCase(), 850, y+4);
-  ctx.fillText(t('r_subtotal').toUpperCase(), 950, y+4);
+  ctx.fillStyle = C.muted; ctx.font = "500 13px Inter, sans-serif";
+  ctx.fillText("kcal", 156, y+94);
+  ctx.fillStyle = C.text; ctx.font = "800 30px " + SERIF;
+  ctx.fillText(fmt(R.calorieTarget), 156, y+126);
   ctx.textAlign = "left";
-  ctx.strokeStyle = C.line; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(730, y-24); ctx.lineTo(730, y+10); ctx.stroke();
+  const leyenda = [
+    [t('r_proteinas'), fmt(R.proteinTarget)+"g", Math.round(kcalP/totalKcal*100), C.pink],
+    [t('r_carbohidratos'), fmt(R.carbTarget)+"g", Math.round(kcalC/totalKcal*100), C.purple],
+    [t('r_grasas'), fmt(R.fatTarget)+"g", Math.round(kcalF/totalKcal*100), C.orange],
+  ];
+  let ly = y + 56;
+  leyenda.forEach(function(l){
+    ctx.fillStyle = l[3]; roundRectPath(ctx, 280, ly-14, 17, 17, 4); ctx.fill();
+    ctx.fillStyle = C.text; ctx.font = "500 19px Inter, sans-serif";
+    ctx.fillText(l[0], 308, ly);
+    ctx.font = "700 19px " + SERIF; ctx.textAlign = "right";
+    ctx.fillText(l[1], 660, ly);
+    ctx.fillStyle = C.muted; ctx.font = "500 17px Inter, sans-serif";
+    ctx.fillText("(" + l[2] + "%)", 764, ly);
+    ctx.textAlign = "left";
+    ly += 48;
+  });
+
+  // Promedio real
+  y += 226;
+  ctx.fillStyle = C.text; ctx.font = "700 23px " + SERIF;
+  ctx.fillText(t('r_promedio'), 46, y);
+  y += 30;
+  ctx.fillStyle = C.card2; roundRectPath(ctx, 46, y, 728, 92, 14); ctx.fill();
+  const reales = [
+    [fmt(R.avg.kcal), t('r_kcaldia'), C.accent],
+    [fmt(R.avg.p)+"g", t('r_proteina'), C.pink],
+    [fmt(R.avg.c)+"g", t('r_carbohidratos'), C.purple],
+    [fmt(R.avg.f)+"g", t('r_grasasLbl'), C.orange],
+  ];
+  let rx = 46 + 91;
+  reales.forEach(function(v){
+    ctx.fillStyle = v[2]; ctx.font = "800 30px " + SERIF; ctx.textAlign = "center";
+    ctx.fillText(v[0], rx, y+46);
+    ctx.fillStyle = C.muted; ctx.font = "400 14px Inter, sans-serif";
+    ctx.fillText(v[1], rx, y+72);
+    ctx.textAlign = "left";
+    rx += 182;
+  });
+
+  y += 116;
+  ctx.fillStyle = C.muted; ctx.font = "400 15px Inter, sans-serif";
+  ctx.fillText(t('r_bmr') + ": " + fmt(R.bmr) + "   ·   " + t('r_tdee') + ": " + fmt(R.tdee) +
+               "   ·   " + t('r_bmi') + ": " + fmt(R.bmi,1), 46, y);
+
+  // Los dos costos, lado a lado
   y += 24;
+  ctx.fillStyle = C.card2; roundRectPath(ctx, 46, y, 357, 120, 16); ctx.fill();
+  ctx.strokeStyle = C.accent; ctx.lineWidth = 2; roundRectPath(ctx, 46, y, 357, 120, 16); ctx.stroke();
+  ctx.fillStyle = C.muted; ctx.font = "600 13px Inter, sans-serif";
+  ctx.fillText(t('r_costotitle').toUpperCase(), 70, y+30);
+  ctx.fillStyle = C.accent; ctx.font = "800 36px " + SERIF;
+  ctx.fillText(R.priceSet.symbol + " " + fmtMoney(R.totalCost), 70, y+78);
+  ctx.fillStyle = C.muted; ctx.font = "400 13px Inter, sans-serif";
+  ctx.fillText(t('r_promediodiario') + ": " + R.priceSet.symbol + " " + fmtMoney(R.totalCost/30), 70, y+104);
+
+  ctx.fillStyle = C.card2; roundRectPath(ctx, 417, y, 357, 120, 16); ctx.fill();
+  ctx.strokeStyle = C.line; ctx.lineWidth = 2; roundRectPath(ctx, 417, y, 357, 120, 16); ctx.stroke();
+  ctx.fillStyle = C.muted; ctx.font = "600 13px Inter, sans-serif";
+  ctx.fillText(t('r_presupuestoSemanal').toUpperCase(), 441, y+30);
+  ctx.fillStyle = C.amber; ctx.font = "800 36px " + SERIF;
+  ctx.fillText(R.priceSet.symbol + " " + fmtMoney(R.totalCost/30*7), 441, y+78);
+  ctx.fillStyle = C.muted; ctx.font = "400 13px Inter, sans-serif";
+  ctx.fillText(R.purchase.length + " " + t('r_alimentosLista'), 441, y+104);
+
+  y += 148;
+  ctx.fillStyle = C.text; ctx.font = "700 21px " + SERIF;
+  ctx.fillText(t('r_planDe') + " " + R.nombre, 46, y);
+  ctx.fillStyle = C.accent; ctx.font = "700 15px Inter, sans-serif";
+  ctx.textAlign = "right"; ctx.fillText("COME PRO", 774, y); ctx.textAlign = "left";
+
+  return recortarCanvas(canvas, y + 30);
+}
+
+/* ---------- IMAGEN 2: LISTA DE COMPRA ---------- */
+function drawListaImage(R){
+  const C = themeColors();
+  const W = 820, rowH = 46;
+  const nGrupos = new Set(R.purchase.map(p=>p.group)).size;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = 300 + R.purchase.length*rowH + nGrupos*36;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = C.bg; ctx.fillRect(0,0,W,canvas.height);
+  drawBrandHeader(ctx, C, R.nombre, t('r_listaCompra'));
+  const SERIF = "Fraunces, Georgia, serif";
+
+  let y = 186;
+  /* Cabecera con DOS bloques bien separados: SEMANA y MES, cada uno con
+     su cantidad y su precio. Antes solo se veía una cifra y no quedaba
+     claro a qué periodo correspondía. */
+  ctx.fillStyle = C.card2; roundRectPath(ctx, 46, y-24, 728, 52, 10); ctx.fill();
+  ctx.fillStyle = C.muted; ctx.font = "700 12px Inter, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(t('r_semanaN').toUpperCase(), 500, y-6);
+  ctx.fillText(t('r_dlPlan').toUpperCase(), 690, y-6);
+  ctx.font = "600 11px Inter, sans-serif";
+  ctx.fillText(t('r_comprar').toUpperCase() + " / " + t('r_subtotal').toUpperCase(), 500, y+16);
+  ctx.fillText(t('r_comprar').toUpperCase() + " / " + t('r_subtotal').toUpperCase(), 690, y+16);
+  ctx.textAlign = "left";
+  ctx.fillStyle = C.text; ctx.font = "700 16px Inter, sans-serif";
+  ctx.fillText(t('r_alimento').toUpperCase(), 62, y+4);
+  ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(596, y-20); ctx.lineTo(596, y+24); ctx.stroke();
+  y += 44;
 
   let grupoActual = null;
   R.purchase.forEach(function(p, i){
     if(p.group !== grupoActual){
       grupoActual = p.group;
       ctx.fillStyle = C.muted; ctx.font = "700 12px Inter, sans-serif";
-      ctx.fillText(shopGroupLabel(p.group).toUpperCase(), 50, y+26);
-      y += 34;
+      ctx.fillText(shopGroupLabel(p.group).toUpperCase(), 46, y+24);
+      y += 36;
     }
-    if(i % 2 === 0){ ctx.fillStyle = C.card; ctx.fillRect(50, y, 900, rowH); }
-    ctx.fillStyle = C.text; ctx.font = "500 15px Inter, sans-serif";
-    ctx.fillText(foodEmoji(p.id) + "  " + p.name + foodStatePlain(p.id), 65, y+27);
-    ctx.textAlign = "right";
-    /* CONSUMO (semanal y mensual) en la misma unidad y SIN redondeo
-       comercial: asi la columna semanal x4,3 sí da la mensual y las
-       cifras se pueden comparar sin que parezcan contradictorias.
-       El redondeo a paquetes enteros vive en su propia columna
-       ("comprar"), que es lo unico que se lleva del supermercado. */
+    if(i % 2 === 0){ ctx.fillStyle = C.card; ctx.fillRect(46, y, 728, rowH); }
+    ctx.fillStyle = C.text; ctx.font = "500 16px Inter, sans-serif";
+    ctx.fillText(foodEmoji(p.id) + "  " + p.name, 60, y+28);
+
     const uni = FOODS[p.id].gPerUnit;
-    const semU = p.gramsNeeded/30*7 / uni;
-    const mesU = p.gramsNeeded / uni;
-    ctx.fillStyle = C.muted; ctx.font = "400 12.5px Inter, sans-serif";
-    ctx.fillText(fmt(semU, semU < 10 ? 1 : 0) + " " + unitLabel(p.unit, semU, CURRENT_LANG), 570, y+27);
-    ctx.fillText(fmt(mesU, mesU < 10 ? 1 : 0) + " " + unitLabel(p.unit, mesU, CURRENT_LANG), 710, y+27);
-    // --- COMPRAR: lo unico redondeado a paquetes enteros ---
-    ctx.fillStyle = C.text; ctx.font = "600 12.5px Inter, sans-serif";
-    ctx.fillText(p.unitsNeeded + " " + unitLabel(p.unit, p.unitsNeeded, CURRENT_LANG), 850, y+27);
+    // Cantidad de la SEMANA, redondeada a paquetes como la del mes
+    const semCompra = Math.max(1, Math.ceil(p.gramsNeeded/30*7 / uni));
+    const semPrecio = semCompra * p.price;
+
+    ctx.textAlign = "center";
+    // SEMANA
+    ctx.fillStyle = C.text; ctx.font = "600 14px Inter, sans-serif";
+    ctx.fillText(semCompra + " " + unitLabel(p.unit, semCompra, CURRENT_LANG), 500, y+22);
+    ctx.fillStyle = C.muted; ctx.font = "500 13px 'IBM Plex Mono', monospace";
+    ctx.fillText(R.priceSet.symbol + fmtMoney(semPrecio), 500, y+39);
+    // MES
+    ctx.fillStyle = C.text; ctx.font = "700 14px Inter, sans-serif";
+    ctx.fillText(p.unitsNeeded + " " + unitLabel(p.unit, p.unitsNeeded, CURRENT_LANG), 690, y+22);
     ctx.fillStyle = C.amber; ctx.font = "700 14px 'IBM Plex Mono', monospace";
-    ctx.fillText(R.priceSet.symbol + fmtMoney(p.subtotal), 950, y+27);
+    ctx.fillText(R.priceSet.symbol + fmtMoney(p.subtotal), 690, y+39);
     ctx.textAlign = "left";
     y += rowH;
   });
 
-  // ---------- 7. PIE ----------
-  y += 26;
-  ctx.fillStyle = C.muted; ctx.font = "italic 12px Inter, sans-serif";
-  const pais = (COUNTRIES.find(function(c){ return c.code === R.country; }) || {})[CURRENT_LANG==='en'?'en':'es'] || R.country;
-  ctx.fillText(pais + " · " + R.priceSet.symbol + " · " + (R.priceSet._fuente || t('r_estimado')), 50, y);
-  y += 20;
-  ctx.fillText(t('r_notaEstimado').slice(0, 105), 50, y);
-  y += 18;
-  ctx.fillText(t('r_notaSemanaMes'), 50, y);
-
-  /* El nombre se repite al cierre: si alguien comparte solo la parte
-     de abajo de la imagen, sigue sabiéndose de quién es el plan. */
-  y += 34;
-  ctx.fillStyle = C.text; ctx.font = "700 19px Fraunces, Georgia, serif";
-  ctx.fillText(t('r_planDe') + " " + R.nombre, 50, y);
-  ctx.fillStyle = C.accent; ctx.font = "700 14px Inter, sans-serif";
-  ctx.textAlign = "right";
-  ctx.fillText("COME PRO", 950, y);
+  // Totales
+  y += 14;
+  ctx.fillStyle = C.card2; roundRectPath(ctx, 46, y, 728, 74, 14); ctx.fill();
+  ctx.fillStyle = C.muted; ctx.font = "600 13px Inter, sans-serif";
+  ctx.fillText(t('r_costotitle').toUpperCase(), 66, y+28);
+  ctx.textAlign = "center";
+  ctx.fillStyle = C.muted; ctx.font = "700 22px " + SERIF;
+  ctx.fillText(R.priceSet.symbol + " " + fmtMoney(R.totalCost/30*7), 500, y+48);
+  ctx.fillStyle = C.accent; ctx.font = "800 26px " + SERIF;
+  ctx.fillText(R.priceSet.symbol + " " + fmtMoney(R.totalCost), 690, y+48);
   ctx.textAlign = "left";
 
-  /* La altura se calcula por adelantado con una estimación, así que casi
-     siempre sobra espacio en blanco al final. Aquí se recorta el lienzo
-     a la altura realmente usada. */
-  return recortarCanvas(canvas, y + 34);
+  y += 100;
+  ctx.fillStyle = C.muted; ctx.font = "italic 13px Inter, sans-serif";
+  const pais = (COUNTRIES.find(function(c){ return c.code === R.country; }) || {})[CURRENT_LANG==='en'?'en':'es'] || R.country;
+  ctx.fillText(pais + " · " + R.priceSet.symbol + " · " + (R.priceSet._fuente || t('r_estimado')), 46, y);
+  y += 30;
+  ctx.fillStyle = C.text; ctx.font = "700 21px " + SERIF;
+  ctx.fillText(t('r_planDe') + " " + R.nombre, 46, y);
+  ctx.fillStyle = C.accent; ctx.font = "700 15px Inter, sans-serif";
+  ctx.textAlign = "right"; ctx.fillText("COME PRO", 774, y); ctx.textAlign = "left";
+
+  return recortarCanvas(canvas, y + 30);
 }
 
 /* Devuelve una copia del lienzo cortada a la altura indicada */
 function recortarCanvas(canvas, alturaReal){
   const alto = Math.min(canvas.height, Math.max(200, Math.round(alturaReal)));
-  if(alto >= canvas.height - 2) return canvas;   // no sobra nada
+  if(alto >= canvas.height - 2) return canvas;
   const salida = document.createElement('canvas');
   salida.width = canvas.width;
   salida.height = alto;
@@ -4169,12 +4421,12 @@ function recortarCanvas(canvas, alturaReal){
 
 function drawWeeklyAverageImage(R){
   const C = themeColors();
-  const rowH = 44;
+  const rowH = 52;
   const weekTotal = R.totalCost / 30 * 7;
   const H = 700 + R.purchase.length*rowH;
-  const canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = H;
+  const canvas = document.createElement('canvas'); canvas.width = 820; canvas.height = H;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = C.bg; ctx.fillRect(0,0,1000,H);
+  ctx.fillStyle = C.bg; ctx.fillRect(0,0,820,H);
   drawBrandHeader(ctx, C, R.nombre, t('r_presupuestoSemanal'));
 
   ctx.fillStyle = C.card2; roundRectPath(ctx, 50, 175, 900, 140, 16); ctx.fill();
@@ -4208,12 +4460,12 @@ function drawWeeklyAverageImage(R){
 
 function drawWeekPurchaseImage(R, weekNum, dayStart, dayEnd, weekPurchase){
   const C = themeColors();
-  const rowH = 44;
+  const rowH = 52;
   const weekTotal = weekPurchase.reduce((s,p)=>s+p.subtotal,0);
   const H = 700 + weekPurchase.length*rowH;
-  const canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = H;
+  const canvas = document.createElement('canvas'); canvas.width = 820; canvas.height = H;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = C.bg; ctx.fillRect(0,0,1000,H);
+  ctx.fillStyle = C.bg; ctx.fillRect(0,0,820,H);
   drawBrandHeader(ctx, C, R.nombre, `${t('r_semanaN')} ${weekNum} — ${t('dia')} ${dayStart}–${dayEnd}`);
 
   ctx.fillStyle = C.card2; roundRectPath(ctx, 50, 175, 900, 120, 16); ctx.fill();
