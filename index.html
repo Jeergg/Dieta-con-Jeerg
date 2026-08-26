@@ -42,6 +42,14 @@
      oscura. En modo día la cabecera de la app no es blanca sino oscura,
      así que la versión de letras negras se perdía; con la placa el logo
      se lee igual de bien en los dos temas y la marca se ve consistente. */
+  /* Recuadro verde que destaca el botón de descargar y comprar */
+  .caja-comprar{ background:rgba(143,191,111,.07); border:1.5px solid var(--accent);
+    border-radius:16px; padding:16px 14px 12px; margin-top:16px; }
+  .caja-comprar .primary{ margin-top:0 !important; }
+  /* Aviso de comisión: deliberadamente discreto, casi transparente */
+  .aviso-comision{ font-size:10.5px; line-height:1.4; color:var(--muted);
+    opacity:.45; text-align:center; margin-top:9px; }
+
   .brand-logo{ height:46px; width:auto; display:block; }
   .brand-logo-wrap{ background:#141a11; border-radius:12px; padding:8px 14px;
     display:inline-flex; align-items:center; }
@@ -565,6 +573,7 @@
    ============================================================ */
 const STR = {
   es: {
+    r_avisoComision:"COME PRO puede recibir una comisión por compras elegibles, sin costo extra para ti.",
     r_comprarEn:"Comprar los ingredientes en",
     r_alimentosLista:"alimentos",
     r_listaCompra:"Lista de compra",
@@ -662,6 +671,7 @@ const STR = {
     errPeso:"Peso no válido", errAltura:"Altura no válida", errCombinacion:"Revisa el peso y la altura: esa combinación no parece posible",
   },
   en: {
+    r_avisoComision:"COME PRO may earn a commission on eligible purchases, at no extra cost to you.",
     r_comprarEn:"Buy the ingredients at",
     r_alimentosLista:"items",
     r_listaCompra:"Shopping list",
@@ -759,6 +769,7 @@ const STR = {
     errPeso:"Invalid weight", errAltura:"Invalid height", errCombinacion:"Check weight and height: that combination does not look possible",
   },
   pt: {
+    r_avisoComision:"COME PRO pode receber uma comissão por compras elegíveis, sem custo extra para você.",
     r_comprarEn:"Comprar os ingredientes em",
     r_alimentosLista:"alimentos",
     r_listaCompra:"Lista de compras",
@@ -947,6 +958,7 @@ const STR = {
     errAltura:"Altura inválida", errCombinacion:"Verifique peso e altura: essa combinação não parece possível",
   },
   fr: {
+    r_avisoComision:"COME PRO peut percevoir une commission sur les achats éligibles, sans frais supplémentaires pour vous.",
     r_comprarEn:"Acheter les ingrédients chez",
     r_alimentosLista:"aliments",
     r_listaCompra:"Liste de courses",
@@ -1135,6 +1147,7 @@ const STR = {
     errAltura:"Taille non valide", errCombinacion:"Vérifiez le poids et la taille : cette combinaison semble impossible",
   },
   de: {
+    r_avisoComision:"COME PRO kann eine Provision für qualifizierte Käufe erhalten, ohne Zusatzkosten für dich.",
     r_comprarEn:"Zutaten kaufen bei",
     r_alimentosLista:"Lebensmittel",
     r_listaCompra:"Einkaufsliste",
@@ -1323,6 +1336,7 @@ const STR = {
     errAltura:"Ungültige Größe", errCombinacion:"Prüfe Gewicht und Größe: diese Kombination scheint nicht möglich",
   },
   it: {
+    r_avisoComision:"COME PRO può ricevere una commissione sugli acquisti idonei, senza costi aggiuntivi per te.",
     r_comprarEn:"Compra gli ingredienti su",
     r_alimentosLista:"alimenti",
     r_listaCompra:"Lista della spesa",
@@ -3304,7 +3318,11 @@ function nivelActividad(f){
    que es lo único fiable ahí. */
 function esNavegadorDeApp(){
   const ua = navigator.userAgent || '';
-  return /Instagram|FBAN|FBAV|FB_IAB|Line\/|Twitter|TikTok|Snapchat|Pinterest|LinkedInApp|WhatsApp/i.test(ua);
+  /* Se listan las firmas REALES de cada app. TikTok, por ejemplo, no
+     pone "TikTok" en su navegador: usa musical_ly en iPhone y
+     BytedanceWebview en Android, así que buscar la palabra TikTok no
+     lo detectaba y esas visitas se perdían. */
+  return /Instagram|FBAN|FBAV|FB_IAB|FBIOS|Messenger|TikTok|musical_ly|BytedanceWebview|Line\/|Twitter|Snapchat|Pinterest|LinkedInApp|WhatsApp|Telegram|KAKAOTALK|NAVER|Weibo|MicroMessenger/i.test(ua);
 }
 
 /* De dónde llega la visita.
@@ -3348,6 +3366,10 @@ function origenVisita(){
     return conocidos[limpio] || limpio;
   }catch(e){ return 'directo'; }
 }
+
+/* Referencias vivas a los píxeles en vuelo, para que el navegador
+   no los descarte antes de enviarlos. */
+const PIXELES_PENDIENTES = [];
 
 function enviarEvento(evento, extra){
   if(!ANALYTICS_URL) return;
@@ -3407,7 +3429,19 @@ function enviarEvento(evento, extra){
           const v = cuerpo[k];
           if(v !== '' && v != null) p.push(k + '=' + encodeURIComponent(String(v).slice(0, 60)));
         });
+        /* La imagen se guarda en una lista global: si fuera una variable
+           local, el recolector de basura podría destruirla en cuanto la
+           función termina, ANTES de que la petición llegue a salir. Ese
+           era el motivo de que las visitas desde Instagram no llegaran.
+           Se descarta sola al cargar o al fallar. */
         const img = new Image();
+        PIXELES_PENDIENTES.push(img);
+        const quitar = function(){
+          const i = PIXELES_PENDIENTES.indexOf(img);
+          if(i !== -1) PIXELES_PENDIENTES.splice(i, 1);
+        };
+        img.onload = quitar;
+        img.onerror = quitar;   // responde texto, no imagen: es normal
         img.src = ANALYTICS_URL + '?guardar=1&' + p.join('&') + '&_=' + Date.now();
       }catch(e){}
     }
@@ -3570,13 +3604,16 @@ function renderResultsModel0(R, el, opts){
          aparece una pestaña en blanco. La descarga se dispara en el
          mismo toque, desde el evento click. */
       const u = urlTiendaDe(R);
+      const aviso = '<div class="aviso-comision">' + t('r_avisoComision') + '</div>';
       if(u){
-        return '<a class="primary" id="downloadTopBtn" href="' + u + '" target="_blank" rel="noopener" ' +
-               'style="margin-top:14px;display:block;text-align:center;text-decoration:none;">' +
-               t('r_descargarCompra') + '</a>';
+        return '<div class="caja-comprar">' +
+               '<a class="primary" id="downloadTopBtn" href="' + u + '" target="_blank" rel="noopener" ' +
+               'style="display:block;text-align:center;text-decoration:none;">' +
+               t('r_descargarCompra') + '</a>' + aviso + '</div>';
       }
-      return '<button type="button" class="primary" id="downloadTopBtn" style="margin-top:14px;">' +
-             t('r_descargarCompra') + '</button>';
+      return '<div class="caja-comprar">' +
+             '<button type="button" class="primary" id="downloadTopBtn">' +
+             t('r_descargarCompra') + '</button>' + aviso + '</div>';
     })()}
     <table class="buy">
       <tr><th>${t('r_alimento')}</th><th>${t('r_consumo')}</th><th>${t('r_comprar')}</th><th class="num">${t('r_subtotal')}</th></tr>
@@ -3844,13 +3881,16 @@ function renderResultsModel1(R, el, opts){
     <div class="sub">${countryLabel} (${R.priceSet.symbol}) — ${R.priceSet._fuente || badgeLabel}</div>
     ${(function(){
       const u = urlTiendaDe(R);
+      const aviso = '<div class="aviso-comision">' + t('r_avisoComision') + '</div>';
       if(u){
-        return '<a class="primary" id="downloadTopBtnM1" href="' + u + '" target="_blank" rel="noopener" ' +
-               'style="margin-top:14px;display:block;text-align:center;text-decoration:none;">' +
-               t('r_descargarCompra') + '</a>';
+        return '<div class="caja-comprar">' +
+               '<a class="primary" id="downloadTopBtnM1" href="' + u + '" target="_blank" rel="noopener" ' +
+               'style="display:block;text-align:center;text-decoration:none;">' +
+               t('r_descargarCompra') + '</a>' + aviso + '</div>';
       }
-      return '<button type="button" class="primary" id="downloadTopBtnM1" style="margin-top:14px;">' +
-             t('r_descargarCompra') + '</button>';
+      return '<div class="caja-comprar">' +
+             '<button type="button" class="primary" id="downloadTopBtnM1">' +
+             t('r_descargarCompra') + '</button>' + aviso + '</div>';
     })()}
     <table class="buy">
       <tr><th>${t('r_alimento')}</th><th>${t('r_consumo')}</th><th>${t('r_comprar')}</th><th class="num">${t('r_subtotal')}</th></tr>
