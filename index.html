@@ -3298,13 +3298,28 @@ function enviarEvento(evento, extra){
       visitaNum: VISITA_NUM,
       segundos: Math.round((Date.now() - INICIO_APP) / 1000),
     }, extra || {});
-    // keepalive permite que el evento salga aunque se cierre la página
+
+    const texto = JSON.stringify(cuerpo);
+
+    /* sendBeacon en lugar de fetch: la URL /exec de Apps Script redirige
+       internamente a script.googleusercontent.com, y fetch con no-cors
+       descarta el cuerpo del POST al seguir esa redirección — el script
+       recibía la petición vacía y no guardaba nada.
+       sendBeacon sobrevive a la redirección y además sigue enviando
+       aunque la persona cierre la página. */
+    if(navigator.sendBeacon){
+      const blob = new Blob([texto], {type: 'text/plain;charset=UTF-8'});
+      if(navigator.sendBeacon(ANALYTICS_URL, blob)) return;
+    }
+
+    // Respaldo para navegadores sin sendBeacon
     fetch(ANALYTICS_URL, {
       method: 'POST',
       mode: 'no-cors',
+      redirect: 'follow',
       keepalive: true,
       headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify(cuerpo),
+      body: texto,
     }).catch(function(){});
   }catch(e){}
 }
@@ -3784,9 +3799,33 @@ function renderResultsModel1(R, el, opts){
         recomendados y el precio total debajo
    Ya no hay ventana flotante: ese contenido vive ahora al final.
    ============================================================ */
+let VENTANA_TIENDA = null;
+
 async function descargarYComprar(R, target, btn){
   target = target || {type:'plan'};
   trackEvent('download_clicked', {type: target.type});
+
+  /* La tienda se abre AQUÍ, en el primer instante tras el toque.
+     Los navegadores solo permiten abrir una ventana por interacción del
+     usuario, y ese permiso se pierde en cuanto pasa algo asíncrono como
+     generar la imagen. Abriéndola primero, la pestaña sale con la página
+     cargada en vez de quedarse en blanco; la descarga se hace después
+     sin necesitar ventana propia. */
+  VENTANA_TIENDA = null;
+  if(showCartButton(R.country)){
+    const sp = supermercadoDe(R.country);
+    let destino = '';
+    if(sp){
+      destino = sp.url;
+      if(destino.indexOf('{q}') !== -1){
+        const pr = R.purchase[0];
+        destino = destino.replace('{q}', encodeURIComponent(pr ? (CART_SEARCH[pr.id] || pr.name) : ''));
+      }
+    } else if(CART_MODO_PRUEBA && !CART_API_ENDPOINT){
+      destino = CART_URL_PRUEBA;
+    }
+    if(destino) VENTANA_TIENDA = window.open(destino, '_blank', 'noopener');
+  }
 
   // --- 1. Descarga ---
   const safeName = R.nombre.replace(/\s+/g,'_');
@@ -3811,23 +3850,20 @@ async function descargarYComprar(R, target, btn){
     // Si el país tiene su propio supermercado configurado, va primero
     const superPais = supermercadoDe(R.country);
     if(superPais){
-      // Igual que arriba: enlace visible en vez de abrir a la fuerza
       enviarEvento('supermercado', Object.assign(datosPerfil(R), {detalle: superPais.nombre}));
+      if(!VENTANA_TIENDA) mostrarEnlaceSupermercado(R, superPais);
       mostrarPantallaFinal(R);
-      mostrarEnlaceSupermercado(R, superPais);
       return;
     }
-    /* MODO PRUEBA: abre Instacart.
-       Los navegadores solo permiten UNA ventana nueva por cada toque del
-       usuario. Como la descarga ya pudo abrir una, aquí no se abre otra
-       de inmediato: se muestra un enlace en la pantalla final para que
-       la persona lo pulse cuando quiera. Antes se abría a la fuerza y
-       salía una página en blanco. */
     if(CART_MODO_PRUEBA && !CART_API_ENDPOINT){
       trackEvent('cart_link_opened', {modo:'prueba', items: R.purchase.length});
       enviarEvento('instacart', datosPerfil(R));
+      /* La tienda se abrió al principio de la función, aprovechando el
+         toque del usuario: los navegadores solo conceden una ventana por
+         interacción, y si se pide después de la descarga la bloquean o
+         sale en blanco. Aquí solo se deja el enlace por si acaso. */
+      if(!VENTANA_TIENDA) mostrarEnlaceRespaldo(CART_URL_PRUEBA);
       mostrarPantallaFinal(R);
-      mostrarEnlaceRespaldo(CART_URL_PRUEBA);
       return;
     }
     if(btn){ btn.disabled = true; btn.textContent = t('r_generandoLista'); }
@@ -4109,7 +4145,10 @@ function downloadCanvasAsPNG(canvas, filename){
      Ahora se abre directamente la URL de la imagen, que el navegador
      ya sabe mostrar, y se puede guardar con un toque largo. */
   function mostrarParaGuardar(url){
-    const w = window.open(url, '_blank');
+    /* No se abre ventana: el permiso del navegador ya se usó para la
+       tienda. Se deja un enlace visible en la propia página, que además
+       evita que se abra nada en blanco. */
+    const w = null;
     if(w) return true;
     // Si el navegador bloqueó la ventana, se deja un enlace visible
     let aviso = document.getElementById('avisoDescarga');
