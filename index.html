@@ -3312,15 +3312,37 @@ function enviarEvento(evento, extra){
       if(navigator.sendBeacon(ANALYTICS_URL, blob)) return;
     }
 
-    // Respaldo para navegadores sin sendBeacon
-    fetch(ANALYTICS_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      redirect: 'follow',
-      keepalive: true,
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: texto,
-    }).catch(function(){});
+    // Respaldo 1: fetch
+    let enviadoPorFetch = false;
+    try{
+      fetch(ANALYTICS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        redirect: 'follow',
+        keepalive: true,
+        headers: {'Content-Type': 'text/plain;charset=utf-8'},
+        body: texto,
+      }).catch(function(){});
+      enviadoPorFetch = true;
+    }catch(e){}
+
+    /* Respaldo 2: una imagen invisible.
+       El navegador de Instagram y similares bloquean sendBeacon y a veces
+       también fetch, y por eso las visitas desde ahí no se contaban.
+       Cargar una imagen es la única petición que ningún navegador impide,
+       así que sirve como último recurso. Los datos van en la dirección,
+       por eso se recortan: hay un límite de longitud. */
+    if(!enviadoPorFetch || esNavegadorDeApp()){
+      try{
+        const p = [];
+        Object.keys(cuerpo).forEach(function(k){
+          const v = cuerpo[k];
+          if(v !== '' && v != null) p.push(k + '=' + encodeURIComponent(String(v).slice(0, 60)));
+        });
+        const img = new Image();
+        img.src = ANALYTICS_URL + '?guardar=1&' + p.join('&') + '&_=' + Date.now();
+      }catch(e){}
+    }
   }catch(e){}
 }
 
@@ -3799,7 +3821,19 @@ function renderResultsModel1(R, el, opts){
         recomendados y el precio total debajo
    Ya no hay ventana flotante: ese contenido vive ahora al final.
    ============================================================ */
+/* NAVEGADORES DENTRO DE APPS (Instagram, Facebook, TikTok...)
+   Estos navegadores bloquean las ventanas emergentes de forma agresiva:
+   window.open devuelve un objeto pero abre una pestaña vacía que nunca
+   navega. Por eso salía la página en blanco al entrar desde Instagram.
+   Detectándolos, en su lugar se muestra un botón que la persona toca,
+   que es lo único fiable ahí. */
+function esNavegadorDeApp(){
+  const ua = navigator.userAgent || '';
+  return /Instagram|FBAN|FBAV|FB_IAB|Line\/|Twitter|TikTok|Snapchat|Pinterest|LinkedInApp|WhatsApp/i.test(ua);
+}
+
 let VENTANA_TIENDA = null;
+let DESTINO_TIENDA = '';
 
 async function descargarYComprar(R, target, btn){
   target = target || {type:'plan'};
@@ -3824,7 +3858,16 @@ async function descargarYComprar(R, target, btn){
     } else if(CART_MODO_PRUEBA && !CART_API_ENDPOINT){
       destino = CART_URL_PRUEBA;
     }
-    if(destino) VENTANA_TIENDA = window.open(destino, '_blank', 'noopener');
+    if(destino){
+      if(esNavegadorDeApp()){
+        // Aquí window.open solo produciría una pestaña en blanco
+        VENTANA_TIENDA = null;
+        DESTINO_TIENDA = destino;
+      } else {
+        VENTANA_TIENDA = window.open(destino, '_blank', 'noopener');
+        DESTINO_TIENDA = destino;
+      }
+    }
   }
 
   // --- 1. Descarga ---
@@ -3851,7 +3894,7 @@ async function descargarYComprar(R, target, btn){
     const superPais = supermercadoDe(R.country);
     if(superPais){
       enviarEvento('supermercado', Object.assign(datosPerfil(R), {detalle: superPais.nombre}));
-      if(!VENTANA_TIENDA) mostrarEnlaceSupermercado(R, superPais);
+      if(!VENTANA_TIENDA) mostrarBotonTienda(DESTINO_TIENDA, superPais.nombre);
       mostrarPantallaFinal(R);
       return;
     }
@@ -3862,7 +3905,7 @@ async function descargarYComprar(R, target, btn){
          toque del usuario: los navegadores solo conceden una ventana por
          interacción, y si se pide después de la descarga la bloquean o
          sale en blanco. Aquí solo se deja el enlace por si acaso. */
-      if(!VENTANA_TIENDA) mostrarEnlaceRespaldo(CART_URL_PRUEBA);
+      if(!VENTANA_TIENDA) mostrarBotonTienda(DESTINO_TIENDA || CART_URL_PRUEBA, 'Instacart');
       mostrarPantallaFinal(R);
       return;
     }
@@ -3920,6 +3963,27 @@ function mostrarEnlaceSupermercado(R, s){
     'font-weight:800;font-size:15px;padding:13px 26px;border-radius:24px;">🛒 ' + s.nombre + '</a>';
   const el = document.getElementById('results');
   if(el) el.prepend(caja);
+}
+
+/* Botón para ir a la tienda. Se usa cuando no se pudo abrir una pestaña
+   (navegador de Instagram y similares). Un enlace real que la persona
+   toca sí navega correctamente en esos navegadores. */
+function mostrarBotonTienda(url, nombre){
+  if(!url) return;
+  let caja = document.getElementById('botonTienda');
+  if(caja) caja.remove();
+  caja = document.createElement('div');
+  caja.id = 'botonTienda';
+  caja.className = 'card';
+  caja.style.cssText = 'text-align:center;border-color:var(--accent);margin-bottom:12px;';
+  caja.innerHTML =
+    '<div class="hint" style="margin:0 0 10px;">' + t('r_comprarEn') + '</div>' +
+    '<a href="' + url + '" target="_blank" rel="noopener" ' +
+    'style="display:inline-block;background:var(--accent);color:#fff;text-decoration:none;' +
+    'font-weight:800;font-size:16px;padding:15px 30px;border-radius:26px;">🛒 ' +
+    (nombre || 'Instacart') + '</a>';
+  const el = document.getElementById('results');
+  if(el){ el.prepend(caja); caja.scrollIntoView({behavior:'smooth', block:'center'}); }
 }
 
 function mostrarEnlaceRespaldo(url){
