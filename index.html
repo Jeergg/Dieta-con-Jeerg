@@ -2269,6 +2269,25 @@ const CART_SEARCH = {
   ajo:"garlic", canela:"ground cinnamon", sal:"salt", cafe:"ground coffee", limon:"lemons",
 };
 
+/* Dirección de la tienda que corresponde al país, ya con la búsqueda
+   insertada si el enlace la admite. Se calcula al dibujar el resultado
+   para poder ponerla en el href del botón. */
+function urlTiendaDe(R){
+  const sp = supermercadoDe(R.country);
+  if(sp){
+    let u = sp.url;
+    if(u.indexOf('{q}') !== -1){
+      const pr = R.purchase[0];
+      u = u.replace('{q}', encodeURIComponent(pr ? (CART_SEARCH[pr.id] || pr.name) : ''));
+    }
+    return u;
+  }
+  if(CART_MODO_PRUEBA && !CART_API_ENDPOINT && CART_COUNTRIES.includes(R.country)){
+    return CART_URL_PRUEBA;
+  }
+  return '';
+}
+
 function showCartButton(countryCode){
   /* El botón aparece si el país tiene supermercado configurado, o si
      sigue activo el modo prueba de Instacart. */
@@ -3277,12 +3296,56 @@ function nivelActividad(f){
 }
 /* De dónde llega el visitante (Instagram, TikTok...), sin la
    dirección completa para no guardar rastros de navegación. */
+/* NAVEGADORES DENTRO DE APPS (Instagram, Facebook, TikTok...)
+   Estos navegadores bloquean las ventanas emergentes de forma agresiva:
+   window.open devuelve un objeto pero abre una pestaña vacía que nunca
+   navega. Por eso salía la página en blanco al entrar desde Instagram.
+   Detectándolos, en su lugar se muestra un botón que la persona toca,
+   que es lo único fiable ahí. */
+function esNavegadorDeApp(){
+  const ua = navigator.userAgent || '';
+  return /Instagram|FBAN|FBAV|FB_IAB|Line\/|Twitter|TikTok|Snapchat|Pinterest|LinkedInApp|WhatsApp/i.test(ua);
+}
+
+/* De dónde llega la visita.
+   Los navegadores dentro de apps (Instagram, TikTok...) NO envían
+   referente, así que todas esas visitas se registraban como "directo"
+   y no se sabía de qué red venían. Se detecta primero la app por su
+   firma de navegador, y solo si no es ninguna se mira el referente. */
 function origenVisita(){
   try{
+    const ua = navigator.userAgent || '';
+    const apps = [
+      [/Instagram/i,            'Instagram'],
+      // Messenger va antes que Facebook: su firma incluye FBAN y si no
+      // se comprueba primero, todas sus visitas se contarian como Facebook
+      [/Messenger/i,            'Messenger'],
+      [/FBAN|FBAV|FB_IAB/i,     'Facebook'],
+      [/TikTok|BytedanceWebview|musical_ly/i, 'TikTok'],
+      [/WhatsApp/i,             'WhatsApp'],
+      [/Twitter/i,              'Twitter'],
+      [/Snapchat/i,             'Snapchat'],
+      [/Pinterest/i,            'Pinterest'],
+      [/LinkedInApp/i,          'LinkedIn'],
+      [/Line\//i,               'Line'],
+      [/Telegram/i,             'Telegram'],
+      [/YouTube/i,              'YouTube'],
+    ];
+    for(let i = 0; i < apps.length; i++){
+      if(apps[i][0].test(ua)) return apps[i][1];
+    }
+    // Navegador normal: se mira de qué web viene
     const r = document.referrer || '';
     if(!r) return 'directo';
     const host = new URL(r).hostname.replace('www.', '');
-    return host.split('.')[0];
+    const limpio = host.split('.')[0];
+    const conocidos = {
+      instagram:'Instagram', facebook:'Facebook', tiktok:'TikTok',
+      twitter:'Twitter', x:'Twitter', youtube:'YouTube', google:'Google',
+      linkedin:'LinkedIn', pinterest:'Pinterest', reddit:'Reddit',
+      t:'Twitter', l:'Facebook', lm:'Facebook',
+    };
+    return conocidos[limpio] || limpio;
   }catch(e){ return 'directo'; }
 }
 
@@ -3307,7 +3370,12 @@ function enviarEvento(evento, extra){
        recibía la petición vacía y no guardaba nada.
        sendBeacon sobrevive a la redirección y además sigue enviando
        aunque la persona cierre la página. */
-    if(navigator.sendBeacon){
+    /* En los navegadores dentro de apps se salta sendBeacon: devuelve
+       true (el navegador acepta encolar la petición) pero luego la
+       descarta en silencio, y como aquí hacíamos "return" nunca se
+       llegaba al respaldo por imagen. Por eso no se contaban esas
+       visitas. Ahí se usa directamente la imagen, que sí funciona. */
+    if(!esNavegadorDeApp() && navigator.sendBeacon){
       const blob = new Blob([texto], {type: 'text/plain;charset=UTF-8'});
       if(navigator.sendBeacon(ANALYTICS_URL, blob)) return;
     }
@@ -3332,7 +3400,7 @@ function enviarEvento(evento, extra){
        Cargar una imagen es la única petición que ningún navegador impide,
        así que sirve como último recurso. Los datos van en la dirección,
        por eso se recortan: hay un límite de longitud. */
-    if(!enviadoPorFetch || esNavegadorDeApp()){
+    if(esNavegadorDeApp() || !enviadoPorFetch){
       try{
         const p = [];
         Object.keys(cuerpo).forEach(function(k){
@@ -3362,7 +3430,8 @@ function datosPerfil(R){
 }
 
 // Visita inicial
-enviarEvento('visita', { referente: origenVisita() });
+enviarEvento('visita', { referente: origenVisita(),
+  detalle: esNavegadorDeApp() ? 'navegador_de_app' : 'navegador_normal' });
 
 // Tiempo total al salir
 window.addEventListener('pagehide', function(){
@@ -3494,7 +3563,21 @@ function renderResultsModel0(R, el, opts){
     <div class="amt">${priceStatus !== 'verificado' ? '≈ ' : ''}${R.priceSet.symbol} ${fmtMoney(R.totalCost)}</div>
     <div class="sub">${t('r_promediodiario')}: ${R.priceSet.symbol} ${fmtMoney(R.totalCost/30)}</div>
     <div class="note">${countryLabel} · ${R.priceSet.symbol} · <b>${badgeLabel}</b>${priceStatus !== 'verificado' ? `<br>${t('r_notaEstimado')}` : ''}</div>
-    <button type="button" class="primary" id="downloadTopBtn" style="margin-top:14px;">${t('r_descargarCompra')}</button>
+    ${(function(){
+      /* Si hay tienda para este país, el botón es un enlace <a> real.
+         Así el navegador lo trata como una navegación iniciada por la
+         persona: se abre la tienda incluso dentro de Instagram, y nunca
+         aparece una pestaña en blanco. La descarga se dispara en el
+         mismo toque, desde el evento click. */
+      const u = urlTiendaDe(R);
+      if(u){
+        return '<a class="primary" id="downloadTopBtn" href="' + u + '" target="_blank" rel="noopener" ' +
+               'style="margin-top:14px;display:block;text-align:center;text-decoration:none;">' +
+               t('r_descargarCompra') + '</a>';
+      }
+      return '<button type="button" class="primary" id="downloadTopBtn" style="margin-top:14px;">' +
+             t('r_descargarCompra') + '</button>';
+    })()}
     <table class="buy">
       <tr><th>${t('r_alimento')}</th><th>${t('r_consumo')}</th><th>${t('r_comprar')}</th><th class="num">${t('r_subtotal')}</th></tr>
       ${(()=>{ let out='', lastG=null;
@@ -3636,7 +3719,10 @@ function renderResultsModel0(R, el, opts){
   const oldPurchaseBtn = document.getElementById('downloadPurchaseBtn');
   if(oldPurchaseBtn) oldPurchaseBtn.addEventListener('click', ()=> descargarYComprar(R, {type:'plan'}, oldPurchaseBtn));
   const topBtn = document.getElementById('downloadTopBtn');
-  if(topBtn) topBtn.addEventListener('click', ()=> descargarYComprar(R, {type:'plan'}, topBtn));
+  /* No se usa preventDefault: el enlace debe navegar a la tienda al
+     mismo tiempo que se dispara la descarga. Si se bloqueara, en
+     Instagram no se abriría nada. */
+  if(topBtn) topBtn.addEventListener('click', function(){ descargarYComprar(R, {type:'plan'}, topBtn); });
   const weeklyBtn = document.getElementById('downloadWeeklyBtn');
   if(weeklyBtn) weeklyBtn.addEventListener('click', ()=> descargarYComprar(R, {type:'semanalPromedio'}, weeklyBtn));
   document.querySelectorAll('#dlTypeSeg .seg-btn').forEach(btn=>{
@@ -3756,7 +3842,16 @@ function renderResultsModel1(R, el, opts){
     </div>
     <div class="amt">${priceStatus !== 'verificado' ? '≈ ' : ''}${R.priceSet.symbol} ${fmtMoney(R.totalCost)}</div>
     <div class="sub">${countryLabel} (${R.priceSet.symbol}) — ${R.priceSet._fuente || badgeLabel}</div>
-    <button type="button" class="primary" id="downloadTopBtnM1" style="margin-top:14px;">${t('r_descargarCompra')}</button>
+    ${(function(){
+      const u = urlTiendaDe(R);
+      if(u){
+        return '<a class="primary" id="downloadTopBtnM1" href="' + u + '" target="_blank" rel="noopener" ' +
+               'style="margin-top:14px;display:block;text-align:center;text-decoration:none;">' +
+               t('r_descargarCompra') + '</a>';
+      }
+      return '<button type="button" class="primary" id="downloadTopBtnM1" style="margin-top:14px;">' +
+             t('r_descargarCompra') + '</button>';
+    })()}
     <table class="buy">
       <tr><th>${t('r_alimento')}</th><th>${t('r_consumo')}</th><th>${t('r_comprar')}</th><th class="num">${t('r_subtotal')}</th></tr>
       ${(()=>{ let out='', lastG=null;
@@ -3821,17 +3916,6 @@ function renderResultsModel1(R, el, opts){
         recomendados y el precio total debajo
    Ya no hay ventana flotante: ese contenido vive ahora al final.
    ============================================================ */
-/* NAVEGADORES DENTRO DE APPS (Instagram, Facebook, TikTok...)
-   Estos navegadores bloquean las ventanas emergentes de forma agresiva:
-   window.open devuelve un objeto pero abre una pestaña vacía que nunca
-   navega. Por eso salía la página en blanco al entrar desde Instagram.
-   Detectándolos, en su lugar se muestra un botón que la persona toca,
-   que es lo único fiable ahí. */
-function esNavegadorDeApp(){
-  const ua = navigator.userAgent || '';
-  return /Instagram|FBAN|FBAV|FB_IAB|Line\/|Twitter|TikTok|Snapchat|Pinterest|LinkedInApp|WhatsApp/i.test(ua);
-}
-
 let VENTANA_TIENDA = null;
 let DESTINO_TIENDA = '';
 
@@ -3858,16 +3942,12 @@ async function descargarYComprar(R, target, btn){
     } else if(CART_MODO_PRUEBA && !CART_API_ENDPOINT){
       destino = CART_URL_PRUEBA;
     }
-    if(destino){
-      if(esNavegadorDeApp()){
-        // Aquí window.open solo produciría una pestaña en blanco
-        VENTANA_TIENDA = null;
-        DESTINO_TIENDA = destino;
-      } else {
-        VENTANA_TIENDA = window.open(destino, '_blank', 'noopener');
-        DESTINO_TIENDA = destino;
-      }
-    }
+    /* Ya NO se abre ninguna ventana desde aquí. El propio botón es un
+       enlace <a href> a la tienda, así que el navegador lo trata como
+       una navegación normal del usuario: funciona incluso dentro de
+       Instagram, y nunca aparece una pestaña en blanco. */
+    DESTINO_TIENDA = destino;
+    VENTANA_TIENDA = true;   // la navegación la hace el propio enlace
   }
 
   // --- 1. Descarga ---
@@ -3894,7 +3974,6 @@ async function descargarYComprar(R, target, btn){
     const superPais = supermercadoDe(R.country);
     if(superPais){
       enviarEvento('supermercado', Object.assign(datosPerfil(R), {detalle: superPais.nombre}));
-      if(!VENTANA_TIENDA) mostrarBotonTienda(DESTINO_TIENDA, superPais.nombre);
       mostrarPantallaFinal(R);
       return;
     }
@@ -3905,7 +3984,6 @@ async function descargarYComprar(R, target, btn){
          toque del usuario: los navegadores solo conceden una ventana por
          interacción, y si se pide después de la descarga la bloquean o
          sale en blanco. Aquí solo se deja el enlace por si acaso. */
-      if(!VENTANA_TIENDA) mostrarBotonTienda(DESTINO_TIENDA || CART_URL_PRUEBA, 'Instacart');
       mostrarPantallaFinal(R);
       return;
     }
