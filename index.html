@@ -42,10 +42,18 @@
      oscura. En modo día la cabecera de la app no es blanca sino oscura,
      así que la versión de letras negras se perdía; con la placa el logo
      se lee igual de bien en los dos temas y la marca se ve consistente. */
-  /* Recuadro verde que destaca el botón de descargar y comprar */
+  /* Recuadro que destaca el botón de descargar y comprar */
   .caja-comprar{ background:rgba(143,191,111,.07); border:1.5px solid var(--accent);
     border-radius:16px; padding:16px 14px 12px; margin-top:16px; }
-  .caja-comprar .primary{ margin-top:0 !important; }
+  /* Botón verde sólido: tiene que verse a la primera que es pulsable */
+  .caja-comprar .primary, .btn-comprar{
+    margin-top:0 !important; background:var(--accent) !important; color:#0e1512 !important;
+    border:none !important; font-weight:800 !important; font-size:16px !important;
+    padding:16px 20px !important; border-radius:14px !important;
+    display:block !important; width:100% !important; text-align:center !important;
+    text-decoration:none !important; box-shadow:0 4px 14px rgba(143,191,111,.28) !important;
+    cursor:pointer; }
+  .caja-comprar .primary:active, .btn-comprar:active{ transform:translateY(1px); }
   /* Aviso de comisión: deliberadamente discreto, casi transparente */
   .aviso-comision{ font-size:10.5px; line-height:1.4; color:var(--muted);
     opacity:.45; text-align:center; margin-top:9px; }
@@ -2286,6 +2294,23 @@ const CART_SEARCH = {
 /* Dirección de la tienda que corresponde al país, ya con la búsqueda
    insertada si el enlace la admite. Se calcula al dibujar el resultado
    para poder ponerla en el href del botón. */
+/* Crea un botón de descarga. Si el país tiene tienda, devuelve un
+   enlace <a href> real en vez de un <button>: el navegador lo trata
+   como navegación iniciada por la persona, así que se abre incluso
+   dentro de Instagram y nunca aparece una pestaña en blanco.
+   Todos los botones de descarga usan esta función, para que se
+   comporten igual y lleven siempre el aviso de comisión. */
+function botonDescarga(R, id, texto){
+  const u = urlTiendaDe(R);
+  const aviso = '<div class="aviso-comision">' + t('r_avisoComision') + '</div>';
+  const etiqueta = texto || t('r_descargarCompra');
+  const cuerpo = u
+    ? '<a class="btn-comprar" id="' + id + '" href="' + u + '" target="_blank" rel="noopener">' +
+      etiqueta + '</a>'
+    : '<button type="button" class="btn-comprar" id="' + id + '">' + etiqueta + '</button>';
+  return '<div class="caja-comprar">' + cuerpo + aviso + '</div>';
+}
+
 function urlTiendaDe(R){
   const sp = supermercadoDe(R.country);
   if(sp){
@@ -3368,14 +3393,67 @@ function origenVisita(){
 }
 
 /* Referencias vivas a los píxeles en vuelo, para que el navegador
-   no los descarte antes de enviarlos. */
+   no los descarte antes de iniciar la petición. */
 const PIXELES_PENDIENTES = [];
+
+/* Cada evento recibe un ID único. El mismo ID se usa en todos los
+   transportes de respaldo; el servidor lo usa para ignorar duplicados. */
+function crearEventoId(){
+  try{
+    if(window.crypto && typeof window.crypto.randomUUID === 'function'){
+      return window.crypto.randomUUID();
+    }
+  }catch(e){}
+  return (SESION_ID || 'anon') + '_' + Date.now().toString(36) + '_' +
+         Math.random().toString(36).slice(2, 10);
+}
+
+function paramsAnalitica(cuerpo, transporte){
+  const p = ['guardar=1', 'transporte=' + encodeURIComponent(transporte || 'get')];
+  Object.keys(cuerpo).forEach(function(k){
+    const v = cuerpo[k];
+    if(v !== '' && v != null){
+      /* Los campos de analítica son cortos. Se limita cada valor para evitar
+         URLs gigantes dentro de navegadores integrados. */
+      p.push(encodeURIComponent(k) + '=' + encodeURIComponent(String(v).slice(0, 160)));
+    }
+  });
+  p.push('_=' + Date.now() + Math.random().toString(36).slice(2,6));
+  return p.join('&');
+}
+
+function enviarPixel(cuerpo, transporte){
+  try{
+    const img = new Image();
+    PIXELES_PENDIENTES.push(img);
+    const quitar = function(){
+      const i = PIXELES_PENDIENTES.indexOf(img);
+      if(i !== -1) PIXELES_PENDIENTES.splice(i, 1);
+    };
+    img.onload = quitar;
+    img.onerror = quitar; // Apps Script responde texto; el GET ya se realizó.
+    img.src = ANALYTICS_URL + '?' + paramsAnalitica(cuerpo, transporte || 'pixel');
+    /* Evita mantener referencias para siempre si el navegador no dispara
+       load/error al suspender la página. */
+    setTimeout(quitar, 15000);
+  }catch(e){}
+}
+
+function enviarGetRespaldo(cuerpo, transporte){
+  try{
+    fetch(ANALYTICS_URL + '?' + paramsAnalitica(cuerpo, transporte || 'fetch_get'), {
+      method: 'GET', mode: 'no-cors', redirect: 'follow', keepalive: true,
+      cache: 'no-store', credentials: 'omit'
+    }).catch(function(){});
+  }catch(e){}
+}
 
 function enviarEvento(evento, extra){
   if(!ANALYTICS_URL) return;
   try{
     const cuerpo = Object.assign({
       evento: evento,
+      eventId: crearEventoId(),
       influencer: (typeof ACTIVE_INFLUENCER !== 'undefined' && ACTIVE_INFLUENCER)
                     ? ACTIVE_INFLUENCER.influencerId : 'directo',
       sesion: SESION_ID,
@@ -3385,68 +3463,56 @@ function enviarEvento(evento, extra){
     }, extra || {});
 
     const texto = JSON.stringify(cuerpo);
+    const dentroApp = esNavegadorDeApp();
 
-    /* sendBeacon en lugar de fetch: la URL /exec de Apps Script redirige
-       internamente a script.googleusercontent.com, y fetch con no-cors
-       descarta el cuerpo del POST al seguir esa redirección — el script
-       recibía la petición vacía y no guardaba nada.
-       sendBeacon sobrevive a la redirección y además sigue enviando
-       aunque la persona cierre la página. */
-    /* En los navegadores dentro de apps se salta sendBeacon: devuelve
-       true (el navegador acepta encolar la petición) pero luego la
-       descarta en silencio, y como aquí hacíamos "return" nunca se
-       llegaba al respaldo por imagen. Por eso no se contaban esas
-       visitas. Ahí se usa directamente la imagen, que sí funciona. */
-    if(!esNavegadorDeApp() && navigator.sendBeacon){
-      const blob = new Blob([texto], {type: 'text/plain;charset=UTF-8'});
-      if(navigator.sendBeacon(ANALYTICS_URL, blob)) return;
+    /* Estrategia resistente a navegadores integrados:
+       - Instagram/Facebook/TikTok/etc.: GET por imagen + GET no-cors.
+       - Safari/Chrome/etc.: sendBeacon y, además, un píxel de respaldo.
+       Los dos intentos llevan el MISMO eventId; Code.gs deduplica bajo lock,
+       así que ganar fiabilidad no duplica las métricas. */
+    if(dentroApp){
+      enviarPixel(cuerpo, 'pixel_app');
+      enviarGetRespaldo(cuerpo, 'fetch_get_app');
+      return;
     }
 
-    // Respaldo 1: fetch
-    let enviadoPorFetch = false;
+    let beaconAceptado = false;
     try{
-      fetch(ANALYTICS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        redirect: 'follow',
-        keepalive: true,
-        headers: {'Content-Type': 'text/plain;charset=utf-8'},
-        body: texto,
-      }).catch(function(){});
-      enviadoPorFetch = true;
+      if(navigator.sendBeacon){
+        const blob = new Blob([texto], {type: 'text/plain;charset=UTF-8'});
+        beaconAceptado = navigator.sendBeacon(ANALYTICS_URL, blob);
+      }
     }catch(e){}
 
-    /* Respaldo 2: una imagen invisible.
-       El navegador de Instagram y similares bloquean sendBeacon y a veces
-       también fetch, y por eso las visitas desde ahí no se contaban.
-       Cargar una imagen es la única petición que ningún navegador impide,
-       así que sirve como último recurso. Los datos van en la dirección,
-       por eso se recortan: hay un límite de longitud. */
-    if(esNavegadorDeApp() || !enviadoPorFetch){
+    /* El píxel se envía incluso si sendBeacon dice "true": true solo significa
+       que el navegador aceptó encolar el envío, no que Apps Script lo guardó.
+       La deduplicación del servidor evita contar dos veces si llegan ambos. */
+    enviarPixel(cuerpo, beaconAceptado ? 'pixel_backup_beacon' : 'pixel_backup');
+
+    if(!beaconAceptado){
       try{
-        const p = [];
-        Object.keys(cuerpo).forEach(function(k){
-          const v = cuerpo[k];
-          if(v !== '' && v != null) p.push(k + '=' + encodeURIComponent(String(v).slice(0, 60)));
-        });
-        /* La imagen se guarda en una lista global: si fuera una variable
-           local, el recolector de basura podría destruirla en cuanto la
-           función termina, ANTES de que la petición llegue a salir. Ese
-           era el motivo de que las visitas desde Instagram no llegaran.
-           Se descarta sola al cargar o al fallar. */
-        const img = new Image();
-        PIXELES_PENDIENTES.push(img);
-        const quitar = function(){
-          const i = PIXELES_PENDIENTES.indexOf(img);
-          if(i !== -1) PIXELES_PENDIENTES.splice(i, 1);
-        };
-        img.onload = quitar;
-        img.onerror = quitar;   // responde texto, no imagen: es normal
-        img.src = ANALYTICS_URL + '?guardar=1&' + p.join('&') + '&_=' + Date.now();
+        fetch(ANALYTICS_URL, {
+          method: 'POST', mode: 'no-cors', redirect: 'follow', keepalive: true,
+          headers: {'Content-Type':'text/plain;charset=utf-8'}, body: texto,
+          credentials: 'omit'
+        }).catch(function(){});
       }catch(e){}
     }
   }catch(e){}
 }
+
+/* Prueba opcional: abre la app con ?analytics_test=1 (o añádelo al enlace)
+   para enviar un evento de diagnóstico que no altera las visitas/dietas. */
+try{
+  if(new URLSearchParams(window.location.search).get('analytics_test') === '1'){
+    setTimeout(function(){
+      enviarEvento('prueba_tracking', {
+        referente: origenVisita(),
+        detalle: esNavegadorDeApp() ? 'navegador_de_app' : 'navegador_normal'
+      });
+    }, 600);
+  }
+}catch(e){}
 
 /* Datos del perfil, ya convertidos a rangos */
 function datosPerfil(R){
@@ -3597,24 +3663,7 @@ function renderResultsModel0(R, el, opts){
     <div class="amt">${priceStatus !== 'verificado' ? '≈ ' : ''}${R.priceSet.symbol} ${fmtMoney(R.totalCost)}</div>
     <div class="sub">${t('r_promediodiario')}: ${R.priceSet.symbol} ${fmtMoney(R.totalCost/30)}</div>
     <div class="note">${countryLabel} · ${R.priceSet.symbol} · <b>${badgeLabel}</b>${priceStatus !== 'verificado' ? `<br>${t('r_notaEstimado')}` : ''}</div>
-    ${(function(){
-      /* Si hay tienda para este país, el botón es un enlace <a> real.
-         Así el navegador lo trata como una navegación iniciada por la
-         persona: se abre la tienda incluso dentro de Instagram, y nunca
-         aparece una pestaña en blanco. La descarga se dispara en el
-         mismo toque, desde el evento click. */
-      const u = urlTiendaDe(R);
-      const aviso = '<div class="aviso-comision">' + t('r_avisoComision') + '</div>';
-      if(u){
-        return '<div class="caja-comprar">' +
-               '<a class="primary" id="downloadTopBtn" href="' + u + '" target="_blank" rel="noopener" ' +
-               'style="display:block;text-align:center;text-decoration:none;">' +
-               t('r_descargarCompra') + '</a>' + aviso + '</div>';
-      }
-      return '<div class="caja-comprar">' +
-             '<button type="button" class="primary" id="downloadTopBtn">' +
-             t('r_descargarCompra') + '</button>' + aviso + '</div>';
-    })()}
+    ${botonDescarga(R, 'downloadTopBtn')}
     <table class="buy">
       <tr><th>${t('r_alimento')}</th><th>${t('r_consumo')}</th><th>${t('r_comprar')}</th><th class="num">${t('r_subtotal')}</th></tr>
       ${(()=>{ let out='', lastG=null;
@@ -3729,7 +3778,7 @@ function renderResultsModel0(R, el, opts){
       <div class="seg-btn" data-dl="plan">${t('r_dlPlan')}</div>
     </div>
     <select id="dlPicker" style="margin-bottom:10px;"></select>
-    <button type="button" class="primary" id="dlGoBtn" style="margin-top:0;">${t('r_descargarAhora')}</button>
+    ${botonDescarga(R, 'dlGoBtn', t('r_descargarAhora'))}
     <div class="hint">${t('r_imgHint')}</div>
   </div>` : ''}
   <canvas id="summaryCanvas" width="1080" height="1350" style="display:none;"></canvas>
@@ -3879,19 +3928,7 @@ function renderResultsModel1(R, el, opts){
     </div>
     <div class="amt">${priceStatus !== 'verificado' ? '≈ ' : ''}${R.priceSet.symbol} ${fmtMoney(R.totalCost)}</div>
     <div class="sub">${countryLabel} (${R.priceSet.symbol}) — ${R.priceSet._fuente || badgeLabel}</div>
-    ${(function(){
-      const u = urlTiendaDe(R);
-      const aviso = '<div class="aviso-comision">' + t('r_avisoComision') + '</div>';
-      if(u){
-        return '<div class="caja-comprar">' +
-               '<a class="primary" id="downloadTopBtnM1" href="' + u + '" target="_blank" rel="noopener" ' +
-               'style="display:block;text-align:center;text-decoration:none;">' +
-               t('r_descargarCompra') + '</a>' + aviso + '</div>';
-      }
-      return '<div class="caja-comprar">' +
-             '<button type="button" class="primary" id="downloadTopBtnM1">' +
-             t('r_descargarCompra') + '</button>' + aviso + '</div>';
-    })()}
+    ${botonDescarga(R, 'downloadTopBtnM1')}
     <table class="buy">
       <tr><th>${t('r_alimento')}</th><th>${t('r_consumo')}</th><th>${t('r_comprar')}</th><th class="num">${t('r_subtotal')}</th></tr>
       ${(()=>{ let out='', lastG=null;
