@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>COME PRO — Administrador</title>
+<style>
+:root{
+  --bg:#0e1512;
+  --card:#161f1a;
+  --card2:#1c2a20;
+  --line:#2a372e;
+  --text:#f2f1ea;
+  --muted:#95a394;
+  --accent:#8fbf6f;
+  --danger:#ef6a6a;
+  --warning:#e6b85c;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  padding:18px 14px 70px;
+}
+.wrap{max-width:1050px;margin:0 auto}
+h1{font-size:27px;margin:0 0 4px}
+h2{font-size:19px;margin:28px 0 10px}
+h3{font-size:15px;margin:0 0 10px}
+p{color:var(--muted)}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:14px;
+}
+.subcard{
+  background:var(--card2);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  margin-top:12px;
+}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+}
+label{
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+input,select,textarea{
+  width:100%;
+  background:#101713;
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px;
+  font:inherit;
+}
+textarea{min-height:90px;resize:vertical}
+button{
+  border:0;
+  border-radius:10px;
+  padding:12px 16px;
+  font-weight:700;
+  cursor:pointer;
+  font:inherit;
+}
+button:disabled{opacity:.55;cursor:not-allowed}
+.primary{background:var(--accent);color:#0e1512}
+.secondary{background:var(--card2);color:var(--text);border:1px solid var(--line)}
+.warning{background:var(--warning);color:#111}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.status{
+  padding:10px 12px;
+  border-radius:10px;
+  background:var(--card2);
+  color:var(--muted);
+  font-size:13px;
+}
+.ok{color:var(--accent)}
+.err{color:var(--danger)}
+.hidden{display:none!important}
+.result{
+  white-space:pre-wrap;
+  word-break:break-word;
+  background:#0b100e;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12px;
+}
+.item{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  border-bottom:1px solid var(--line);
+  padding:12px 0;
+}
+.item:last-child{border-bottom:0}
+.meta{color:var(--muted);font-size:12px;margin-top:4px}
+.badge{
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:999px;
+  background:var(--card2);
+  font-size:11px;
+  margin-right:6px;
+}
+.small{font-size:12px;color:var(--muted)}
+.section-note{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+.provider-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.provider-title strong{font-size:14px}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>COME PRO — Administrador</h1>
+  <p>Gestiona influencers, referidos y enlaces afiliados por producto y país.</p>
+
+  <div class="card">
+    <h2 style="margin-top:0">1. Conexión</h2>
+    <div class="grid">
+      <div>
+        <label>API de COME PRO</label>
+        <input id="apiUrl" value="https://raspy-disk-10bc.el-0a6.workers.dev">
+      </div>
+      <div>
+        <label>PANEL_KEY</label>
+        <input id="panelKey" type="password" placeholder="Tu PANEL_KEY privada">
+      </div>
+      <div>
+        <label>URL pública de COME PRO</label>
+        <input id="appUrl" placeholder="https://jeergg.github.io/Dieta-con-Jeerg/">
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="primary" id="btnConnect">Conectar y cargar influencers</button>
+      <span class="status" id="connectionStatus">Sin conectar</span>
+    </div>
+    <p class="small">La PANEL_KEY se guarda solo en esta pestaña con sessionStorage.</p>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0" id="formTitle">2. Nuevo influencer</h2>
+      <button class="secondary hidden" id="btnCancelEdit">Cancelar edición</button>
+    </div>
+
+    <div class="grid" style="margin-top:14px">
+      <div><label>Nombre *</label><input id="name" placeholder="Carlos Fitness"></div>
+      <div><label>Slug opcional</label><input id="slug" placeholder="carlos-fitness"></div>
+      <div><label>Contacto</label><input id="contact" placeholder="Teléfono, DM, correo..."></div>
+      <div><label>Email</label><input id="email" type="email" placeholder="correo@ejemplo.com"></div>
+      <div><label>WhatsApp</label><input id="whatsapp" placeholder="+1..."></div>
+      <div><label>Instagram</label><input id="instagram" placeholder="@usuario"></div>
+      <div>
+        <label>Referido por</label>
+        <select id="referredBy"><option value="">Nadie / directo</option></select>
+      </div>
+      <div>
+        <label>Estado</label>
+        <select id="status">
+          <option value="active">Activo</option>
+          <option value="pending">Pendiente</option>
+          <option value="paused">Pausado</option>
+          <option value="blocked">Bloqueado</option>
+        </select>
+      </div>
+      <div><label>Comisión directa %</label><input id="directCommission" type="number" min="0" max="100" step="0.1" value="0"></div>
+      <div><label>Comisión por referido directo %</label><input id="referralCommission" type="number" min="0" max="100" step="0.1" value="5"></div>
+    </div>
+
+    <div style="margin-top:12px">
+      <label>Notas internas</label>
+      <textarea id="notes" placeholder="Notas privadas..."></textarea>
+    </div>
+
+    <div class="subcard">
+      <div class="provider-title">
+        <strong>Amazon — enlaces por producto</strong>
+        <span class="code">provider: amazon</span>
+      </div>
+      <div class="section-note">
+        Puedes dejar cualquier campo vacío. Si manejas solo 10 enlaces, deja vacío el producto que no uses.
+      </div>
+      <div id="amazonFields" class="grid" style="margin-top:12px"></div>
+    </div>
+
+    <div class="subcard">
+      <div class="provider-title">
+        <strong>Supermercados por país</strong>
+        <span class="code">1 link por tienda/país</span>
+      </div>
+      <div class="section-note">
+        Si todavía no te han aprobado en un supermercado, déjalo vacío. Luego podrás editar al influencer y agregar el enlace.
+      </div>
+      <div id="storeFields" class="grid" style="margin-top:12px"></div>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="primary" id="btnSaveInfluencer">Crear influencer</button>
+      <button class="secondary" id="btnClear">Limpiar</button>
+    </div>
+  </div>
+
+  <div id="createdCard" class="card hidden">
+    <h2 style="margin-top:0">Resultado</h2>
+    <div id="createdResult" class="result"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="primary" id="btnCopyLink">Copiar link COME PRO</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:0">3. Influencers registrados</h2>
+      <button class="secondary" id="btnRefresh">Actualizar</button>
+    </div>
+    <div id="influencerList" style="margin-top:10px">
+      <div class="small">Conecta el panel para cargar los influencers.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">Registro técnico</h2>
+    <div id="log" class="result">Listo.</div>
+  </div>
+</div>
+
+<script>
+const AMAZON_PRODUCTS = [
+  { label:"creatina", name:"Creatina monohidratada" },
+  { label:"proteina_polvo", name:"Proteína en polvo" },
+  { label:"proteina_sin_lactosa", name:"Proteína sin lactosa" },
+  { label:"omega_3", name:"Omega-3" },
+  { label:"vitamina_d", name:"Vitamina D" },
+  { label:"magnesio", name:"Magnesio" },
+  { label:"zinc", name:"Zinc" },
+  { label:"ashwagandha", name:"Ashwagandha" },
+  { label:"vitamina_e", name:"Vitamina E" },
+  { label:"bascula_cocina", name:"Báscula de cocina" },
+  { label:"guantes_gimnasio", name:"Guantes de gimnasio" }
+];
+
+const STORE_PROVIDERS = [
+  { code:"instacart", country:"US", name:"🇺🇸 Estados Unidos — Instacart" },
+  { code:"rewe_de", country:"DE", name:"🇩🇪 Alemania — REWE DE" },
+  { code:"picnic_nl", country:"NL", name:"🇳🇱 Países Bajos — Picnic NL" },
+  { code:"iceland_uk", country:"GB", name:"🇬🇧 Reino Unido — Iceland Foods" },
+  { code:"jow_fr", country:"FR", name:"🇫🇷 Francia — Jow FR" },
+  { code:"carrefour_es", country:"ES", name:"🇪🇸 España — Carrefour España" }
+];
+
+const $ = (id) => document.getElementById(id);
+
+let influencers = [];
+let editingInfluencerId = null;
+let lastGeneratedLink = "";
+
+function renderAffiliateFields(){
+  $("amazonFields").innerHTML = AMAZON_PRODUCTS.map(p => `
+    <div>
+      <label>${escapeHtml(p.name)}</label>
+      <input id="amazon_${p.label}" placeholder="https://...">
+    </div>
+  `).join("");
+
+  $("storeFields").innerHTML = STORE_PROVIDERS.map(p => `
+    <div>
+      <label>${escapeHtml(p.name)}</label>
+      <input id="store_${p.code}" placeholder="https://...">
+    </div>
+  `).join("");
+}
+
+function apiBase(){
+  return $("apiUrl").value.trim().replace(/\/+$/, "");
+}
+
+function panelKey(){
+  return $("panelKey").value.trim();
+}
+
+function log(message, isError=false){
+  $("log").textContent = (isError ? "ERROR: " : "") + message;
+}
+
+async function api(path, options={}){
+  const key = panelKey();
+  if(!key) throw new Error("Falta PANEL_KEY.");
+
+  const headers = new Headers(options.headers || {});
+  headers.set("X-Panel-Key", key);
+  if(options.body && !headers.has("Content-Type")){
+    headers.set("Content-Type", "application/json");
+  }
+
+  const res = await fetch(apiBase() + path, { ...options, headers });
+  const text = await res.text();
+  let data;
+  try{ data = text ? JSON.parse(text) : {}; }
+  catch{ data = { raw:text }; }
+
+  if(!res.ok){
+    throw new Error((data && data.error) || ("HTTP " + res.status));
+  }
+  return data;
+}
+
+function saveSessionSettings(){
+  sessionStorage.setItem("comepro_api_url", $("apiUrl").value.trim());
+  sessionStorage.setItem("comepro_panel_key", $("panelKey").value);
+  sessionStorage.setItem("comepro_app_url", $("appUrl").value.trim());
+}
+
+function restoreSessionSettings(){
+  const a = sessionStorage.getItem("comepro_api_url");
+  const k = sessionStorage.getItem("comepro_panel_key");
+  const u = sessionStorage.getItem("comepro_app_url");
+  if(a) $("apiUrl").value = a;
+  if(k) $("panelKey").value = k;
+  if(u) $("appUrl").value = u;
+}
+
+async function loadInfluencers(){
+  saveSessionSettings();
+  $("connectionStatus").textContent = "Cargando...";
+  $("connectionStatus").className = "status";
+
+  const data = await api("/influencers");
+  influencers = data.influencers || [];
+
+  $("connectionStatus").textContent = "Conectado";
+  $("connectionStatus").className = "status ok";
+
+  renderReferralOptions();
+  renderInfluencers();
+  log("Conexión correcta. Influencers cargados: " + influencers.length);
+}
+
+function renderReferralOptions(){
+  const select = $("referredBy");
+  const current = select.value;
+  select.innerHTML = '<option value="">Nadie / directo</option>';
+
+  influencers
+    .filter(inf => inf.id !== editingInfluencerId)
+    .forEach(inf => {
+      const opt = document.createElement("option");
+      opt.value = inf.id;
+      opt.textContent = inf.name + " (" + inf.slug + ")";
+      select.appendChild(opt);
+    });
+
+  if([...select.options].some(o => o.value === current)){
+    select.value = current;
+  }
+}
+
+function renderInfluencers(){
+  const box = $("influencerList");
+  if(!influencers.length){
+    box.innerHTML = '<div class="small">No hay influencers todavía.</div>';
+    return;
+  }
+
+  box.innerHTML = "";
+
+  influencers.forEach(inf => {
+    const item = document.createElement("div");
+    item.className = "item";
+
+    const left = document.createElement("div");
+    const parent = inf.referred_by_name ? ("Referido por: " + inf.referred_by_name) : "Sin referidor";
+
+    left.innerHTML =
+      '<strong>' + escapeHtml(inf.name) + '</strong>' +
+      '<div class="meta">' + escapeHtml(inf.slug) + ' · ' + escapeHtml(parent) + '</div>' +
+      '<div class="meta">' +
+      '<span class="badge">' + escapeHtml(inf.status || "") + '</span>' +
+      '<span class="badge">' + Number(inf.direct_referrals || 0) + ' referidos directos</span>' +
+      '</div>';
+
+    const right = document.createElement("div");
+    right.className = "row";
+
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "secondary";
+    copyBtn.textContent = "Copiar link";
+    copyBtn.onclick = async () => {
+      const link = buildInfluencerLink($("appUrl").value.trim(), inf.slug);
+      await copyText(link);
+      log("Link copiado: " + link);
+    };
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "secondary";
+    editBtn.textContent = "Editar";
+    editBtn.onclick = async () => {
+      try{
+        await loadInfluencerForEdit(inf.id);
+      }catch(e){
+        log(e.message, true);
+      }
+    };
+
+    right.appendChild(copyBtn);
+    right.appendChild(editBtn);
+    item.appendChild(left);
+    item.appendChild(right);
+    box.appendChild(item);
+  });
+}
+
+function buildInfluencerLink(baseUrl, slug){
+  if(!baseUrl) return "?i=" + encodeURIComponent(slug);
+  const sep = baseUrl.includes("?") ? "&" : "?";
+  return baseUrl + sep + "i=" + encodeURIComponent(slug);
+}
+
+function slugify(v){
+  return String(v || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0,80);
+}
+
+async function saveAffiliateLink(influencerId, providerCode, countryCode, label, url){
+  const cleanUrl = String(url || "").trim();
+  if(!cleanUrl) return null;
+
+  return api("/affiliate-links", {
+    method:"POST",
+    body:JSON.stringify({
+      influencer_id:influencerId,
+      provider_code:providerCode,
+      country_code:countryCode,
+      label,
+      url:cleanUrl,
+      active:true,
+      priority:100
+    })
+  });
+}
+
+function collectInfluencerPayload(){
+  const name = $("name").value.trim();
+  if(!name) throw new Error("El nombre es obligatorio.");
+
+  return {
+    name,
+    slug:slugify($("slug").value.trim() || name),
+    contact:$("contact").value.trim(),
+    email:$("email").value.trim(),
+    whatsapp:$("whatsapp").value.trim(),
+    instagram:$("instagram").value.trim(),
+    referred_by:$("referredBy").value || null,
+    status:$("status").value,
+    direct_commission_pct:Number($("directCommission").value || 0),
+    referral_commission_pct:Number($("referralCommission").value || 5),
+    notes:$("notes").value.trim()
+  };
+}
+
+async function saveAllAffiliateLinks(influencerId){
+  let saved = 0;
+
+  for(const p of AMAZON_PRODUCTS){
+    const url = $("amazon_" + p.label).value.trim();
+    if(url){
+      await saveAffiliateLink(influencerId, "amazon", "", p.label, url);
+      saved++;
+    }
+  }
+
+  for(const p of STORE_PROVIDERS){
+    const url = $("store_" + p.code).value.trim();
+    if(url){
+      await saveAffiliateLink(influencerId, p.code, p.country, "default", url);
+      saved++;
+    }
+  }
+
+  return saved;
+}
+
+async function createInfluencer(){
+  const payload = collectInfluencerPayload();
+  payload.app_base_url = $("appUrl").value.trim();
+
+  const created = await api("/influencers", {
+    method:"POST",
+    body:JSON.stringify(payload)
+  });
+
+  const inf = created.influencer;
+  if(!inf || !inf.id) throw new Error("La API no devolvió el influencer creado.");
+
+  const linksSaved = await saveAllAffiliateLinks(inf.id);
+
+  lastGeneratedLink = created.generated_link || buildInfluencerLink($("appUrl").value.trim(), inf.slug);
+
+  $("createdResult").textContent =
+    "Influencer creado correctamente\n\n" +
+    "Nombre: " + inf.name + "\n" +
+    "Slug: " + inf.slug + "\n" +
+    "ID: " + inf.id + "\n" +
+    "Links afiliados guardados: " + linksSaved + "\n\n" +
+    "Link COME PRO:\n" + lastGeneratedLink;
+
+  $("createdCard").classList.remove("hidden");
+  log("Influencer creado. Links afiliados guardados: " + linksSaved);
+  await loadInfluencers();
+}
+
+async function updateInfluencer(){
+  if(!editingInfluencerId) throw new Error("No hay influencer en edición.");
+
+  const payload = collectInfluencerPayload();
+
+  const updated = await api("/influencers/" + encodeURIComponent(editingInfluencerId), {
+    method:"PATCH",
+    body:JSON.stringify(payload)
+  });
+
+  const inf = updated.influencer;
+  if(!inf || !inf.id) throw new Error("La API no devolvió el influencer actualizado.");
+
+  const linksSaved = await saveAllAffiliateLinks(inf.id);
+  lastGeneratedLink = buildInfluencerLink($("appUrl").value.trim(), inf.slug);
+
+  $("createdResult").textContent =
+    "Influencer actualizado correctamente\n\n" +
+    "Nombre: " + inf.name + "\n" +
+    "Slug: " + inf.slug + "\n" +
+    "Links guardados/actualizados: " + linksSaved + "\n\n" +
+    "Link COME PRO:\n" + lastGeneratedLink;
+
+  $("createdCard").classList.remove("hidden");
+  log("Influencer actualizado. Links guardados/actualizados: " + linksSaved);
+  cancelEdit(false);
+  await loadInfluencers();
+}
+
+async function saveInfluencer(){
+  $("btnSaveInfluencer").disabled = true;
+  $("btnSaveInfluencer").textContent = editingInfluencerId ? "Guardando..." : "Creando...";
+
+  try{
+    if(editingInfluencerId){
+      await updateInfluencer();
+    }else{
+      await createInfluencer();
+    }
+  }finally{
+    $("btnSaveInfluencer").disabled = false;
+    $("btnSaveInfluencer").textContent = editingInfluencerId ? "Guardar cambios" : "Crear influencer";
+  }
+}
+
+async function loadInfluencerForEdit(id){
+  const detail = await api("/influencer-summary?id=" + encodeURIComponent(id) + "&days=30");
+  const inf = detail.influencer;
+  if(!inf) throw new Error("No se pudo cargar el influencer.");
+
+  editingInfluencerId = inf.id;
+  $("formTitle").textContent = "2. Editar influencer";
+  $("btnSaveInfluencer").textContent = "Guardar cambios";
+  $("btnCancelEdit").classList.remove("hidden");
+
+  $("name").value = inf.name || "";
+  $("slug").value = inf.slug || "";
+  $("contact").value = inf.contact || "";
+  $("email").value = inf.email || "";
+  $("whatsapp").value = inf.whatsapp || "";
+  $("instagram").value = inf.instagram || "";
+  $("status").value = inf.status || "active";
+  $("directCommission").value = Number(inf.directCommissionPct || 0);
+  $("referralCommission").value = Number(inf.referralCommissionPct || 5);
+  $("notes").value = "";
+
+  renderReferralOptions();
+  $("referredBy").value = inf.referredById || "";
+
+  AMAZON_PRODUCTS.forEach(p => { $("amazon_" + p.label).value = ""; });
+  STORE_PROVIDERS.forEach(p => { $("store_" + p.code).value = ""; });
+
+  const links = detail.affiliateLinks || [];
+  links.forEach(link => {
+    if(link.providerCode === "amazon"){
+      const idField = "amazon_" + link.label;
+      if($(idField)) $(idField).value = link.url || "";
+      return;
+    }
+
+    const store = STORE_PROVIDERS.find(p => p.code === link.providerCode);
+    if(store){
+      $("store_" + store.code).value = link.url || "";
+    }
+  });
+
+  window.scrollTo({ top:0, behavior:"smooth" });
+  log("Editando: " + inf.name);
+}
+
+function cancelEdit(clear=true){
+  editingInfluencerId = null;
+  $("formTitle").textContent = "2. Nuevo influencer";
+  $("btnSaveInfluencer").textContent = "Crear influencer";
+  $("btnCancelEdit").classList.add("hidden");
+  renderReferralOptions();
+  if(clear) clearForm();
+}
+
+function clearForm(){
+  ["name","slug","contact","email","whatsapp","instagram","notes"].forEach(id => $(id).value = "");
+  $("referredBy").value = "";
+  $("status").value = "active";
+  $("directCommission").value = "0";
+  $("referralCommission").value = "5";
+  AMAZON_PRODUCTS.forEach(p => { $("amazon_" + p.label).value = ""; });
+  STORE_PROVIDERS.forEach(p => { $("store_" + p.code).value = ""; });
+  $("createdCard").classList.add("hidden");
+  lastGeneratedLink = "";
+}
+
+async function copyText(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  ta.remove();
+}
+
+function escapeHtml(value){
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+$("btnConnect").addEventListener("click", async () => {
+  try{ await loadInfluencers(); }
+  catch(e){
+    $("connectionStatus").textContent = "Error";
+    $("connectionStatus").className = "status err";
+    log(e.message, true);
+  }
+});
+
+$("btnRefresh").addEventListener("click", async () => {
+  try{ await loadInfluencers(); }
+  catch(e){ log(e.message, true); }
+});
+
+$("btnSaveInfluencer").addEventListener("click", async () => {
+  try{ await saveInfluencer(); }
+  catch(e){ log(e.message, true); }
+});
+
+$("btnClear").addEventListener("click", clearForm);
+$("btnCancelEdit").addEventListener("click", () => cancelEdit(true));
+
+$("btnCopyLink").addEventListener("click", async () => {
+  try{
+    if(!lastGeneratedLink) throw new Error("No hay link para copiar.");
+    await copyText(lastGeneratedLink);
+    log("Link copiado: " + lastGeneratedLink);
+  }catch(e){
+    log(e.message, true);
+  }
+});
+
+renderAffiliateFields();
+restoreSessionSettings();
+</script>
+</body>
+</html>
