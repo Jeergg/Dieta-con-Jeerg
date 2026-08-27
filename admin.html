@@ -76,6 +76,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .primary{background:var(--accent);color:#0e1512}
 .secondary{background:var(--card2);color:var(--text);border:1px solid var(--line)}
 .warning{background:var(--warning);color:#111}
+.danger{background:var(--danger);color:#111}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .status{
   padding:10px 12px;
@@ -120,33 +121,42 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .provider-title strong{font-size:14px}
 .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted)}
 hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+@media(max-width:640px){
+  .item{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
+
 <div class="wrap">
   <h1>COME PRO — Administrador</h1>
   <p>Gestiona influencers, referidos y enlaces afiliados por producto y país.</p>
 
   <div class="card">
     <h2 style="margin-top:0">1. Conexión</h2>
+
     <div class="grid">
       <div>
         <label>API de COME PRO</label>
         <input id="apiUrl" value="https://raspy-disk-10bc.el-0a6.workers.dev">
       </div>
+
       <div>
         <label>PANEL_KEY</label>
         <input id="panelKey" type="password" placeholder="Tu PANEL_KEY privada">
       </div>
+
       <div>
         <label>URL pública de COME PRO</label>
-        <input id="appUrl" placeholder="https://jeergg.github.io/Dieta-con-Jeerg/">
+        <input id="appUrl" value="https://come-pro.com/" placeholder="https://come-pro.com/">
       </div>
     </div>
+
     <div class="row" style="margin-top:12px">
       <button class="primary" id="btnConnect">Conectar y cargar influencers</button>
       <span class="status" id="connectionStatus">Sin conectar</span>
     </div>
+
     <p class="small">La PANEL_KEY se guarda solo en esta pestaña con sessionStorage.</p>
   </div>
 
@@ -163,10 +173,14 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
       <div><label>Email</label><input id="email" type="email" placeholder="correo@ejemplo.com"></div>
       <div><label>WhatsApp</label><input id="whatsapp" placeholder="+1..."></div>
       <div><label>Instagram</label><input id="instagram" placeholder="@usuario"></div>
+
       <div>
         <label>Referido por</label>
-        <select id="referredBy"><option value="">Nadie / directo</option></select>
+        <select id="referredBy">
+          <option value="">Nadie / directo</option>
+        </select>
       </div>
+
       <div>
         <label>Estado</label>
         <select id="status">
@@ -174,10 +188,19 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
           <option value="pending">Pendiente</option>
           <option value="paused">Pausado</option>
           <option value="blocked">Bloqueado</option>
+          <option value="inactive">Inactivo / dado de baja</option>
         </select>
       </div>
-      <div><label>Comisión directa %</label><input id="directCommission" type="number" min="0" max="100" step="0.1" value="0"></div>
-      <div><label>Comisión por referido directo %</label><input id="referralCommission" type="number" min="0" max="100" step="0.1" value="5"></div>
+
+      <div>
+        <label>Comisión directa %</label>
+        <input id="directCommission" type="number" min="0" max="100" step="0.1" value="0">
+      </div>
+
+      <div>
+        <label>Comisión por referido directo %</label>
+        <input id="referralCommission" type="number" min="0" max="100" step="0.1" value="5">
+      </div>
     </div>
 
     <div style="margin-top:12px">
@@ -190,9 +213,11 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
         <strong>Amazon — enlaces por producto</strong>
         <span class="code">provider: amazon</span>
       </div>
+
       <div class="section-note">
         Puedes dejar cualquier campo vacío. Si manejas solo 10 enlaces, deja vacío el producto que no uses.
       </div>
+
       <div id="amazonFields" class="grid" style="margin-top:12px"></div>
     </div>
 
@@ -201,9 +226,11 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
         <strong>Supermercados por país</strong>
         <span class="code">1 link por tienda/país</span>
       </div>
+
       <div class="section-note">
         Si todavía no te han aprobado en un supermercado, déjalo vacío. Luego podrás editar al influencer y agregar el enlace.
       </div>
+
       <div id="storeFields" class="grid" style="margin-top:12px"></div>
     </div>
 
@@ -226,6 +253,7 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
       <h2 style="margin:0">3. Influencers registrados</h2>
       <button class="secondary" id="btnRefresh">Actualizar</button>
     </div>
+
     <div id="influencerList" style="margin-top:10px">
       <div class="small">Conecta el panel para cargar los influencers.</div>
     </div>
@@ -301,19 +329,25 @@ async function api(path, options={}){
 
   const headers = new Headers(options.headers || {});
   headers.set("X-Panel-Key", key);
+
   if(options.body && !headers.has("Content-Type")){
     headers.set("Content-Type", "application/json");
   }
 
-  const res = await fetch(apiBase() + path, { ...options, headers });
+  const res = await fetch(apiBase() + path, {...options, headers});
   const text = await res.text();
+
   let data;
-  try{ data = text ? JSON.parse(text) : {}; }
-  catch{ data = { raw:text }; }
+  try{
+    data = text ? JSON.parse(text) : {};
+  }catch{
+    data = { raw:text };
+  }
 
   if(!res.ok){
     throw new Error((data && data.error) || ("HTTP " + res.status));
   }
+
   return data;
 }
 
@@ -327,6 +361,7 @@ function restoreSessionSettings(){
   const a = sessionStorage.getItem("comepro_api_url");
   const k = sessionStorage.getItem("comepro_panel_key");
   const u = sessionStorage.getItem("comepro_app_url");
+
   if(a) $("apiUrl").value = a;
   if(k) $("panelKey").value = k;
   if(u) $("appUrl").value = u;
@@ -334,6 +369,7 @@ function restoreSessionSettings(){
 
 async function loadInfluencers(){
   saveSessionSettings();
+
   $("connectionStatus").textContent = "Cargando...";
   $("connectionStatus").className = "status";
 
@@ -351,6 +387,7 @@ async function loadInfluencers(){
 function renderReferralOptions(){
   const select = $("referredBy");
   const current = select.value;
+
   select.innerHTML = '<option value="">Nadie / directo</option>';
 
   influencers
@@ -369,6 +406,7 @@ function renderReferralOptions(){
 
 function renderInfluencers(){
   const box = $("influencerList");
+
   if(!influencers.length){
     box.innerHTML = '<div class="small">No hay influencers todavía.</div>';
     return;
@@ -381,14 +419,16 @@ function renderInfluencers(){
     item.className = "item";
 
     const left = document.createElement("div");
-    const parent = inf.referred_by_name ? ("Referido por: " + inf.referred_by_name) : "Sin referidor";
+    const parent = inf.referred_by_name
+      ? ("Referido por: " + inf.referred_by_name)
+      : "Sin referidor";
 
     left.innerHTML =
       '<strong>' + escapeHtml(inf.name) + '</strong>' +
       '<div class="meta">' + escapeHtml(inf.slug) + ' · ' + escapeHtml(parent) + '</div>' +
       '<div class="meta">' +
-      '<span class="badge">' + escapeHtml(inf.status || "") + '</span>' +
-      '<span class="badge">' + Number(inf.direct_referrals || 0) + ' referidos directos</span>' +
+        '<span class="badge">' + escapeHtml(inf.status || "") + '</span>' +
+        '<span class="badge">' + Number(inf.direct_referrals || 0) + ' referidos directos</span>' +
       '</div>';
 
     const right = document.createElement("div");
@@ -398,9 +438,13 @@ function renderInfluencers(){
     copyBtn.className = "secondary";
     copyBtn.textContent = "Copiar link";
     copyBtn.onclick = async () => {
-      const link = buildInfluencerLink($("appUrl").value.trim(), inf.slug);
-      await copyText(link);
-      log("Link copiado: " + link);
+      try{
+        const link = buildInfluencerLink($("appUrl").value.trim(), inf.slug);
+        await copyText(link);
+        log("Link copiado: " + link);
+      }catch(e){
+        log(e.message, true);
+      }
     };
 
     const editBtn = document.createElement("button");
@@ -414,18 +458,137 @@ function renderInfluencers(){
       }
     };
 
+    const statusLower = String(inf.status || "").toLowerCase();
+
+    const stateBtn = document.createElement("button");
+    if(statusLower === "inactive"){
+      stateBtn.className = "primary";
+      stateBtn.textContent = "Reactivar";
+      stateBtn.onclick = async () => {
+        await reactivateInfluencer(inf);
+      };
+    }else{
+      stateBtn.className = "warning";
+      stateBtn.textContent = "Dar de baja";
+      stateBtn.onclick = async () => {
+        await deactivateInfluencer(inf);
+      };
+    }
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "danger";
+    deleteBtn.textContent = "Eliminar";
+    deleteBtn.onclick = async () => {
+      await hardDeleteInfluencer(inf);
+    };
+
     right.appendChild(copyBtn);
     right.appendChild(editBtn);
+    right.appendChild(stateBtn);
+    right.appendChild(deleteBtn);
+
     item.appendChild(left);
     item.appendChild(right);
     box.appendChild(item);
   });
 }
 
+async function deactivateInfluencer(inf){
+  const ok = confirm(
+    `Dar de baja a "${inf.name}"?\n\n` +
+    "Se conservarán sus visitas, métricas, comisiones y relaciones históricas."
+  );
+
+  if(!ok) return;
+
+  try{
+    const data = await api(
+      "/influencers/" + encodeURIComponent(inf.id),
+      { method:"DELETE" }
+    );
+
+    log(
+      (data.message || "Influencer dado de baja correctamente.") +
+      "\nHistorial conservado."
+    );
+
+    await loadInfluencers();
+  }catch(e){
+    log(e.message, true);
+  }
+}
+
+async function reactivateInfluencer(inf){
+  const ok = confirm(`¿Reactivar a "${inf.name}"?`);
+  if(!ok) return;
+
+  try{
+    await api(
+      "/influencers/" + encodeURIComponent(inf.id),
+      {
+        method:"PATCH",
+        body:JSON.stringify({ status:"active" })
+      }
+    );
+
+    log("Influencer reactivado correctamente: " + inf.name);
+    await loadInfluencers();
+  }catch(e){
+    log(e.message, true);
+  }
+}
+
+async function hardDeleteInfluencer(inf){
+  const first = confirm(
+    `ELIMINAR DEFINITIVAMENTE a "${inf.name}"?\n\n` +
+    "Esta opción es solo para registros creados por error.\n" +
+    "Si tiene historial, el servidor bloqueará el borrado."
+  );
+
+  if(!first) return;
+
+  const typed = prompt(
+    'Para confirmar, escribe exactamente:\n\nELIMINAR'
+  );
+
+  if(typed !== "ELIMINAR"){
+    log("Eliminación cancelada.");
+    return;
+  }
+
+  try{
+    const data = await api(
+      "/influencers/" + encodeURIComponent(inf.id) + "?hard=1",
+      { method:"DELETE" }
+    );
+
+    log("Influencer eliminado definitivamente: " + inf.name);
+
+    if(data.references){
+      log("No se pudo borrar porque existen datos históricos.", true);
+    }
+
+    await loadInfluencers();
+  }catch(e){
+    log(
+      e.message +
+      "\n\nSi tiene historial, usa 'Dar de baja' en lugar de eliminar.",
+      true
+    );
+  }
+}
+
 function buildInfluencerLink(baseUrl, slug){
-  if(!baseUrl) return "?i=" + encodeURIComponent(slug);
-  const sep = baseUrl.includes("?") ? "&" : "?";
-  return baseUrl + sep + "i=" + encodeURIComponent(slug);
+  const base = baseUrl || "https://come-pro.com/";
+
+  try{
+    const u = new URL(base);
+    u.searchParams.set("i", slug);
+    return u.toString();
+  }catch{
+    const sep = base.includes("?") ? "&" : "?";
+    return base + sep + "i=" + encodeURIComponent(slug);
+  }
 }
 
 function slugify(v){
@@ -500,7 +663,7 @@ async function saveAllAffiliateLinks(influencerId){
 
 async function createInfluencer(){
   const payload = collectInfluencerPayload();
-  payload.app_base_url = $("appUrl").value.trim();
+  payload.app_base_url = $("appUrl").value.trim() || "https://come-pro.com/";
 
   const created = await api("/influencers", {
     method:"POST",
@@ -508,11 +671,15 @@ async function createInfluencer(){
   });
 
   const inf = created.influencer;
-  if(!inf || !inf.id) throw new Error("La API no devolvió el influencer creado.");
+  if(!inf || !inf.id){
+    throw new Error("La API no devolvió el influencer creado.");
+  }
 
   const linksSaved = await saveAllAffiliateLinks(inf.id);
 
-  lastGeneratedLink = created.generated_link || buildInfluencerLink($("appUrl").value.trim(), inf.slug);
+  lastGeneratedLink =
+    created.generated_link ||
+    buildInfluencerLink($("appUrl").value.trim(), inf.slug);
 
   $("createdResult").textContent =
     "Influencer creado correctamente\n\n" +
@@ -523,25 +690,35 @@ async function createInfluencer(){
     "Link COME PRO:\n" + lastGeneratedLink;
 
   $("createdCard").classList.remove("hidden");
+
   log("Influencer creado. Links afiliados guardados: " + linksSaved);
   await loadInfluencers();
 }
 
 async function updateInfluencer(){
-  if(!editingInfluencerId) throw new Error("No hay influencer en edición.");
+  if(!editingInfluencerId){
+    throw new Error("No hay influencer en edición.");
+  }
 
   const payload = collectInfluencerPayload();
 
-  const updated = await api("/influencers/" + encodeURIComponent(editingInfluencerId), {
-    method:"PATCH",
-    body:JSON.stringify(payload)
-  });
+  const updated = await api(
+    "/influencers/" + encodeURIComponent(editingInfluencerId),
+    {
+      method:"PATCH",
+      body:JSON.stringify(payload)
+    }
+  );
 
   const inf = updated.influencer;
-  if(!inf || !inf.id) throw new Error("La API no devolvió el influencer actualizado.");
+  if(!inf || !inf.id){
+    throw new Error("La API no devolvió el influencer actualizado.");
+  }
 
   const linksSaved = await saveAllAffiliateLinks(inf.id);
-  lastGeneratedLink = buildInfluencerLink($("appUrl").value.trim(), inf.slug);
+
+  lastGeneratedLink =
+    buildInfluencerLink($("appUrl").value.trim(), inf.slug);
 
   $("createdResult").textContent =
     "Influencer actualizado correctamente\n\n" +
@@ -551,14 +728,17 @@ async function updateInfluencer(){
     "Link COME PRO:\n" + lastGeneratedLink;
 
   $("createdCard").classList.remove("hidden");
+
   log("Influencer actualizado. Links guardados/actualizados: " + linksSaved);
+
   cancelEdit(false);
   await loadInfluencers();
 }
 
 async function saveInfluencer(){
   $("btnSaveInfluencer").disabled = true;
-  $("btnSaveInfluencer").textContent = editingInfluencerId ? "Guardando..." : "Creando...";
+  $("btnSaveInfluencer").textContent =
+    editingInfluencerId ? "Guardando..." : "Creando...";
 
   try{
     if(editingInfluencerId){
@@ -568,16 +748,26 @@ async function saveInfluencer(){
     }
   }finally{
     $("btnSaveInfluencer").disabled = false;
-    $("btnSaveInfluencer").textContent = editingInfluencerId ? "Guardar cambios" : "Crear influencer";
+    $("btnSaveInfluencer").textContent =
+      editingInfluencerId ? "Guardar cambios" : "Crear influencer";
   }
 }
 
 async function loadInfluencerForEdit(id){
-  const detail = await api("/influencer-summary?id=" + encodeURIComponent(id) + "&days=30");
+  const detail = await api(
+    "/influencer-summary?id=" +
+    encodeURIComponent(id) +
+    "&days=30"
+  );
+
   const inf = detail.influencer;
-  if(!inf) throw new Error("No se pudo cargar el influencer.");
+
+  if(!inf){
+    throw new Error("No se pudo cargar el influencer.");
+  }
 
   editingInfluencerId = inf.id;
+
   $("formTitle").textContent = "2. Editar influencer";
   $("btnSaveInfluencer").textContent = "Guardar cambios";
   $("btnCancelEdit").classList.remove("hidden");
@@ -591,49 +781,87 @@ async function loadInfluencerForEdit(id){
   $("status").value = inf.status || "active";
   $("directCommission").value = Number(inf.directCommissionPct || 0);
   $("referralCommission").value = Number(inf.referralCommissionPct || 5);
-  $("notes").value = "";
+  $("notes").value = inf.notes || "";
 
   renderReferralOptions();
   $("referredBy").value = inf.referredById || "";
 
-  AMAZON_PRODUCTS.forEach(p => { $("amazon_" + p.label).value = ""; });
-  STORE_PROVIDERS.forEach(p => { $("store_" + p.code).value = ""; });
+  AMAZON_PRODUCTS.forEach(p => {
+    $("amazon_" + p.label).value = "";
+  });
+
+  STORE_PROVIDERS.forEach(p => {
+    $("store_" + p.code).value = "";
+  });
 
   const links = detail.affiliateLinks || [];
+
   links.forEach(link => {
     if(link.providerCode === "amazon"){
-      const idField = "amazon_" + link.label;
-      if($(idField)) $(idField).value = link.url || "";
+      const fieldId = "amazon_" + link.label;
+      if($(fieldId)){
+        $(fieldId).value = link.url || "";
+      }
       return;
     }
 
-    const store = STORE_PROVIDERS.find(p => p.code === link.providerCode);
+    const store = STORE_PROVIDERS.find(
+      p => p.code === link.providerCode
+    );
+
     if(store){
       $("store_" + store.code).value = link.url || "";
     }
   });
 
-  window.scrollTo({ top:0, behavior:"smooth" });
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+
   log("Editando: " + inf.name);
 }
 
 function cancelEdit(clear=true){
   editingInfluencerId = null;
+
   $("formTitle").textContent = "2. Nuevo influencer";
   $("btnSaveInfluencer").textContent = "Crear influencer";
   $("btnCancelEdit").classList.add("hidden");
+
   renderReferralOptions();
-  if(clear) clearForm();
+
+  if(clear){
+    clearForm();
+  }
 }
 
 function clearForm(){
-  ["name","slug","contact","email","whatsapp","instagram","notes"].forEach(id => $(id).value = "");
+  [
+    "name",
+    "slug",
+    "contact",
+    "email",
+    "whatsapp",
+    "instagram",
+    "notes"
+  ].forEach(id => {
+    $(id).value = "";
+  });
+
   $("referredBy").value = "";
   $("status").value = "active";
   $("directCommission").value = "0";
   $("referralCommission").value = "5";
-  AMAZON_PRODUCTS.forEach(p => { $("amazon_" + p.label).value = ""; });
-  STORE_PROVIDERS.forEach(p => { $("store_" + p.code).value = ""; });
+
+  AMAZON_PRODUCTS.forEach(p => {
+    $("amazon_" + p.label).value = "";
+  });
+
+  STORE_PROVIDERS.forEach(p => {
+    $("store_" + p.code).value = "";
+  });
+
   $("createdCard").classList.add("hidden");
   lastGeneratedLink = "";
 }
@@ -643,6 +871,7 @@ async function copyText(text){
     await navigator.clipboard.writeText(text);
     return;
   }
+
   const ta = document.createElement("textarea");
   ta.value = text;
   document.body.appendChild(ta);
@@ -661,8 +890,9 @@ function escapeHtml(value){
 }
 
 $("btnConnect").addEventListener("click", async () => {
-  try{ await loadInfluencers(); }
-  catch(e){
+  try{
+    await loadInfluencers();
+  }catch(e){
     $("connectionStatus").textContent = "Error";
     $("connectionStatus").className = "status err";
     log(e.message, true);
@@ -670,21 +900,33 @@ $("btnConnect").addEventListener("click", async () => {
 });
 
 $("btnRefresh").addEventListener("click", async () => {
-  try{ await loadInfluencers(); }
-  catch(e){ log(e.message, true); }
+  try{
+    await loadInfluencers();
+  }catch(e){
+    log(e.message, true);
+  }
 });
 
 $("btnSaveInfluencer").addEventListener("click", async () => {
-  try{ await saveInfluencer(); }
-  catch(e){ log(e.message, true); }
+  try{
+    await saveInfluencer();
+  }catch(e){
+    log(e.message, true);
+  }
 });
 
 $("btnClear").addEventListener("click", clearForm);
-$("btnCancelEdit").addEventListener("click", () => cancelEdit(true));
+
+$("btnCancelEdit").addEventListener("click", () => {
+  cancelEdit(true);
+});
 
 $("btnCopyLink").addEventListener("click", async () => {
   try{
-    if(!lastGeneratedLink) throw new Error("No hay link para copiar.");
+    if(!lastGeneratedLink){
+      throw new Error("No hay link para copiar.");
+    }
+
     await copyText(lastGeneratedLink);
     log("Link copiado: " + lastGeneratedLink);
   }catch(e){
@@ -697,3 +939,4 @@ restoreSessionSettings();
 </script>
 </body>
 </html>
+
