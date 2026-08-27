@@ -124,6 +124,59 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
 @media(max-width:640px){
   .item{grid-template-columns:1fr}
 }
+
+.influencer-card{
+  border:1px solid var(--line);
+  border-radius:14px;
+  margin-top:10px;
+  overflow:hidden;
+  background:#111914;
+}
+.influencer-head{
+  padding:14px;
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:center;
+}
+.influencer-head:hover{background:#172119}
+.influencer-actions{
+  padding:0 14px 14px;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.influencer-details{
+  display:none;
+  padding:14px;
+  border-top:1px solid var(--line);
+  background:#0d130f;
+}
+.influencer-card.open .influencer-details{display:block}
+.detail-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:10px;
+}
+.detail-box{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px;
+  background:#111914;
+}
+.detail-box b{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.detail-box span{word-break:break-word}
+.link-list{display:grid;gap:8px;margin-top:10px}
+.link-row{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:10px;
+  background:#111914;
+}
+.chevron{font-size:18px;color:var(--muted);transition:.2s}
+.influencer-card.open .chevron{transform:rotate(180deg)}
+
 </style>
 </head>
 <body>
@@ -415,8 +468,11 @@ function renderInfluencers(){
   box.innerHTML = "";
 
   influencers.forEach(inf => {
-    const item = document.createElement("div");
-    item.className = "item";
+    const card = document.createElement("div");
+    card.className = "influencer-card";
+
+    const head = document.createElement("div");
+    head.className = "influencer-head";
 
     const left = document.createElement("div");
     const parent = inf.referred_by_name
@@ -431,13 +487,45 @@ function renderInfluencers(){
         '<span class="badge">' + Number(inf.direct_referrals || 0) + ' referidos directos</span>' +
       '</div>';
 
-    const right = document.createElement("div");
-    right.className = "row";
+    const chev = document.createElement("div");
+    chev.className = "chevron";
+    chev.textContent = "⌄";
+
+    head.appendChild(left);
+    head.appendChild(chev);
+
+    const details = document.createElement("div");
+    details.className = "influencer-details";
+    details.innerHTML = '<div class="small">Toca para cargar la información…</div>';
+
+    let loaded = false;
+
+    head.onclick = async () => {
+      card.classList.toggle("open");
+
+      if(card.classList.contains("open") && !loaded){
+        details.innerHTML = '<div class="small">Cargando información…</div>';
+        try{
+          const detail = await api(
+            "/influencer-summary?id=" + encodeURIComponent(inf.id) + "&days=30"
+          );
+          renderInfluencerDetails(details, detail, inf);
+          loaded = true;
+        }catch(e){
+          details.innerHTML =
+            '<div class="err">ERROR: ' + escapeHtml(e.message) + '</div>';
+        }
+      }
+    };
+
+    const actions = document.createElement("div");
+    actions.className = "influencer-actions";
 
     const copyBtn = document.createElement("button");
     copyBtn.className = "secondary";
     copyBtn.textContent = "Copiar link";
-    copyBtn.onclick = async () => {
+    copyBtn.onclick = async (ev) => {
+      ev.stopPropagation();
       try{
         const link = buildInfluencerLink($("appUrl").value.trim(), inf.slug);
         await copyText(link);
@@ -450,7 +538,8 @@ function renderInfluencers(){
     const editBtn = document.createElement("button");
     editBtn.className = "secondary";
     editBtn.textContent = "Editar";
-    editBtn.onclick = async () => {
+    editBtn.onclick = async (ev) => {
+      ev.stopPropagation();
       try{
         await loadInfluencerForEdit(inf.id);
       }catch(e){
@@ -464,13 +553,15 @@ function renderInfluencers(){
     if(statusLower === "inactive"){
       stateBtn.className = "primary";
       stateBtn.textContent = "Reactivar";
-      stateBtn.onclick = async () => {
+      stateBtn.onclick = async (ev) => {
+        ev.stopPropagation();
         await reactivateInfluencer(inf);
       };
     }else{
       stateBtn.className = "warning";
       stateBtn.textContent = "Dar de baja";
-      stateBtn.onclick = async () => {
+      stateBtn.onclick = async (ev) => {
+        ev.stopPropagation();
         await deactivateInfluencer(inf);
       };
     }
@@ -478,19 +569,106 @@ function renderInfluencers(){
     const deleteBtn = document.createElement("button");
     deleteBtn.className = "danger";
     deleteBtn.textContent = "Eliminar";
-    deleteBtn.onclick = async () => {
-      await hardDeleteInfluencer(inf);
+    deleteBtn.onclick = async (ev) => {
+      ev.stopPropagation();
+      await purgeInfluencer(inf);
     };
 
-    right.appendChild(copyBtn);
-    right.appendChild(editBtn);
-    right.appendChild(stateBtn);
-    right.appendChild(deleteBtn);
+    actions.appendChild(copyBtn);
+    actions.appendChild(editBtn);
+    actions.appendChild(stateBtn);
+    actions.appendChild(deleteBtn);
 
-    item.appendChild(left);
-    item.appendChild(right);
-    box.appendChild(item);
+    card.appendChild(head);
+    card.appendChild(details);
+    card.appendChild(actions);
+    box.appendChild(card);
   });
+}
+
+function renderInfluencerDetails(container, detail, fallbackInf){
+  const inf = detail.influencer || fallbackInf || {};
+  const links = detail.affiliateLinks || [];
+  const summary = detail.summary || {};
+
+  const comeProLink = buildInfluencerLink(
+    $("appUrl").value.trim() || "https://come-pro.com/",
+    inf.slug || fallbackInf.slug
+  );
+
+  const amazonLinks = links.filter(x => x.providerCode === "amazon");
+  const storeLinks = links.filter(x => x.providerCode !== "amazon");
+
+  container.innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-box"><b>Nombre</b><span>${escapeHtml(inf.name || "")}</span></div>
+      <div class="detail-box"><b>Slug</b><span>${escapeHtml(inf.slug || "")}</span></div>
+      <div class="detail-box"><b>Estado</b><span>${escapeHtml(inf.status || "")}</span></div>
+      <div class="detail-box"><b>Contacto</b><span>${escapeHtml(inf.contact || "—")}</span></div>
+      <div class="detail-box"><b>Email</b><span>${escapeHtml(inf.email || "—")}</span></div>
+      <div class="detail-box"><b>WhatsApp</b><span>${escapeHtml(inf.whatsapp || "—")}</span></div>
+      <div class="detail-box"><b>Instagram</b><span>${escapeHtml(inf.instagram || "—")}</span></div>
+      <div class="detail-box"><b>Referido por</b><span>${escapeHtml(
+        fallbackInf.referred_by_name || "Nadie / directo"
+      )}</span></div>
+      <div class="detail-box"><b>Referidos directos</b><span>${Number(
+        fallbackInf.direct_referrals || 0
+      )}</span></div>
+      <div class="detail-box"><b>Comisión directa</b><span>${Number(
+        inf.directCommissionPct || 0
+      )}%</span></div>
+      <div class="detail-box"><b>Comisión por referido</b><span>${Number(
+        inf.referralCommissionPct || 0
+      )}%</span></div>
+      <div class="detail-box"><b>Creado</b><span>${escapeHtml(
+        formatDate(inf.createdAt || "")
+      )}</span></div>
+    </div>
+
+    <div class="subcard">
+      <div class="provider-title"><strong>Link COME PRO</strong></div>
+      <div class="result">${escapeHtml(comeProLink)}</div>
+    </div>
+
+    <div class="subcard">
+      <div class="provider-title"><strong>Amazon</strong><span class="code">${amazonLinks.length} enlaces</span></div>
+      <div class="link-list">
+        ${renderLinkRows(amazonLinks)}
+      </div>
+    </div>
+
+    <div class="subcard">
+      <div class="provider-title"><strong>Supermercados</strong><span class="code">${storeLinks.length} enlaces</span></div>
+      <div class="link-list">
+        ${renderLinkRows(storeLinks)}
+      </div>
+    </div>
+
+    <div class="subcard">
+      <div class="provider-title"><strong>Resumen disponible</strong></div>
+      <div class="result">${escapeHtml(JSON.stringify(summary, null, 2))}</div>
+    </div>
+  `;
+}
+
+function renderLinkRows(links){
+  if(!links.length){
+    return '<div class="small">Sin enlaces guardados.</div>';
+  }
+
+  return links.map(link => `
+    <div class="link-row">
+      <strong>${escapeHtml(link.providerName || link.providerCode || "")}</strong>
+      <div class="meta">${escapeHtml(link.label || "default")} ${link.countryCode ? "· " + escapeHtml(link.countryCode) : ""}</div>
+      <div class="small">${escapeHtml(link.url || "")}</div>
+    </div>
+  `).join("");
+}
+
+function formatDate(value){
+  if(!value) return "—";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString();
 }
 
 async function deactivateInfluencer(inf){
@@ -538,11 +716,11 @@ async function reactivateInfluencer(inf){
   }
 }
 
-async function hardDeleteInfluencer(inf){
+async function purgeInfluencer(inf){
   const first = confirm(
     `ELIMINAR DEFINITIVAMENTE a "${inf.name}"?\n\n` +
-    "Esta opción es solo para registros creados por error.\n" +
-    "Si tiene historial, el servidor bloqueará el borrado."
+    "Esto borrará también sus eventos, sesiones, conversiones, comisiones, pagos, métricas, campañas y enlaces afiliados asociados.\n\n" +
+    "Esta acción NO se puede deshacer."
   );
 
   if(!first) return;
@@ -558,23 +736,18 @@ async function hardDeleteInfluencer(inf){
 
   try{
     const data = await api(
-      "/influencers/" + encodeURIComponent(inf.id) + "?hard=1",
+      "/influencers/" + encodeURIComponent(inf.id) + "?purge=1",
       { method:"DELETE" }
     );
 
-    log("Influencer eliminado definitivamente: " + inf.name);
-
-    if(data.references){
-      log("No se pudo borrar porque existen datos históricos.", true);
-    }
+    log(
+      data.message ||
+      ("Influencer eliminado definitivamente: " + inf.name)
+    );
 
     await loadInfluencers();
   }catch(e){
-    log(
-      e.message +
-      "\n\nSi tiene historial, usa 'Dar de baja' en lugar de eliminar.",
-      true
-    );
+    log(e.message, true);
   }
 }
 
@@ -939,4 +1112,3 @@ restoreSessionSettings();
 </script>
 </body>
 </html>
-
