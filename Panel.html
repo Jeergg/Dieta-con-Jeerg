@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f6f2e8">
+  <title>COME PRO — Panel de Tráfico</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#f5f1e8;
+      --paper:#fffdf8;
+      --ink:#23251f;
+      --muted:#777a71;
+      --line:#e1ddcf;
+      --green:#91c96f;
+      --green-dark:#5b8f3e;
+      --green-soft:#eaf4e2;
+      --purple:#8873d4;
+      --purple-soft:#eee9fb;
+      --pink:#e07cac;
+      --pink-soft:#f9e7ef;
+      --blue:#6db8c8;
+      --blue-soft:#e5f3f6;
+      --amber:#d9a441;
+      --amber-soft:#fbf0d6;
+      --red:#d96f68;
+      --shadow:0 8px 26px rgba(45,48,40,.07);
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{min-height:100vh}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .wrap{width:min(1180px,100%);margin:0 auto;padding:24px 16px 96px}
+
+    .hero{
+      background:linear-gradient(135deg,#f9f6ed 0%,#eef7e8 100%);
+      border:1px solid var(--line);
+      border-radius:28px;
+      padding:24px;
+      box-shadow:var(--shadow);
+      margin-bottom:18px;
+    }
+    .brandrow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+    h1,h2,h3{margin:0;color:var(--ink)}
+    h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(32px,5vw,52px);line-height:1}
+    h2{font-family:Georgia,"Times New Roman",serif;font-size:28px;margin-top:30px}
+    h3{font-size:18px}
+    .subtitle{color:var(--muted);margin-top:9px;line-height:1.45;max-width:760px}
+    .badge{
+      background:var(--green-soft);color:var(--green-dark);
+      border:1px solid #cfe4c0;padding:8px 12px;border-radius:999px;
+      font-weight:800;font-size:12px;white-space:nowrap
+    }
+
+    .toolbar{
+      display:grid;
+      grid-template-columns:minmax(200px,1.1fr) minmax(150px,.65fr) minmax(220px,1fr) auto;
+      gap:10px;margin-top:20px
+    }
+    .field,.btn{
+      min-height:50px;border:1px solid var(--line);border-radius:14px;
+      background:var(--paper);color:var(--ink);padding:0 14px
+    }
+    .btn{font-weight:900}
+    .btn.primary{background:var(--green);border-color:var(--green);color:#173011}
+    .btn.secondary{background:var(--paper)}
+    .status{margin-top:12px;color:var(--muted);font-size:13px}
+    .error{color:var(--red)}
+
+    .selected{
+      display:none;margin-top:12px;padding:12px 14px;border-radius:14px;
+      background:var(--green-soft);border:1px solid #cfe4c0
+    }
+    .selected.show{display:block}
+
+    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+    .metric{
+      background:var(--paper);border:1px solid var(--line);border-radius:20px;
+      padding:18px;box-shadow:var(--shadow)
+    }
+    .metric .label{color:var(--muted);font-size:13px;margin-bottom:8px}
+    .metric .value{font-size:36px;font-weight:900;letter-spacing:-.03em;line-height:1}
+    .metric .trend{font-size:12px;margin-top:9px;font-weight:800}
+    .up{color:var(--green-dark)}
+    .down{color:var(--red)}
+    .flat{color:var(--muted)}
+    .c-green{border-top:4px solid var(--green)}
+    .c-purple{border-top:4px solid var(--purple)}
+    .c-pink{border-top:4px solid var(--pink)}
+    .c-blue{border-top:4px solid var(--blue)}
+    .c-amber{border-top:4px solid var(--amber)}
+
+    .grid2{display:grid;grid-template-columns:1.35fr .65fr;gap:14px;margin-top:14px}
+    .panel{
+      background:var(--paper);border:1px solid var(--line);border-radius:22px;
+      padding:18px;box-shadow:var(--shadow)
+    }
+    .panel-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:14px}
+    .small{font-size:12px;color:var(--muted)}
+    .chartbox{height:330px}
+
+    .insights{display:grid;gap:9px}
+    .insight{padding:12px;border-radius:14px;background:#faf8f2;border:1px solid var(--line)}
+    .insight b{display:block;font-size:14px;margin-bottom:5px}
+    .insight span{color:var(--muted);font-size:13px;line-height:1.4}
+
+    .funnel{display:grid;gap:10px}
+    .frow{display:grid;grid-template-columns:minmax(150px,1fr) 3fr auto;gap:10px;align-items:center}
+    .track{height:13px;background:#eeeadd;border-radius:999px;overflow:hidden}
+    .fill{height:100%;border-radius:999px;background:var(--green)}
+    .fnum{font-weight:900;min-width:48px;text-align:right}
+    .fpct{font-size:11px;color:var(--muted);margin-left:6px}
+
+    .barlist{display:grid;gap:12px}
+    .barrow{display:grid;grid-template-columns:minmax(120px,1fr) 2.4fr auto;gap:10px;align-items:center}
+    .barname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .barvalue{font-weight:900}
+    .barfill{height:100%;border-radius:999px}
+    .empty{padding:18px;text-align:center;color:var(--muted)}
+
+    .table-wrap{overflow:auto}
+    table{width:100%;border-collapse:collapse;min-width:900px}
+    th,td{padding:12px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+    th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+    td.num,th.num{text-align:right}
+    .linkslug{font-size:12px;color:var(--muted)}
+    .rank{font-weight:900;color:var(--green-dark)}
+
+    details.inf{
+      background:var(--paper);border:1px solid var(--line);border-radius:18px;
+      margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow)
+    }
+    details.inf summary{
+      list-style:none;display:grid;grid-template-columns:1.5fr repeat(4,.72fr);
+      gap:10px;align-items:center;padding:16px;cursor:pointer
+    }
+    details.inf summary::-webkit-details-marker{display:none}
+    .iname b{display:block}
+    .iname span{font-size:12px;color:var(--muted)}
+    .inum{text-align:right}
+    .inum b{display:block;font-size:18px}
+    .inum span{font-size:11px;color:var(--muted)}
+    .ibody{padding:16px;border-top:1px solid var(--line);background:#fffefb}
+    .pillrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+    .pill{display:inline-flex;padding:6px 9px;border-radius:999px;background:#f3f0e7;border:1px solid var(--line);font-size:12px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .mini{
+      min-height:38px;border:1px solid var(--line);border-radius:10px;
+      background:var(--paper);padding:0 11px;font-weight:800
+    }
+
+    .section-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .section-grid.three{grid-template-columns:repeat(3,1fr)}
+    .costlist{display:grid;gap:9px}
+    .costrow{display:flex;justify-content:space-between;gap:10px;padding-bottom:8px;border-bottom:1px dashed var(--line)}
+    .costrow span:last-child{font-weight:900}
+
+    @media(max-width:900px){
+      .toolbar{grid-template-columns:1fr 1fr}
+      .cards{grid-template-columns:repeat(2,1fr)}
+      .grid2,.section-grid,.section-grid.three{grid-template-columns:1fr}
+      details.inf summary{grid-template-columns:1.4fr 1fr 1fr}
+      details.inf summary .hide-mobile{display:none}
+    }
+    @media(max-width:560px){
+      .wrap{padding:14px 12px 80px}
+      .hero{padding:18px;border-radius:22px}
+      .brandrow{display:block}
+      .badge{display:inline-flex;margin-top:12px}
+      .toolbar{grid-template-columns:1fr}
+      .metric{padding:15px}
+      .metric .value{font-size:31px}
+      .chartbox{height:280px}
+      .frow,.barrow{grid-template-columns:1.2fr 1.8fr auto}
+      details.inf summary{padding:14px 12px}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <div class="brandrow">
+      <div>
+        <h1>COME PRO — Analítica</h1>
+        <div class="subtitle">
+          Panel general de tráfico, conversiones, redes sociales, Instacart y rendimiento de cada link de influencer.
+        </div>
+      </div>
+      <div class="badge">Worker + Supabase</div>
+    </div>
+
+    <div class="toolbar">
+      <input id="panelKey" class="field" type="password" placeholder="PANEL_KEY">
+      <select id="days" class="field">
+        <option value="7">Últimos 7 días</option>
+        <option value="30" selected>Últimos 30 días</option>
+        <option value="90">Últimos 90 días</option>
+        <option value="365">Último año</option>
+        <option value="3650">Todo el historial</option>
+      </select>
+      <select id="influencerFilter" class="field">
+        <option value="">Todos los influencers</option>
+      </select>
+      <button id="loadBtn" class="btn primary">Actualizar</button>
+    </div>
+
+    <div id="status" class="status">Introduce tu PANEL_KEY y pulsa Actualizar.</div>
+    <div id="selected" class="selected"></div>
+  </section>
+
+  <section id="metrics" class="cards"></section>
+
+  <section class="grid2">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <h3>Evolución del tráfico</h3>
+          <div class="small">Compara visitas, dietas e Instacart a través del tiempo.</div>
+        </div>
+      </div>
+      <div class="chartbox"><canvas id="trafficChart"></canvas></div>
+    </div>
+
+    <div class="panel">
+      <h3>Lectura rápida</h3>
+      <div class="small" style="margin-top:4px">Interpretaciones automáticas del período.</div>
+      <div id="insights" class="insights" style="margin-top:13px"></div>
+    </div>
+  </section>
+
+  <h2>Embudo de conversión</h2>
+  <section class="panel" id="funnel"></section>
+
+  <section class="section-grid">
+    <div>
+      <h2>De dónde llegan</h2>
+      <section class="panel barlist" id="sources"></section>
+    </div>
+    <div>
+      <h2>Navegadores</h2>
+      <section class="panel barlist" id="browsers"></section>
+    </div>
+  </section>
+
+  <h2>Comparación de influencers</h2>
+  <section class="panel table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Influencer / link</th>
+          <th class="num">Visitas</th>
+          <th class="num">Únicos</th>
+          <th class="num">Dietas</th>
+          <th class="num">Conversión</th>
+          <th class="num">Instacart</th>
+          <th class="num">CTR</th>
+          <th class="num">Descargas</th>
+          <th class="num">Calendario</th>
+        </tr>
+      </thead>
+      <tbody id="influencerTable"></tbody>
+    </table>
+  </section>
+
+  <h2>Analítica desplegable por link</h2>
+  <div id="influencerDetails"></div>
+
+  <section class="section-grid three">
+    <div>
+      <h2>Países</h2>
+      <section class="panel barlist" id="countries"></section>
+    </div>
+    <div>
+      <h2>Plataformas</h2>
+      <section class="panel barlist" id="platforms"></section>
+    </div>
+    <div>
+      <h2>Idiomas</h2>
+      <section class="panel barlist" id="languages"></section>
+    </div>
+  </section>
+
+  <section class="section-grid">
+    <div>
+      <h2>Edades</h2>
+      <section class="panel barlist" id="ages"></section>
+    </div>
+    <div>
+      <h2>Sexo</h2>
+      <section class="panel barlist" id="sexes"></section>
+    </div>
+  </section>
+
+  <section class="section-grid">
+    <div>
+      <h2>Objetivos</h2>
+      <section class="panel barlist" id="goals"></section>
+    </div>
+    <div>
+      <h2>Actividad</h2>
+      <section class="panel barlist" id="activities"></section>
+    </div>
+  </section>
+
+  <section class="section-grid">
+    <div>
+      <h2>Productos Amazon</h2>
+      <section class="panel barlist" id="products"></section>
+    </div>
+    <div>
+      <h2>Cambios de alimentos</h2>
+      <section class="panel barlist" id="foodChanges"></section>
+    </div>
+  </section>
+
+  <section class="section-grid">
+    <div>
+      <h2>Abandonos</h2>
+      <section class="panel barlist" id="abandonments"></section>
+    </div>
+    <div>
+      <h2>Costo promedio por país</h2>
+      <section class="panel costlist" id="costByCountry"></section>
+    </div>
+  </section>
+</div>
+
+<script>
+const API_URL = "https://raspy-disk-10bc.el-0a6.workers.dev";
+const APP_URL = "https://come-pro.com/";
+let chart = null;
+let lastGeneralInfluencers = [];
+
+const $ = id => document.getElementById(id);
+const fmt = n => Number(n || 0).toLocaleString('es-ES');
+const pct = n => Number(n || 0).toLocaleString('es-ES',{maximumFractionDigits:1}) + '%';
+
+function esc(v){
+  return String(v ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+function secondsText(sec){
+  sec = Math.max(0,Number(sec||0));
+  const m = Math.floor(sec/60);
+  const s = Math.round(sec%60);
+  return m ? `${m}m ${s}s` : `${s}s`;
+}
+
+function trendHtml(cmp){
+  if(!cmp) return '<div class="trend flat">Sin comparación</div>';
+  const n = Number(cmp.changePct||0);
+  if(n > 0) return `<div class="trend up">▲ ${pct(Math.abs(n))} vs período anterior</div>`;
+  if(n < 0) return `<div class="trend down">▼ ${pct(Math.abs(n))} vs período anterior</div>`;
+  return '<div class="trend flat">— Sin cambio</div>';
+}
+
+async function loadAnalytics(){
+  const key = $('panelKey').value.trim();
+  if(!key){
+    $('status').innerHTML = '<span class="error">Falta PANEL_KEY.</span>';
+    return;
+  }
+
+  sessionStorage.setItem('comepro_panel_key',key);
+
+  const days = $('days').value;
+  const slug = $('influencerFilter').value;
+  const qs = new URLSearchParams({days});
+  if(slug) qs.set('influencer_slug',slug);
+
+  $('loadBtn').disabled = true;
+  $('status').textContent = 'Cargando analíticas…';
+
+  try{
+    const res = await fetch(API_URL + '/analytics?' + qs.toString(),{
+      headers:{'X-Panel-Key':key}
+    });
+    const data = await res.json();
+    if(!res.ok || !data.ok) throw new Error(data.error || 'No se pudieron cargar los datos.');
+
+    renderAll(data);
+
+    if(!slug){
+      lastGeneralInfluencers = data.influencers || [];
+      populateInfluencers(lastGeneralInfluencers);
+    }
+
+    $('status').textContent =
+      'Actualizado ' + new Date().toLocaleString('es-ES') +
+      ' · ' + fmt(data.summary.totalEvents) + ' eventos analizados';
+  }catch(err){
+    $('status').innerHTML = '<span class="error">' + esc(err.message) + '</span>';
+  }finally{
+    $('loadBtn').disabled = false;
+  }
+}
+
+function populateInfluencers(rows){
+  const current = $('influencerFilter').value;
+  $('influencerFilter').innerHTML =
+    '<option value="">Todos los influencers</option>' +
+    (rows||[]).filter(x=>x.slug!=='directo').map(x =>
+      `<option value="${esc(x.slug)}">${esc(x.name)} · ?i=${esc(x.slug)}</option>`
+    ).join('');
+  if([...$('influencerFilter').options].some(o=>o.value===current)){
+    $('influencerFilter').value=current;
+  }
+}
+
+function renderAll(data){
+  renderSelected(data);
+  renderMetrics(data.summary,data.comparison);
+  renderChart(data.daily||[]);
+  renderInsights(data.interpretations||[]);
+  renderFunnel(data.summary);
+  renderBars('sources',data.sources,'var(--green)');
+  renderBars('browsers',data.browsers,'var(--purple)');
+  renderInfluencers(data.influencers||[]);
+  renderBars('countries',data.countries,'var(--pink)');
+  renderBars('platforms',data.platforms,'var(--blue)');
+  renderBars('languages',data.languages,'var(--amber)');
+  renderBars('ages',data.ages,'var(--green)');
+  renderBars('sexes',data.sexes,'var(--purple)');
+  renderBars('goals',data.goals,'var(--pink)');
+  renderBars('activities',data.activities,'var(--blue)');
+  renderBars('products',data.products,'var(--amber)');
+  renderBars('foodChanges',data.foodChanges,'var(--green)');
+  renderBars('abandonments',data.abandonments,'var(--pink)');
+  renderCosts(data.costByCountry||[]);
+}
+
+function renderSelected(data){
+  const box=$('selected');
+  const slug=data.range?.influencerSlug;
+  if(!slug){
+    box.className='selected';
+    box.innerHTML='';
+    return;
+  }
+  const r=(data.influencers||[]).find(x=>x.slug===slug);
+  box.className='selected show';
+  box.innerHTML='<b>Vista individual:</b> '+esc(r?.name||slug)+' · '+esc(APP_URL+'?i='+slug);
+}
+
+function renderMetrics(s,c){
+  const items=[
+    ['Visitas',fmt(s.visits),c?.visits,'c-green'],
+    ['Visitantes únicos',fmt(s.uniqueVisitors),c?.uniqueVisitors,'c-blue'],
+    ['Dietas',fmt(s.diets),c?.diets,'c-amber'],
+    ['Conversión',pct(s.dietConversion),c?.dietConversion,'c-pink'],
+    ['Instacart',fmt(s.instacartClicks),c?.instacartClicks,'c-purple'],
+    ['CTR Instacart',pct(s.instacartCtr),c?.instacartCtr,'c-green'],
+    ['Descargas',fmt(s.downloads),c?.downloads,'c-blue'],
+    ['Recurrencia',pct(s.returningRate),c?.returningRate,'c-purple'],
+    ['Tiempo medio',secondsText(s.avgTimeSeconds),null,'c-amber'],
+    ['Costo medio',s.avgCostUsd ? '$'+fmt(s.avgCostUsd) : '—',null,'c-green'],
+    ['Calendario',fmt(s.calendarActivations),null,'c-pink'],
+    ['WhatsApp',fmt(s.whatsappClicks),null,'c-blue']
+  ];
+  $('metrics').innerHTML=items.map(([label,value,cmp,cls])=>`
+    <div class="metric ${cls}">
+      <div class="label">${esc(label)}</div>
+      <div class="value">${value}</div>
+      ${trendHtml(cmp)}
+    </div>`).join('');
+}
+
+function renderChart(rows){
+  if(chart) chart.destroy();
+  chart=new Chart($('trafficChart'),{
+    type:'line',
+    data:{
+      labels:rows.map(x=>x.date),
+      datasets:[
+        {label:'Visitas',data:rows.map(x=>x.visits),borderWidth:3,tension:.28},
+        {label:'Dietas',data:rows.map(x=>x.diets),borderWidth:3,tension:.28},
+        {label:'Instacart',data:rows.map(x=>x.instacartClicks),borderWidth:3,tension:.28}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#4d5048'}}},
+      scales:{
+        x:{ticks:{color:'#777a71'},grid:{color:'rgba(50,50,40,.05)'}},
+        y:{beginAtZero:true,ticks:{color:'#777a71',precision:0},grid:{color:'rgba(50,50,40,.06)'}}
+      }
+    }
+  });
+}
+
+function renderInsights(rows){
+  $('insights').innerHTML=rows.length
+    ? rows.map(x=>`<div class="insight"><b>${esc(x.title)}</b><span>${esc(x.text)}</span></div>`).join('')
+    : '<div class="empty">Todavía no hay suficientes datos.</div>';
+}
+
+function renderFunnel(s){
+  const base=Math.max(1,Number(s.visits||0));
+  const rows=[
+    ['Entraron',s.visits,100],
+    ['Generaron dieta',s.diets,s.diets/base*100],
+    ['Descargaron',s.downloads,s.downloads/base*100],
+    ['Tocaron Instacart',s.instacartClicks,s.instacartClicks/base*100],
+    ['Tocaron supermercado',s.supermarketClicks,s.supermarketClicks/base*100],
+    ['Activaron calendario',s.calendarActivations,s.calendarActivations/base*100],
+    ['WhatsApp',s.whatsappClicks,s.whatsappClicks/base*100]
+  ];
+  $('funnel').innerHTML='<div class="funnel">'+rows.map(([name,n,p])=>`
+    <div class="frow">
+      <div>${esc(name)} <span class="fpct">${pct(p)}</span></div>
+      <div class="track"><div class="fill" style="width:${Math.min(100,p)}%"></div></div>
+      <div class="fnum">${fmt(n)}</div>
+    </div>`).join('')+'</div>';
+}
+
+function renderBars(id,rows,color){
+  rows=rows||[];
+  const max=Math.max(1,...rows.map(x=>Number(x.count||0)));
+  $(id).innerHTML=rows.length?rows.map(x=>`
+    <div class="barrow">
+      <div class="barname">${esc(x.name)}</div>
+      <div class="track"><div class="barfill" style="width:${Number(x.count||0)/max*100}%;background:${color}"></div></div>
+      <div class="barvalue">${fmt(x.count)}</div>
+    </div>`).join(''):'<div class="empty">Sin datos todavía</div>';
+}
+
+function renderInfluencers(rows){
+  const table=$('influencerTable');
+  table.innerHTML=rows.length?rows.map((r,i)=>`
+    <tr>
+      <td class="rank">${i+1}</td>
+      <td><b>${esc(r.name)}</b><div class="linkslug">${esc(r.slug==='directo'?'sin referido':'?i='+r.slug)}</div></td>
+      <td class="num">${fmt(r.visits)}</td>
+      <td class="num">${fmt(r.uniqueVisitors)}</td>
+      <td class="num">${fmt(r.diets)}</td>
+      <td class="num">${pct(r.dietConversion)}</td>
+      <td class="num">${fmt(r.instacartClicks)}</td>
+      <td class="num">${pct(r.instacartCtr)}</td>
+      <td class="num">${fmt(r.downloads)}</td>
+      <td class="num">${fmt(r.calendarActivations)}</td>
+    </tr>`).join(''):'<tr><td colspan="10" class="empty">Sin datos</td></tr>';
+
+  $('influencerDetails').innerHTML=rows.length?rows.map(r=>{
+    const link=r.slug==='directo'?APP_URL:APP_URL+'?i='+encodeURIComponent(r.slug);
+    const ref=r.referredBy?`${r.referredBy.name} (?i=${r.referredBy.slug})`:'Sin influencer superior';
+    return `
+      <details class="inf">
+        <summary>
+          <div class="iname"><b>${esc(r.name)}</b><span>${esc(r.slug==='directo'?'Tráfico directo':'?i='+r.slug)}</span></div>
+          <div class="inum"><b>${fmt(r.visits)}</b><span>visitas</span></div>
+          <div class="inum"><b>${fmt(r.instacartClicks)}</b><span>Instacart</span></div>
+          <div class="inum hide-mobile"><b>${fmt(r.diets)}</b><span>dietas</span></div>
+          <div class="inum hide-mobile"><b>${pct(r.dietConversion)}</b><span>conv.</span></div>
+        </summary>
+        <div class="ibody">
+          <div class="small">Referido por: ${esc(ref)}</div>
+          <div class="pillrow">
+            ${(r.sources||[]).map(s=>`<span class="pill">${esc(s.name)} · ${fmt(s.count)}</span>`).join('')||'<span class="pill">Sin fuente detectada</span>'}
+          </div>
+          <div class="cards">
+            <div class="metric c-blue"><div class="label">Únicos</div><div class="value">${fmt(r.uniqueVisitors)}</div></div>
+            <div class="metric c-amber"><div class="label">Descargas</div><div class="value">${fmt(r.downloads)}</div></div>
+            <div class="metric c-purple"><div class="label">CTR Instacart</div><div class="value">${pct(r.instacartCtr)}</div></div>
+            <div class="metric c-pink"><div class="label">Calendario</div><div class="value">${fmt(r.calendarActivations)}</div></div>
+          </div>
+          <div class="actions">
+            ${r.slug!=='directo'?`<button class="mini" onclick="filterInfluencer('${esc(r.slug)}')">📈 Ver solo este influencer</button>`:''}
+            <button class="mini" onclick="copyText('${esc(link)}')">📋 Copiar link</button>
+            <button class="mini" onclick="window.open('${esc(link)}','_blank','noopener')">↗ Abrir link</button>
+          </div>
+        </div>
+      </details>`;
+  }).join(''):'<div class="empty">Sin datos por influencer.</div>';
+}
+
+function renderCosts(rows){
+  $('costByCountry').innerHTML=rows.length?rows.map(r=>`
+    <div class="costrow">
+      <span>${esc(r.name)} <small style="color:var(--muted)">(${fmt(r.samples)} muestras)</small></span>
+      <span>$${fmt(r.avgCostUsd)}</span>
+    </div>`).join(''):'<div class="empty">Sin datos todavía</div>';
+}
+
+function filterInfluencer(slug){
+  $('influencerFilter').value=slug;
+  loadAnalytics();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function copyText(text){
+  try{await navigator.clipboard.writeText(text)}
+  catch(e){
+    const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();
+  }
+}
+
+$('panelKey').value=sessionStorage.getItem('comepro_panel_key')||'';
+$('loadBtn').addEventListener('click',loadAnalytics);
+$('days').addEventListener('change',()=>{if($('panelKey').value)loadAnalytics()});
+$('influencerFilter').addEventListener('change',()=>{if($('panelKey').value)loadAnalytics()});
+</script>
+</body>
+</html>
