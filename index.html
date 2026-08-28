@@ -4,7 +4,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>window.COME_PRO_BUILD = "2026-08-28.5";</script>
+<script>window.COME_PRO_BUILD = "2026-08-28.7";</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COME PRO — Versión prueba</title>
@@ -3738,6 +3738,33 @@ function costoEnDolares(costoLocal, codigoPais){
   }catch(e){ return 0; }
 }
 
+
+function destacarRecordatoriosTrasDescarga(){
+  const card = document.getElementById('comeProCalendarCard');
+  if(!card) return;
+
+  card.style.boxShadow = '0 0 0 3px rgba(76,175,62,.18)';
+  card.style.transition = 'box-shadow .2s ease';
+
+  let aviso = document.getElementById('calendarAfterDownloadNotice');
+  if(!aviso){
+    aviso = document.createElement('div');
+    aviso.id = 'calendarAfterDownloadNotice';
+    aviso.className = 'hint';
+    aviso.style.cssText =
+      'margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(76,175,62,.10);font-weight:600;';
+    aviso.textContent = 'Último paso: activa tus recordatorios COME PRO.';
+    const btn = document.getElementById('calendarActivateBtn');
+    if(btn && btn.parentNode){
+      btn.parentNode.insertBefore(aviso, btn);
+    }
+  }
+
+  try{
+    card.scrollIntoView({behavior:'smooth', block:'center'});
+  }catch(e){}
+}
+
 function mostrarRecordatoriosEnResultados(R){
   const results = document.getElementById('results');
   if(!results || !R) return;
@@ -4279,6 +4306,12 @@ async function descargarYComprar(R, target, btn){
   trackEvent('budget_downloaded', {type: target.type});
   enviarEvento('descarga', Object.assign(datosPerfil(R), {detalle: target.type}));
 
+  /* No abrimos el calendario automáticamente aquí.
+     El mismo toque ya se usa para descargar y/o abrir Instacart.
+     En su lugar, destacamos el botón de recordatorios para que sea
+     el siguiente paso cuando el usuario vuelva a COME PRO. */
+  destacarRecordatoriosTrasDescarga();
+
   // --- 2. Instacart con la lista completa ---
   if(showCartButton(R.country)){
     // Si el país tiene su propio supermercado configurado, va primero
@@ -4442,22 +4475,7 @@ function mostrarPantallaFinal(R){
       '</div>' +
     '</div>' +
 
-    '<div class="card">' +
-      '<div class="card-head">' +
-        '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>' +
-        '<h3>Recordatorios COME PRO</h3>' +
-      '</div>' +
-      '<p class="hint">Añádelos a tu calendario para mantener tu dieta y tus compras al día.</p>' +
-      '<button type="button" class="primary" id="calendarWeeklyBtn_OLD_DISABLED">📅 Añadir recordatorio semanal</button>' +
-      '<button type="button" id="calendarMonthlyBtn_OLD_DISABLED" style="margin-top:8px;">📅 Añadir recordatorio mensual</button>' +
-      '<div class="hint" style="margin-top:10px;">Semanal: revisar y comprar tu comida. · Mensual: actualizar tu peso y generar una nueva dieta.</div>' +
-    '</div>' +
-
-    '<div class="card cost-card" style="text-align:center;">' +
-      '<div class="sub">' + t('r_costotitle') + '</div>' +
-      '<div class="amt">' + R.priceSet.symbol + ' ' + fmtMoney(R.totalCost) + '</div>' +
-      '<div class="note">' + t('r_promediodiario') + ': ' + R.priceSet.symbol + ' ' + fmtMoney(R.totalCost/30) + '</div>' +
-    '</div>';
+    '';
 
   el.prepend(screen);
   screen.scrollIntoView({behavior:'smooth'});
@@ -4496,20 +4514,7 @@ function mostrarPantallaFinal(R){
     const msg = encodeURIComponent('Hola, llegue desde COME PRO y estoy interesado en conocer tus servicios.');
     window.open('https://wa.me/' + inf.whatsapp + '?text=' + msg, '_blank', 'noopener');
   });
-  const weeklyCal = document.getElementById('calendarWeeklyBtn_OLD_DISABLED');
-  if(weeklyCal){
-    weeklyCal.addEventListener('click', function(){
-      agregarRecordatorio('weekly', R);
-    });
-  }
-
-  const monthlyCal = document.getElementById('calendarMonthlyBtn_OLD_DISABLED');
-  if(monthlyCal){
-    monthlyCal.addEventListener('click', function(){
-      agregarRecordatorio('monthly', R);
-    });
-  }
-
+  
   screen.querySelectorAll('[data-product]').forEach(function(card){
     card.addEventListener('click', function(){
       const s = SUPPLEMENT_CATALOG.find(function(x){ return x.productId === card.dataset.product; });
