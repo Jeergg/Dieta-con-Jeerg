@@ -4,7 +4,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>window.COME_PRO_BUILD = "2026-08-28.3";</script>
+<script>window.COME_PRO_BUILD = "2026-08-28.4";</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COME PRO — Versión prueba</title>
@@ -4946,56 +4946,65 @@ function crearICS(kind, R){
   ].join("\r\n");
 }
 
-function abrirICS(kind, R){
-  const ics = crearICS(kind, R);
-  const blob = new Blob([ics], {type:"text/calendar;charset=utf-8"});
-  const url = URL.createObjectURL(blob);
-
+function detectarPlataformaCalendario(){
   const ua = navigator.userAgent || "";
-  const esIOS = /iPhone|iPad|iPod/i.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const platform = navigator.platform || "";
 
-  if(esIOS){
-    /* En iPhone no usamos download="...": eso lo mandaba a Archivos.
-       Abrimos el text/calendar directamente para que iOS pueda ofrecer
-       añadirlo al calendario. */
-    window.location.href = url;
-    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
-    return;
-  }
+  const ios =
+    /iPhone|iPad|iPod/i.test(ua) ||
+    (platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = kind === 'weekly'
-    ? 'COME_PRO_recordatorio_semanal.ics'
-    : 'COME_PRO_recordatorio_mensual.ics';
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
+  const android = /Android/i.test(ua);
+
+  if(ios) return "ios";
+  if(android) return "android";
+  return "other";
 }
 
-function abrirGoogleCalendar(kind, R){
+function calendarServerUrl(kind, R){
+  const u = new URL(COME_PRO_API + "/calendar.ics");
+  u.searchParams.set("kind", kind);
+  u.searchParams.set("app", comeProReferralUrl());
+
+  const shopUrl = shoppingUrlForImage(R);
+  if(kind === "weekly" && shopUrl){
+    u.searchParams.set("shop", shopUrl);
+  }
+
+  /* Evita que Chrome/Safari reutilicen una descarga anterior. */
+  u.searchParams.set("_", String(Date.now()));
+  return u.toString();
+}
+
+function abrirAppleCalendar(kind, R){
+  /* iPhone/iPad:
+     El .ics ya NO se crea como Blob dentro del navegador.
+     Se abre desde un endpoint HTTPS real con Content-Type text/calendar.
+     Esto permite que iOS entregue el archivo al sistema de Calendario
+     en lugar de tratarlo como un archivo desconocido generado por la web. */
+  window.location.assign(calendarServerUrl(kind, R));
+}
+
+function googleCalendarTemplateUrl(kind, R){
   const copy = calendarCopy(kind);
   const appUrl = comeProReferralUrl();
   const shopUrl = shoppingUrlForImage(R);
 
   let details = copy.body + "\n\nCOME PRO: " + appUrl;
-  if(kind === 'weekly' && shopUrl){
+  if(kind === "weekly" && shopUrl){
     details += "\nCompras: " + shopUrl;
   }
 
-  const start = fechaCalendario(kind === 'weekly' ? 7 : 30);
+  const start = fechaCalendario(kind === "weekly" ? 7 : 30);
   const d = new Date();
-  d.setDate(d.getDate() + (kind === 'weekly' ? 8 : 31));
+  d.setDate(d.getDate() + (kind === "weekly" ? 8 : 31));
   const end = [
     d.getFullYear(),
-    String(d.getMonth()+1).padStart(2,'0'),
-    String(d.getDate()).padStart(2,'0')
+    String(d.getMonth()+1).padStart(2,"0"),
+    String(d.getDate()).padStart(2,"0")
   ].join("");
 
-  const recur = kind === 'weekly'
+  const recur = kind === "weekly"
     ? "RRULE:FREQ=WEEKLY;INTERVAL=1"
     : "RRULE:FREQ=MONTHLY;INTERVAL=1";
 
@@ -5005,47 +5014,54 @@ function abrirGoogleCalendar(kind, R){
   u.searchParams.set("details", details);
   u.searchParams.set("dates", start + "/" + end);
   u.searchParams.set("recur", recur);
+  return u.toString();
+}
 
-  /* No usamos window.open aquí: Instagram/Facebook/TikTok suelen bloquear
-     ventanas nuevas aunque el usuario haya tocado un botón. Navegar en la
-     misma pestaña es mucho más fiable dentro de esos WebViews. */
-  window.location.href = u.toString();
+function abrirAndroidCalendar(kind, R){
+  const webUrl = googleCalendarTemplateUrl(kind, R);
+
+  /* Android: primero intentamos abrir la aplicación Google Calendar.
+     Chrome entiende intent:// y, si la app no está instalada, utiliza
+     browser_fallback_url. */
+  const withoutScheme = webUrl.replace(/^https:\/\//, "");
+  const intentUrl =
+    "intent://" + withoutScheme +
+    "#Intent;" +
+    "scheme=https;" +
+    "package=com.google.android.calendar;" +
+    "S.browser_fallback_url=" + encodeURIComponent(webUrl) + ";" +
+    "end";
+
+  window.location.assign(intentUrl);
+}
+
+function abrirCalendarioEscritorio(kind, R){
+  /* En computadora / plataforma desconocida usamos Google Calendar web. */
+  window.location.assign(googleCalendarTemplateUrl(kind, R));
 }
 
 function agregarRecordatorio(kind, R){
   enviarEvento(
-    kind === 'weekly' ? 'calendario_semanal' : 'calendario_mensual',
-    Object.assign(datosPerfil(R), {detalle:kind})
+    kind === "weekly" ? "calendario_semanal" : "calendario_mensual",
+    Object.assign(datosPerfil(R), {
+      detalle:kind,
+      plataforma_calendario:detectarPlataformaCalendario()
+    })
   );
 
-  const ua = navigator.userAgent || "";
-  const android = /Android/i.test(ua);
-  const dentroApp = esNavegadorDeApp();
-  const esIOS = /iPhone|iPad|iPod/i.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const plataforma = detectarPlataformaCalendario();
 
-  /* Instagram/Facebook/TikTok bloquean o ignoran archivos blob .ics.
-     En esos navegadores abrimos Google Calendar directamente por HTTPS,
-     que sí puede salir del WebView y funciona sin descargar un archivo. */
-  if(dentroApp){
-    abrirGoogleCalendar(kind, R);
+  if(plataforma === "ios"){
+    abrirAppleCalendar(kind, R);
     return;
   }
 
-  /* Android: Google Calendar es la vía más consistente. */
-  if(android){
-    abrirGoogleCalendar(kind, R);
+  if(plataforma === "android"){
+    abrirAndroidCalendar(kind, R);
     return;
   }
 
-  /* Safari/Chrome en iPhone/iPad: .ics abre el flujo de calendario de iOS. */
-  if(esIOS){
-    abrirICS(kind, R);
-    return;
-  }
-
-  /* Escritorio y otros navegadores. */
-  abrirICS(kind, R);
+  abrirCalendarioEscritorio(kind, R);
 }
 
 function downloadCanvasAsPNG(canvas, filename){
