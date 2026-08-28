@@ -4,7 +4,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>window.COME_PRO_BUILD = "2026-08-28.2";</script>
+<script>window.COME_PRO_BUILD = "2026-08-28.3";</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COME PRO — Versión prueba</title>
@@ -3761,7 +3761,7 @@ function mostrarRecordatoriosEnResultados(R){
     '<button type="button" class="primary" id="calendarWeeklyMainBtn">' +
       '📅 Recordatorio semanal de compras' +
     '</button>' +
-    '<button type="button" id="calendarMonthlyMainBtn" style="margin-top:8px;">' +
+    '<button type="button" class="primary" id="calendarMonthlyMainBtn" style="margin-top:8px;">' +
       '📅 Recordatorio mensual de dieta' +
     '</button>' +
     '<div class="hint" style="margin-top:10px;">' +
@@ -5006,7 +5006,10 @@ function abrirGoogleCalendar(kind, R){
   u.searchParams.set("dates", start + "/" + end);
   u.searchParams.set("recur", recur);
 
-  window.open(u.toString(), "_blank", "noopener");
+  /* No usamos window.open aquí: Instagram/Facebook/TikTok suelen bloquear
+     ventanas nuevas aunque el usuario haya tocado un botón. Navegar en la
+     misma pestaña es mucho más fiable dentro de esos WebViews. */
+  window.location.href = u.toString();
 }
 
 function agregarRecordatorio(kind, R){
@@ -5017,14 +5020,31 @@ function agregarRecordatorio(kind, R){
 
   const ua = navigator.userAgent || "";
   const android = /Android/i.test(ua);
+  const dentroApp = esNavegadorDeApp();
+  const esIOS = /iPhone|iPad|iPod/i.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  if(android){
-    try{
-      abrirGoogleCalendar(kind, R);
-      return;
-    }catch(e){}
+  /* Instagram/Facebook/TikTok bloquean o ignoran archivos blob .ics.
+     En esos navegadores abrimos Google Calendar directamente por HTTPS,
+     que sí puede salir del WebView y funciona sin descargar un archivo. */
+  if(dentroApp){
+    abrirGoogleCalendar(kind, R);
+    return;
   }
 
+  /* Android: Google Calendar es la vía más consistente. */
+  if(android){
+    abrirGoogleCalendar(kind, R);
+    return;
+  }
+
+  /* Safari/Chrome en iPhone/iPad: .ics abre el flujo de calendario de iOS. */
+  if(esIOS){
+    abrirICS(kind, R);
+    return;
+  }
+
+  /* Escritorio y otros navegadores. */
   abrirICS(kind, R);
 }
 
