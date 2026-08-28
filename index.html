@@ -4,7 +4,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>window.COME_PRO_BUILD = "2026-08-28.4";</script>
+<script>window.COME_PRO_BUILD = "2026-08-28.5";</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COME PRO — Versión prueba</title>
@@ -3757,32 +3757,22 @@ function mostrarRecordatoriosEnResultados(R){
       '</svg>' +
       '<h3>Recordatorios COME PRO</h3>' +
     '</div>' +
-    '<p class="hint">Añádelos ahora a tu calendario.</p>' +
-    '<button type="button" class="primary" id="calendarWeeklyMainBtn">' +
-      '📅 Recordatorio semanal de compras' +
+    '<p class="hint">Actívalos una sola vez y tendrás los dos recordatorios.</p>' +
+    '<button type="button" class="primary" id="calendarActivateBtn" ' +
+      'style="width:100%;min-height:60px;font-size:17px;">' +
+      '📅 Activar recordatorios COME PRO' +
     '</button>' +
-    '<button type="button" class="primary" id="calendarMonthlyMainBtn" style="margin-top:8px;">' +
-      '📅 Recordatorio mensual de dieta' +
-    '</button>' +
-    '<div class="hint" style="margin-top:10px;">' +
-      'Semanal: “¿Ya tienes tu comida de la semana?”<br>' +
-      'Mensual: “Actualiza tu dieta”.' +
+    '<div class="hint" style="margin-top:12px;line-height:1.55;">' +
+      '✓ Semanal: “¿Ya tienes tu comida de la semana?”<br>' +
+      '✓ Mensual: “Actualiza tu dieta”.' +
     '</div>';
 
-  /* Lo ponemos al principio de resultados para que sea imposible perderlo. */
   results.prepend(card);
 
-  const weekly = document.getElementById('calendarWeeklyMainBtn');
-  if(weekly){
-    weekly.addEventListener('click', function(){
-      agregarRecordatorio('weekly', R);
-    });
-  }
-
-  const monthly = document.getElementById('calendarMonthlyMainBtn');
-  if(monthly){
-    monthly.addEventListener('click', function(){
-      agregarRecordatorio('monthly', R);
+  const activate = document.getElementById('calendarActivateBtn');
+  if(activate){
+    activate.addEventListener('click', function(){
+      activarRecordatoriosComePro(R);
     });
   }
 }
@@ -4458,8 +4448,8 @@ function mostrarPantallaFinal(R){
         '<h3>Recordatorios COME PRO</h3>' +
       '</div>' +
       '<p class="hint">Añádelos a tu calendario para mantener tu dieta y tus compras al día.</p>' +
-      '<button type="button" class="primary" id="calendarWeeklyBtn">📅 Añadir recordatorio semanal</button>' +
-      '<button type="button" id="calendarMonthlyBtn" style="margin-top:8px;">📅 Añadir recordatorio mensual</button>' +
+      '<button type="button" class="primary" id="calendarWeeklyBtn_OLD_DISABLED">📅 Añadir recordatorio semanal</button>' +
+      '<button type="button" id="calendarMonthlyBtn_OLD_DISABLED" style="margin-top:8px;">📅 Añadir recordatorio mensual</button>' +
       '<div class="hint" style="margin-top:10px;">Semanal: revisar y comprar tu comida. · Mensual: actualizar tu peso y generar una nueva dieta.</div>' +
     '</div>' +
 
@@ -4506,14 +4496,14 @@ function mostrarPantallaFinal(R){
     const msg = encodeURIComponent('Hola, llegue desde COME PRO y estoy interesado en conocer tus servicios.');
     window.open('https://wa.me/' + inf.whatsapp + '?text=' + msg, '_blank', 'noopener');
   });
-  const weeklyCal = document.getElementById('calendarWeeklyBtn');
+  const weeklyCal = document.getElementById('calendarWeeklyBtn_OLD_DISABLED');
   if(weeklyCal){
     weeklyCal.addEventListener('click', function(){
       agregarRecordatorio('weekly', R);
     });
   }
 
-  const monthlyCal = document.getElementById('calendarMonthlyBtn');
+  const monthlyCal = document.getElementById('calendarMonthlyBtn_OLD_DISABLED');
   if(monthlyCal){
     monthlyCal.addEventListener('click', function(){
       agregarRecordatorio('monthly', R);
@@ -4961,107 +4951,65 @@ function detectarPlataformaCalendario(){
   return "other";
 }
 
-function calendarServerUrl(kind, R){
-  const u = new URL(COME_PRO_API + "/calendar.ics");
-  u.searchParams.set("kind", kind);
+function calendarFeedHttpsUrl(R, endpoint){
+  const u = new URL(COME_PRO_API + endpoint);
   u.searchParams.set("app", comeProReferralUrl());
 
   const shopUrl = shoppingUrlForImage(R);
-  if(kind === "weekly" && shopUrl){
+  if(shopUrl){
     u.searchParams.set("shop", shopUrl);
   }
 
-  /* Evita que Chrome/Safari reutilicen una descarga anterior. */
-  u.searchParams.set("_", String(Date.now()));
   return u.toString();
 }
 
-function abrirAppleCalendar(kind, R){
-  /* iPhone/iPad:
-     El .ics ya NO se crea como Blob dentro del navegador.
-     Se abre desde un endpoint HTTPS real con Content-Type text/calendar.
-     Esto permite que iOS entregue el archivo al sistema de Calendario
-     en lugar de tratarlo como un archivo desconocido generado por la web. */
-  window.location.assign(calendarServerUrl(kind, R));
+function activarRecordatoriosIOS(R){
+  const httpsUrl = calendarFeedHttpsUrl(R, "/calendar-subscribe.ics");
+  const webcalUrl = httpsUrl.replace(/^https:\/\//i, "webcal://");
+  window.location.href = webcalUrl;
 }
 
-function googleCalendarTemplateUrl(kind, R){
-  const copy = calendarCopy(kind);
-  const appUrl = comeProReferralUrl();
-  const shopUrl = shoppingUrlForImage(R);
+function activarRecordatoriosAndroid(R){
+  const httpsUrl = calendarFeedHttpsUrl(R, "/calendar-bundle.ics");
 
-  let details = copy.body + "\n\nCOME PRO: " + appUrl;
-  if(kind === "weekly" && shopUrl){
-    details += "\nCompras: " + shopUrl;
-  }
-
-  const start = fechaCalendario(kind === "weekly" ? 7 : 30);
-  const d = new Date();
-  d.setDate(d.getDate() + (kind === "weekly" ? 8 : 31));
-  const end = [
-    d.getFullYear(),
-    String(d.getMonth()+1).padStart(2,"0"),
-    String(d.getDate()).padStart(2,"0")
-  ].join("");
-
-  const recur = kind === "weekly"
-    ? "RRULE:FREQ=WEEKLY;INTERVAL=1"
-    : "RRULE:FREQ=MONTHLY;INTERVAL=1";
-
-  const u = new URL("https://calendar.google.com/calendar/render");
-  u.searchParams.set("action", "TEMPLATE");
-  u.searchParams.set("text", copy.title);
-  u.searchParams.set("details", details);
-  u.searchParams.set("dates", start + "/" + end);
-  u.searchParams.set("recur", recur);
-  return u.toString();
-}
-
-function abrirAndroidCalendar(kind, R){
-  const webUrl = googleCalendarTemplateUrl(kind, R);
-
-  /* Android: primero intentamos abrir la aplicación Google Calendar.
-     Chrome entiende intent:// y, si la app no está instalada, utiliza
-     browser_fallback_url. */
-  const withoutScheme = webUrl.replace(/^https:\/\//, "");
   const intentUrl =
-    "intent://" + withoutScheme +
+    "intent://" +
+    httpsUrl.replace(/^https:\/\//i, "") +
     "#Intent;" +
     "scheme=https;" +
-    "package=com.google.android.calendar;" +
-    "S.browser_fallback_url=" + encodeURIComponent(webUrl) + ";" +
+    "type=text/calendar;" +
+    "S.browser_fallback_url=" + encodeURIComponent(httpsUrl) + ";" +
     "end";
 
-  window.location.assign(intentUrl);
+  window.location.href = intentUrl;
 }
 
-function abrirCalendarioEscritorio(kind, R){
-  /* En computadora / plataforma desconocida usamos Google Calendar web. */
-  window.location.assign(googleCalendarTemplateUrl(kind, R));
+function activarRecordatoriosOtro(R){
+  window.location.href = calendarFeedHttpsUrl(R, "/calendar-bundle.ics");
 }
 
-function agregarRecordatorio(kind, R){
+function activarRecordatoriosComePro(R){
+  const plataforma = detectarPlataformaCalendario();
+
   enviarEvento(
-    kind === "weekly" ? "calendario_semanal" : "calendario_mensual",
+    "calendario_activado",
     Object.assign(datosPerfil(R), {
-      detalle:kind,
-      plataforma_calendario:detectarPlataformaCalendario()
+      detalle:"recordatorios_semanal_mensual",
+      plataforma_calendario:plataforma
     })
   );
 
-  const plataforma = detectarPlataformaCalendario();
-
   if(plataforma === "ios"){
-    abrirAppleCalendar(kind, R);
+    activarRecordatoriosIOS(R);
     return;
   }
 
   if(plataforma === "android"){
-    abrirAndroidCalendar(kind, R);
+    activarRecordatoriosAndroid(R);
     return;
   }
 
-  abrirCalendarioEscritorio(kind, R);
+  activarRecordatoriosOtro(R);
 }
 
 function downloadCanvasAsPNG(canvas, filename){
