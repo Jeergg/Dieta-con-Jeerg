@@ -4,7 +4,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>window.COME_PRO_BUILD = "2026-08-28.8-analytics";</script>
+<script>window.COME_PRO_BUILD = "2026-08-28.9-tracking-event";</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COME PRO — Versión prueba</title>
@@ -3447,6 +3447,7 @@ document.addEventListener('click', function(e){
    nombre, peso, altura ni condición médica.
    ============================================================ */
 const ANALYTICS_URL = COME_PRO_API;
+const ANALYTICS_EVENT_URL = COME_PRO_API.replace(/\/+$/, '') + '/event';
 const LEGACY_ANALYTICS_URL = "https://script.google.com/macros/s/AKfycbw-PzaIQy8Gk8QyBWFo1-qaIyBnRdJMLikJjL-CNp0WkXpYug6Gz632oTyK8qDislvZ/exec";
 
 /* Paso en el que está la persona: si cierra la app aquí, sabremos
@@ -3660,6 +3661,36 @@ function enviarEventoA(url, cuerpo, texto, dentroApp, etiqueta){
   }
 }
 
+function enviarEventoWorker(cuerpo){
+  const texto = JSON.stringify(cuerpo);
+
+  /* El Worker tiene una ruta dedicada /event.
+     Primero intentamos POST JSON real. Esto funciona en Safari/Chrome y,
+     cuando el navegador interno lo permite, también en Instagram/Facebook/TikTok. */
+  try{
+    fetch(ANALYTICS_EVENT_URL, {
+      method:'POST',
+      mode:'cors',
+      redirect:'follow',
+      keepalive:true,
+      cache:'no-store',
+      credentials:'omit',
+      headers:{'Content-Type':'application/json'},
+      body:texto
+    }).catch(function(){});
+  }catch(e){}
+
+  /* Respaldo universal por GET. /event acepta GET directamente y el mismo
+     event_id permite que Supabase ignore duplicados si llegan ambos envíos. */
+  try{
+    enviarPixelA(ANALYTICS_EVENT_URL, cuerpo, 'pixel_worker');
+  }catch(e){}
+
+  try{
+    enviarGetRespaldoA(ANALYTICS_EVENT_URL, cuerpo, 'fetch_get_worker');
+  }catch(e){}
+}
+
 function enviarEvento(evento, extra){
   try{
     const nuevoEventId = crearEventoId();
@@ -3690,7 +3721,9 @@ function enviarEvento(evento, extra){
        2) Google Apps Script sigue recibiéndolo para que el panel de estadísticas
           anterior continúe contando Safari, Chrome e Instagram.
        Ambos reciben el mismo eventId para poder deduplicar respaldos. */
-    enviarEventoA(ANALYTICS_URL, cuerpo, texto, dentroApp, 'worker');
+    /* Worker/Supabase: ruta /event con POST JSON + dos respaldos GET.
+       Google Apps Script se conserva como estaba para no romper el panel viejo. */
+    enviarEventoWorker(cuerpo);
     enviarEventoA(LEGACY_ANALYTICS_URL, cuerpo, texto, dentroApp, 'legacy');
 
   }catch(e){}
