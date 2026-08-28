@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<script>window.COME_PRO_BUILD = "2026-08-28.2";</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COME PRO — Versión prueba</title>
@@ -3433,6 +3437,7 @@ document.addEventListener('click', function(e){
    nombre, peso, altura ni condición médica.
    ============================================================ */
 const ANALYTICS_URL = COME_PRO_API;
+const LEGACY_ANALYTICS_URL = "https://script.google.com/macros/s/AKfycbw-PzaIQy8Gk8QyBWFo1-qaIyBnRdJMLikJjL-CNp0WkXpYug6Gz632oTyK8qDislvZ/exec";
 
 /* Paso en el que está la persona: si cierra la app aquí, sabremos
    en qué punto del formulario se pierde la gente. */
@@ -3574,7 +3579,8 @@ function paramsAnalitica(cuerpo, transporte){
   return p.join('&');
 }
 
-function enviarPixel(cuerpo, transporte){
+function enviarPixelA(url, cuerpo, transporte){
+  if(!url) return;
   try{
     const img = new Image();
     PIXELES_PENDIENTES.push(img);
@@ -3583,25 +3589,68 @@ function enviarPixel(cuerpo, transporte){
       if(i !== -1) PIXELES_PENDIENTES.splice(i, 1);
     };
     img.onload = quitar;
-    img.onerror = quitar; // Apps Script responde texto; el GET ya se realizó.
-    img.src = ANALYTICS_URL + '?' + paramsAnalitica(cuerpo, transporte || 'pixel');
-    /* Evita mantener referencias para siempre si el navegador no dispara
-       load/error al suspender la página. */
+    img.onerror = quitar;
+    img.src = url + '?' + paramsAnalitica(cuerpo, transporte || 'pixel');
     setTimeout(quitar, 15000);
   }catch(e){}
 }
 
-function enviarGetRespaldo(cuerpo, transporte){
+function enviarGetRespaldoA(url, cuerpo, transporte){
+  if(!url) return;
   try{
-    fetch(ANALYTICS_URL + '?' + paramsAnalitica(cuerpo, transporte || 'fetch_get'), {
-      method: 'GET', mode: 'no-cors', redirect: 'follow', keepalive: true,
-      cache: 'no-store', credentials: 'omit'
+    fetch(url + '?' + paramsAnalitica(cuerpo, transporte || 'fetch_get'), {
+      method:'GET',
+      mode:'no-cors',
+      redirect:'follow',
+      keepalive:true,
+      cache:'no-store',
+      credentials:'omit'
     }).catch(function(){});
   }catch(e){}
 }
 
+function enviarEventoA(url, cuerpo, texto, dentroApp, etiqueta){
+  if(!url) return;
+
+  /* Instagram/Facebook/TikTok: el GET por imagen es la vía más resistente.
+     También se manda un GET no-cors como respaldo. */
+  if(dentroApp){
+    enviarPixelA(url, cuerpo, 'pixel_app_' + etiqueta);
+    enviarGetRespaldoA(url, cuerpo, 'fetch_get_app_' + etiqueta);
+    return;
+  }
+
+  /* Safari/Chrome: sendBeacon + pixel de respaldo. */
+  let beaconAceptado = false;
+  try{
+    if(navigator.sendBeacon){
+      const blob = new Blob([texto], {type:'text/plain;charset=UTF-8'});
+      beaconAceptado = navigator.sendBeacon(url, blob);
+    }
+  }catch(e){}
+
+  enviarPixelA(
+    url,
+    cuerpo,
+    beaconAceptado ? 'pixel_backup_beacon_' + etiqueta : 'pixel_backup_' + etiqueta
+  );
+
+  if(!beaconAceptado){
+    try{
+      fetch(url, {
+        method:'POST',
+        mode:'no-cors',
+        redirect:'follow',
+        keepalive:true,
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:texto,
+        credentials:'omit'
+      }).catch(function(){});
+    }catch(e){}
+  }
+}
+
 function enviarEvento(evento, extra){
-  if(!ANALYTICS_URL) return;
   try{
     const nuevoEventId = crearEventoId();
     const slugAtribucion = ACTIVE_INFLUENCER_SLUG ||
@@ -3610,54 +3659,30 @@ function enviarEvento(evento, extra){
         : '');
 
     const cuerpo = Object.assign({
-      evento: evento,
-      event_id: nuevoEventId,
-      eventId: nuevoEventId,
-      influencer: slugAtribucion || 'directo',
-      influencer_slug: slugAtribucion || '',
-      sesion: SESION_ID,
-      session_id: SESION_ID,
-      idioma: CURRENT_LANG,
-      visitaNum: VISITA_NUM,
-      segundos: Math.round((Date.now() - INICIO_APP) / 1000),
+      evento:evento,
+      event_id:nuevoEventId,
+      eventId:nuevoEventId,
+      influencer:slugAtribucion || 'directo',
+      influencer_slug:slugAtribucion || '',
+      sesion:SESION_ID,
+      session_id:SESION_ID,
+      idioma:CURRENT_LANG,
+      visitaNum:VISITA_NUM,
+      segundos:Math.round((Date.now() - INICIO_APP) / 1000),
+      build:(window.COME_PRO_BUILD || '')
     }, extra || {});
 
     const texto = JSON.stringify(cuerpo);
     const dentroApp = esNavegadorDeApp();
 
-    /* Estrategia resistente a navegadores integrados:
-       - Instagram/Facebook/TikTok/etc.: GET por imagen + GET no-cors.
-       - Safari/Chrome/etc.: sendBeacon y, además, un píxel de respaldo.
-       Los dos intentos llevan el MISMO eventId; Code.gs deduplica bajo lock,
-       así que ganar fiabilidad no duplica las métricas. */
-    if(dentroApp){
-      enviarPixel(cuerpo, 'pixel_app');
-      enviarGetRespaldo(cuerpo, 'fetch_get_app');
-      return;
-    }
+    /* IMPORTANTE:
+       1) Worker/Supabase recibe el evento para el nuevo sistema por influencer.
+       2) Google Apps Script sigue recibiéndolo para que el panel de estadísticas
+          anterior continúe contando Safari, Chrome e Instagram.
+       Ambos reciben el mismo eventId para poder deduplicar respaldos. */
+    enviarEventoA(ANALYTICS_URL, cuerpo, texto, dentroApp, 'worker');
+    enviarEventoA(LEGACY_ANALYTICS_URL, cuerpo, texto, dentroApp, 'legacy');
 
-    let beaconAceptado = false;
-    try{
-      if(navigator.sendBeacon){
-        const blob = new Blob([texto], {type: 'text/plain;charset=UTF-8'});
-        beaconAceptado = navigator.sendBeacon(ANALYTICS_URL, blob);
-      }
-    }catch(e){}
-
-    /* El píxel se envía incluso si sendBeacon dice "true": true solo significa
-       que el navegador aceptó encolar el envío, no que Apps Script lo guardó.
-       La deduplicación del servidor evita contar dos veces si llegan ambos. */
-    enviarPixel(cuerpo, beaconAceptado ? 'pixel_backup_beacon' : 'pixel_backup');
-
-    if(!beaconAceptado){
-      try{
-        fetch(ANALYTICS_URL, {
-          method: 'POST', mode: 'no-cors', redirect: 'follow', keepalive: true,
-          headers: {'Content-Type':'text/plain;charset=utf-8'}, body: texto,
-          credentials: 'omit'
-        }).catch(function(){});
-      }catch(e){}
-    }
   }catch(e){}
 }
 
@@ -3713,6 +3738,55 @@ function costoEnDolares(costoLocal, codigoPais){
   }catch(e){ return 0; }
 }
 
+function mostrarRecordatoriosEnResultados(R){
+  const results = document.getElementById('results');
+  if(!results || !R) return;
+
+  let card = document.getElementById('comeProCalendarCard');
+  if(card) card.remove();
+
+  card = document.createElement('div');
+  card.id = 'comeProCalendarCard';
+  card.className = 'card';
+  card.style.cssText = 'border-color:var(--accent);margin-top:14px;';
+  card.innerHTML =
+    '<div class="card-head">' +
+      '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+        '<rect x="3" y="5" width="18" height="16" rx="2"/>' +
+        '<path d="M16 3v4M8 3v4M3 11h18"/>' +
+      '</svg>' +
+      '<h3>Recordatorios COME PRO</h3>' +
+    '</div>' +
+    '<p class="hint">Añádelos ahora a tu calendario.</p>' +
+    '<button type="button" class="primary" id="calendarWeeklyMainBtn">' +
+      '📅 Recordatorio semanal de compras' +
+    '</button>' +
+    '<button type="button" id="calendarMonthlyMainBtn" style="margin-top:8px;">' +
+      '📅 Recordatorio mensual de dieta' +
+    '</button>' +
+    '<div class="hint" style="margin-top:10px;">' +
+      'Semanal: “¿Ya tienes tu comida de la semana?”<br>' +
+      'Mensual: “Actualiza tu dieta”.' +
+    '</div>';
+
+  /* Lo ponemos al principio de resultados para que sea imposible perderlo. */
+  results.prepend(card);
+
+  const weekly = document.getElementById('calendarWeeklyMainBtn');
+  if(weekly){
+    weekly.addEventListener('click', function(){
+      agregarRecordatorio('weekly', R);
+    });
+  }
+
+  const monthly = document.getElementById('calendarMonthlyMainBtn');
+  if(monthly){
+    monthly.addEventListener('click', function(){
+      agregarRecordatorio('monthly', R);
+    });
+  }
+}
+
 function renderResults(R, opts){
   // Evento principal: aquí es donde la visita se convierte en dieta
   enviarEvento('dieta_generada', datosPerfil(R));
@@ -3733,8 +3807,15 @@ function renderResults(R, opts){
   const el = document.getElementById('results');
   el.classList.remove('hidden');
 
-  if(IS_MODEL_1){ renderResultsModel1(R, el, opts); return; }
-  renderResultsModel0(R, el, opts);
+  if(IS_MODEL_1){
+    renderResultsModel1(R, el, opts);
+  } else {
+    renderResultsModel0(R, el, opts);
+  }
+
+  /* El calendario aparece inmediatamente al terminar de generar la dieta,
+     tanto en Safari/Chrome como en el navegador interno de Instagram. */
+  mostrarRecordatoriosEnResultados(R);
 }
 
 function renderResultsModel0(R, el, opts){
@@ -4572,34 +4653,51 @@ function drawBrandHeader(ctx, C, nombre, subtitle){
    - enlace visible de regreso a COME PRO con ?i=slug
    ============================================================ */
 function qrCanvasFor(text, size){
-  if(!text || typeof QRCode === 'undefined') return null;
+  if(!text) return null;
+
+  /* QRCode.js se carga en <head>. Si por cualquier razón el navegador
+     todavía no lo tiene listo, devolvemos null; decorateCanvas conserva
+     el footer y el enlace visible. */
+  if(typeof QRCode === 'undefined') return null;
 
   try{
     const holder = document.createElement('div');
-    holder.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
+    holder.style.cssText =
+      'position:fixed;left:-9999px;top:-9999px;width:' + size + 'px;height:' + size + 'px;overflow:hidden;';
     document.body.appendChild(holder);
 
     new QRCode(holder, {
-      text: text,
-      width: size,
-      height: size,
-      colorDark: "#000000",
-      colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.M
+      text:text,
+      width:size,
+      height:size,
+      colorDark:"#000000",
+      colorLight:"#ffffff",
+      correctLevel:QRCode.CorrectLevel.M
     });
 
-    const qrc = holder.querySelector('canvas');
-    if(!qrc){
-      holder.remove();
-      return null;
-    }
+    const sourceCanvas = holder.querySelector('canvas');
+    const sourceImg = holder.querySelector('img');
 
     const copy = document.createElement('canvas');
     copy.width = size;
     copy.height = size;
-    copy.getContext('2d').drawImage(qrc, 0, 0, size, size);
+    const ctx = copy.getContext('2d');
+
+    if(sourceCanvas){
+      ctx.drawImage(sourceCanvas, 0, 0, size, size);
+      holder.remove();
+      return copy;
+    }
+
+    /* Algunos WebViews crean <img> en vez de <canvas>. */
+    if(sourceImg && sourceImg.complete && sourceImg.naturalWidth){
+      ctx.drawImage(sourceImg, 0, 0, size, size);
+      holder.remove();
+      return copy;
+    }
+
     holder.remove();
-    return copy;
+    return null;
   }catch(e){
     if(typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE){
       console.warn("COME PRO: no se pudo dibujar el QR", e);
@@ -4852,6 +4950,20 @@ function abrirICS(kind, R){
   const ics = crearICS(kind, R);
   const blob = new Blob([ics], {type:"text/calendar;charset=utf-8"});
   const url = URL.createObjectURL(blob);
+
+  const ua = navigator.userAgent || "";
+  const esIOS = /iPhone|iPad|iPod/i.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  if(esIOS){
+    /* En iPhone no usamos download="...": eso lo mandaba a Archivos.
+       Abrimos el text/calendar directamente para que iOS pueda ofrecer
+       añadirlo al calendario. */
+    window.location.href = url;
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+    return;
+  }
+
   const a = document.createElement('a');
   a.href = url;
   a.download = kind === 'weekly'
@@ -5831,18 +5943,12 @@ if(ACTIVE_INFLUENCER_SLUG){
   trackEvent('landing_view', {model:0});
 }
 
-/* Registra una visita REAL en Worker/Supabase. Se espera a que termine
-   la carga pública del influencer para que sus enlaces estén disponibles,
-   pero la atribución usa el slug de ?i= desde el primer instante. */
-Promise.resolve(INFLUENCER_READY)
-  .catch(function(){ return null; })
-  .finally(function(){
-    enviarEvento('visita', {
-      referente: origenVisita(),
-      detalle: esNavegadorDeApp() ? 'navegador_de_app' : 'navegador_normal',
-      landing_url: window.location.href
-    });
-  });
+/* La visita inicial ya se registra una sola vez arriba.
+   INFLUENCER_READY continúa cargando los datos y enlaces del influencer
+   en segundo plano, sin duplicar la visita. */
+Promise.resolve(INFLUENCER_READY).catch(function(){ return null; });
+
+try{ console.log("COME PRO build", window.COME_PRO_BUILD); }catch(e){}
 </script>
 </body>
 </html>
