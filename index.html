@@ -322,6 +322,7 @@
   .m1-modal-close{ position:absolute; top:14px; right:16px; background:var(--surface2); border:none;
     width:30px; height:30px; border-radius:50%; color:var(--text); cursor:pointer; font-size:14px; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
 <body data-theme="light">
 
@@ -1691,9 +1692,135 @@ const SUPPLEMENT_CATALOG = [
 function getUrlParam(name){
   return new URLSearchParams(window.location.search).get(name);
 }
-const ACTIVE_INFLUENCER_SLUG = getUrlParam('i');
-const ACTIVE_INFLUENCER = ACTIVE_INFLUENCER_SLUG ? INFLUENCERS[ACTIVE_INFLUENCER_SLUG] : null;
-const IS_MODEL_1 = !!(ACTIVE_INFLUENCER && ACTIVE_INFLUENCER.active && ACTIVE_INFLUENCER.modelType === 1);
+
+/* ============================================================
+   INFLUENCER DINÁMICO — WORKER + SUPABASE
+   ------------------------------------------------------------
+   Cualquier URL como:
+     https://come-pro.com/?i=carlos-fit
+     https://come-pro.com/?i=pruebaaa
+
+   se reconoce automáticamente. No hay que agregar el nombre del
+   influencer manualmente dentro de este index.html.
+
+   El slug se usa inmediatamente para tracking. En paralelo se consulta
+   el Worker para obtener nombre, Instagram, WhatsApp y enlaces afiliados.
+   ============================================================ */
+const COME_PRO_API = "https://raspy-disk-10bc.el-0a6.workers.dev";
+const ACTIVE_INFLUENCER_SLUG = (getUrlParam('i') || '').trim();
+
+let ACTIVE_INFLUENCER = ACTIVE_INFLUENCER_SLUG
+  ? (INFLUENCERS[ACTIVE_INFLUENCER_SLUG] || {
+      influencerId: ACTIVE_INFLUENCER_SLUG,
+      slug: ACTIVE_INFLUENCER_SLUG,
+      name: ACTIVE_INFLUENCER_SLUG,
+      description: "",
+      profileImage: "",
+      whatsapp: "",
+      instagram: "",
+      services: [],
+      active: true,
+      modelType: 0
+    })
+  : null;
+
+/* Los enlaces públicos del influencer llegan del Worker. */
+let ACTIVE_AFFILIATE_LINKS = [];
+
+/* Se mantiene el comportamiento anterior para influencers estáticos que
+   explícitamente usan Modelo 1. Los influencers creados desde el panel
+   conservan la experiencia normal de COME PRO (Modelo 0). */
+let IS_MODEL_1 = !!(
+  ACTIVE_INFLUENCER &&
+  ACTIVE_INFLUENCER.active &&
+  ACTIVE_INFLUENCER.modelType === 1
+);
+
+async function cargarInfluencerPublico(){
+  if(!ACTIVE_INFLUENCER_SLUG) return null;
+
+  try{
+    const res = await fetch(
+      COME_PRO_API + "/public/influencer?slug=" +
+      encodeURIComponent(ACTIVE_INFLUENCER_SLUG),
+      {
+        method:"GET",
+        cache:"no-store",
+        credentials:"omit"
+      }
+    );
+
+    if(!res.ok) throw new Error("Influencer no disponible");
+
+    const data = await res.json();
+
+    if(!data || !data.ok || !data.influencer){
+      throw new Error("Influencer no encontrado");
+    }
+
+    const remoto = data.influencer;
+
+    ACTIVE_INFLUENCER = Object.assign(
+      {},
+      ACTIVE_INFLUENCER || {},
+      {
+        influencerId: remoto.slug || ACTIVE_INFLUENCER_SLUG,
+        slug: remoto.slug || ACTIVE_INFLUENCER_SLUG,
+        name: remoto.name || ACTIVE_INFLUENCER_SLUG,
+        instagram: remoto.instagram || "",
+        whatsapp: remoto.whatsapp || "",
+        active: true,
+        /* El panel no cambia el modelo de dieta: solo atribuye y personaliza. */
+        modelType: (ACTIVE_INFLUENCER && ACTIVE_INFLUENCER.modelType === 1) ? 1 : 0
+      }
+    );
+
+    ACTIVE_AFFILIATE_LINKS = Array.isArray(data.affiliateLinks)
+      ? data.affiliateLinks.filter(function(x){ return x && x.active !== false && x.url; })
+      : [];
+
+    IS_MODEL_1 = !!(
+      ACTIVE_INFLUENCER &&
+      ACTIVE_INFLUENCER.active &&
+      ACTIVE_INFLUENCER.modelType === 1
+    );
+
+    return ACTIVE_INFLUENCER;
+
+  }catch(e){
+    if(typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE){
+      console.warn("COME PRO: no se pudo cargar el influencer dinámico", e);
+    }
+    /* El slug se conserva para analítica aunque el perfil remoto falle. */
+    return ACTIVE_INFLUENCER;
+  }
+}
+
+const INFLUENCER_READY = cargarInfluencerPublico();
+
+function affiliateLinkFor(providerCode, label){
+  const code = String(providerCode || '').toLowerCase();
+  const wantedLabel = String(label || '').toLowerCase();
+
+  let exact = ACTIVE_AFFILIATE_LINKS.find(function(x){
+    return String(x.providerCode || '').toLowerCase() === code &&
+           (!wantedLabel || String(x.label || '').toLowerCase() === wantedLabel);
+  });
+
+  if(exact) return exact;
+
+  return ACTIVE_AFFILIATE_LINKS.find(function(x){
+    return String(x.providerCode || '').toLowerCase() === code;
+  }) || null;
+}
+
+function comeProReferralUrl(){
+  const u = new URL("https://come-pro.com/");
+  if(ACTIVE_INFLUENCER_SLUG){
+    u.searchParams.set("i", ACTIVE_INFLUENCER_SLUG);
+  }
+  return u.toString();
+}
 
 /* ============================================================
    EVENTOS ANALÍTICOS — estructura lista para producción.
@@ -2241,6 +2368,31 @@ const SUPERMERCADOS = {
 
 /* Devuelve el supermercado del país si está activo y con enlace */
 function supermercadoDe(codigoPais){
+  const providerByCountry = {
+    US:"instacart",
+    DE:"rewe_de",
+    NL:"picnic_nl",
+    GB:"iceland_uk",
+    FR:"jow_fr",
+    ES:"carrefour_es"
+  };
+
+  const providerCode = providerByCountry[codigoPais];
+
+  /* Primero se usa el enlace configurado para ESTE influencer en Supabase. */
+  if(providerCode){
+    const remoto = affiliateLinkFor(providerCode, "default") || affiliateLinkFor(providerCode);
+    if(remoto && remoto.url){
+      return {
+        nombre: remoto.providerName || providerCode,
+        url: remoto.url,
+        activo: true,
+        providerCode: providerCode
+      };
+    }
+  }
+
+  /* Respaldo: configuración estática anterior. */
   const s = SUPERMERCADOS[codigoPais];
   if(!s || !s.activo || !s.url) return null;
   return s;
@@ -3280,7 +3432,7 @@ document.addEventListener('click', function(e){
    no la edad exacta; rango de peso, no el peso. Nunca se envía
    nombre, peso, altura ni condición médica.
    ============================================================ */
-const ANALYTICS_URL = "https://script.google.com/macros/s/AKfycbw-PzaIQy8Gk8QyBWFo1-qaIyBnRdJMLikJjL-CNp0WkXpYug6Gz632oTyK8qDislvZ/exec";
+const ANALYTICS_URL = COME_PRO_API;
 
 /* Paso en el que está la persona: si cierra la app aquí, sabremos
    en qué punto del formulario se pierde la gente. */
@@ -3451,12 +3603,20 @@ function enviarGetRespaldo(cuerpo, transporte){
 function enviarEvento(evento, extra){
   if(!ANALYTICS_URL) return;
   try{
+    const nuevoEventId = crearEventoId();
+    const slugAtribucion = ACTIVE_INFLUENCER_SLUG ||
+      ((typeof ACTIVE_INFLUENCER !== 'undefined' && ACTIVE_INFLUENCER)
+        ? (ACTIVE_INFLUENCER.slug || ACTIVE_INFLUENCER.influencerId || '')
+        : '');
+
     const cuerpo = Object.assign({
       evento: evento,
-      eventId: crearEventoId(),
-      influencer: (typeof ACTIVE_INFLUENCER !== 'undefined' && ACTIVE_INFLUENCER)
-                    ? ACTIVE_INFLUENCER.influencerId : 'directo',
+      event_id: nuevoEventId,
+      eventId: nuevoEventId,
+      influencer: slugAtribucion || 'directo',
+      influencer_slug: slugAtribucion || '',
       sesion: SESION_ID,
+      session_id: SESION_ID,
       idioma: CURRENT_LANG,
       visitaNum: VISITA_NUM,
       segundos: Math.round((Date.now() - INICIO_APP) / 1000),
@@ -3559,6 +3719,9 @@ function renderResults(R, opts){
 
   opts = opts || {};
   CURRENT_RESULT = R;
+  /* Prepara el carrito / enlace de compra en segundo plano para que el
+     QR y los recordatorios tengan el destino listo al descargar. */
+  prepararUrlCompra(R);
   document.getElementById('placeholderSummary').classList.add('hidden');
   // Barra de navegación rápida: solo cuando ya hay plan que recorrer
   document.getElementById('quickNav').classList.remove('hidden');
@@ -4031,16 +4194,16 @@ async function descargarYComprar(R, target, btn){
   const safeName = R.nombre.replace(/\s+/g,'_');
   if(target.type === 'dia' && target.value){
     const d = R.days[parseInt(target.value,10)-1];
-    downloadCanvasAsPNG(drawWeekDayImage(R, d, themeColors()), 'COMEPRO_dia' + d.idx + '_' + safeName + '.png');
+    downloadCanvasAsPNG(decorateCanvasForComePro(drawWeekDayImage(R, d, themeColors()), R), 'COMEPRO_dia' + d.idx + '_' + safeName + '.png');
   } else if(target.type === 'semana' && target.value !== undefined){
     const wi = parseInt(target.value,10);
     const rango = WEEK_RANGES[wi];
     const weekPurchase = buildPurchaseForDays(R, R.days.slice(rango[0], rango[1]));
-    downloadCanvasAsPNG(drawWeekPurchaseImage(R, wi+1, rango[0]+1, rango[1], weekPurchase), 'COMEPRO_semana' + (wi+1) + '_' + safeName + '.png');
+    downloadCanvasAsPNG(decorateCanvasForComePro(drawWeekPurchaseImage(R, wi+1, rango[0]+1, rango[1], weekPurchase), R), 'COMEPRO_semana' + (wi+1) + '_' + safeName + '.png');
   } else if(target.type === 'semanalPromedio'){
-    downloadCanvasAsPNG(drawWeeklyAverageImage(R), 'COMEPRO_semanal_' + safeName + '.png');
+    downloadCanvasAsPNG(decorateCanvasForComePro(drawWeeklyAverageImage(R), R), 'COMEPRO_semanal_' + safeName + '.png');
   } else {
-    downloadCanvasAsPNG(drawPurchaseImage(R), 'COMEPRO_plan_' + safeName + '.png');
+    downloadCanvasAsPNG(decorateCanvasForComePro(drawPurchaseImage(R), R), 'COMEPRO_plan_' + safeName + '.png');
   }
   trackEvent('budget_downloaded', {type: target.type});
   enviarEvento('descarga', Object.assign(datosPerfil(R), {detalle: target.type}));
@@ -4173,9 +4336,9 @@ function mostrarPantallaFinal(R){
         (inf.profileImage ? '<img src="' + inf.profileImage + '" style="width:100%;height:100%;object-fit:cover;">' : '\u{1F464}') +
       '</div>' +
       '<div style="font-family:\'Fraunces\',serif; font-size:20px; font-weight:700;">' + inf.name + '</div>' +
-      '<div class="hint" style="margin-top:4px;">' + inf.description + '</div>' +
+      '<div class="hint" style="margin-top:4px;">' + (inf.description || '') + '</div>' +
       '<div style="font-family:\'Fraunces\',serif; font-size:16px; font-weight:700; margin:16px 0 8px;">' + t('m1_siguienteNivel') + '</div>' +
-      '<div class="chips" style="justify-content:center;">' + inf.services.map(function(s){ return '<span class="chip">' + s + '</span>'; }).join('') + '</div>' +
+      '<div class="chips" style="justify-content:center;">' + (Array.isArray(inf.services) ? inf.services : []).map(function(s){ return '<span class="chip">' + s + '</span>'; }).join('') + '</div>' +
       '<button type="button" class="primary" id="finalWhatsappBtn" style="background:#25D366; color:#fff;">' + t('m1_contactarWhatsapp') + '</button>' +
       (!inf.whatsapp ? '<div class="warn-box" style="margin-top:8px;">' + t('m1_whatsappPendiente') + '</div>' : '') +
     '</div>' : '') +
@@ -4206,6 +4369,17 @@ function mostrarPantallaFinal(R){
         '<button type="button" id="joinBtn">' + t('m1_quieroUnirme') + '</button>' +
         '<div class="join-mail">' + JOIN_EMAIL + '</div>' +
       '</div>' +
+    '</div>' +
+
+    '<div class="card">' +
+      '<div class="card-head">' +
+        '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>' +
+        '<h3>Recordatorios COME PRO</h3>' +
+      '</div>' +
+      '<p class="hint">Añádelos a tu calendario para mantener tu dieta y tus compras al día.</p>' +
+      '<button type="button" class="primary" id="calendarWeeklyBtn">📅 Añadir recordatorio semanal</button>' +
+      '<button type="button" id="calendarMonthlyBtn" style="margin-top:8px;">📅 Añadir recordatorio mensual</button>' +
+      '<div class="hint" style="margin-top:10px;">Semanal: revisar y comprar tu comida. · Mensual: actualizar tu peso y generar una nueva dieta.</div>' +
     '</div>' +
 
     '<div class="card cost-card" style="text-align:center;">' +
@@ -4251,13 +4425,47 @@ function mostrarPantallaFinal(R){
     const msg = encodeURIComponent('Hola, llegue desde COME PRO y estoy interesado en conocer tus servicios.');
     window.open('https://wa.me/' + inf.whatsapp + '?text=' + msg, '_blank', 'noopener');
   });
+  const weeklyCal = document.getElementById('calendarWeeklyBtn');
+  if(weeklyCal){
+    weeklyCal.addEventListener('click', function(){
+      agregarRecordatorio('weekly', R);
+    });
+  }
+
+  const monthlyCal = document.getElementById('calendarMonthlyBtn');
+  if(monthlyCal){
+    monthlyCal.addEventListener('click', function(){
+      agregarRecordatorio('monthly', R);
+    });
+  }
+
   screen.querySelectorAll('[data-product]').forEach(function(card){
     card.addEventListener('click', function(){
       const s = SUPPLEMENT_CATALOG.find(function(x){ return x.productId === card.dataset.product; });
-      if(!s || !s.active || !s.affiliateUrl) return;
+      if(!s || !s.active) return;
+
+      const labelMap = {
+        creatina:"creatina",
+        proteina:"proteina_polvo",
+        proteina_sl:"proteina_sin_lactosa",
+        omega3:"omega_3",
+        vitaminad:"vitamina_d",
+        magnesio:"magnesio",
+        zinc:"zinc",
+        ashwagandha:"ashwagandha",
+        vitaminae:"vitamina_e",
+        bascula:"bascula_cocina",
+        guantes:"guantes_gimnasio"
+      };
+
+      const remotoAmazon = affiliateLinkFor("amazon", labelMap[s.productId] || s.productId);
+      const destinoAmazon = (remotoAmazon && remotoAmazon.url) || s.affiliateUrl;
+
+      if(!destinoAmazon) return;
+
       trackEvent('affiliate_product_clicked', {productId: s.productId});
       enviarEvento('amazon', Object.assign(datosPerfil(R), {detalle: s.productId}));
-      window.open(s.affiliateUrl, '_blank', 'noopener');
+      window.open(destinoAmazon, '_blank', 'noopener');
     });
   });
 }
@@ -4355,6 +4563,359 @@ function drawBrandHeader(ctx, C, nombre, subtitle){
    Se intentan en orden y siempre queda un camino disponible, así que
    nunca ocurre que el usuario pulse y no pase nada.
    ============================================================ */
+
+/* ============================================================
+   QR + LINK DE REGRESO EN LAS IMÁGENES
+   ------------------------------------------------------------
+   Todas las imágenes descargadas reciben al final:
+   - QR hacia la compra / supermercado (Instacart en EE.UU.)
+   - enlace visible de regreso a COME PRO con ?i=slug
+   ============================================================ */
+function qrCanvasFor(text, size){
+  if(!text || typeof QRCode === 'undefined') return null;
+
+  try{
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;';
+    document.body.appendChild(holder);
+
+    new QRCode(holder, {
+      text: text,
+      width: size,
+      height: size,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
+    const qrc = holder.querySelector('canvas');
+    if(!qrc){
+      holder.remove();
+      return null;
+    }
+
+    const copy = document.createElement('canvas');
+    copy.width = size;
+    copy.height = size;
+    copy.getContext('2d').drawImage(qrc, 0, 0, size, size);
+    holder.remove();
+    return copy;
+  }catch(e){
+    if(typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE){
+      console.warn("COME PRO: no se pudo dibujar el QR", e);
+    }
+    return null;
+  }
+}
+
+function shoppingUrlForImage(R){
+  if(R && R.shoppingUrl) return R.shoppingUrl;
+  return urlTiendaDe(R) || "";
+}
+
+function decorateCanvasForComePro(original, R){
+  if(!original) return original;
+
+  const appUrl = comeProReferralUrl();
+  const shopUrl = shoppingUrlForImage(R);
+
+  const footerH = 300;
+  const out = document.createElement('canvas');
+  out.width = original.width;
+  out.height = original.height + footerH;
+
+  const ctx = out.getContext('2d');
+  ctx.drawImage(original, 0, 0);
+
+  const C = themeColors();
+  const y0 = original.height;
+
+  ctx.fillStyle = C.card || "#ffffff";
+  ctx.fillRect(0, y0, out.width, footerH);
+
+  ctx.strokeStyle = C.line || "#d8ddd4";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(42, y0 + 1);
+  ctx.lineTo(out.width - 42, y0 + 1);
+  ctx.stroke();
+
+  const qrSize = 190;
+  const qrX = 48;
+  const qrY = y0 + 48;
+  const qr = qrCanvasFor(shopUrl, qrSize);
+
+  if(qr){
+    ctx.fillStyle = "#ffffff";
+    roundRectPath(ctx, qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 14);
+    ctx.fill();
+    ctx.drawImage(qr, qrX, qrY, qrSize, qrSize);
+
+    ctx.fillStyle = C.text || "#111";
+    ctx.font = "700 18px Inter, sans-serif";
+    ctx.fillText("Escanea para comprar tu lista", qrX + qrSize + 34, qrY + 38);
+
+    ctx.fillStyle = C.muted || "#667066";
+    ctx.font = "500 15px Inter, sans-serif";
+    ctx.fillText("Compras / Instacart", qrX + qrSize + 34, qrY + 68);
+  }else{
+    ctx.fillStyle = C.muted || "#667066";
+    ctx.font = "600 16px Inter, sans-serif";
+    ctx.fillText("Compras: enlace no disponible todavía", qrX, qrY + 45);
+  }
+
+  const textX = qr ? (qrX + qrSize + 34) : 48;
+  const linkY = qr ? (qrY + 132) : (qrY + 95);
+
+  ctx.fillStyle = C.text || "#111";
+  ctx.font = "700 17px Inter, sans-serif";
+  ctx.fillText("Vuelve a COME PRO:", textX, linkY);
+
+  ctx.fillStyle = C.accent || "#4d8d34";
+  ctx.font = "600 16px Inter, sans-serif";
+
+  /* Ajuste sencillo para que URLs largas no salgan del canvas. */
+  let visibleUrl = appUrl;
+  const maxW = out.width - textX - 45;
+  while(visibleUrl.length > 12 && ctx.measureText(visibleUrl).width > maxW){
+    visibleUrl = visibleUrl.slice(0, -2);
+  }
+  if(visibleUrl !== appUrl) visibleUrl += "…";
+  ctx.fillText(visibleUrl, textX, linkY + 31);
+
+  ctx.fillStyle = C.muted || "#667066";
+  ctx.font = "500 13px Inter, sans-serif";
+  ctx.fillText("COME PRO · tu dieta y lista de compras", textX, linkY + 61);
+
+  return out;
+}
+
+/* Prepara en segundo plano una URL de carrito real cuando exista
+   CART_API_ENDPOINT. Así el QR puede usar el carrito completo sin
+   retrasar el toque de descarga. */
+async function prepararUrlCompra(R){
+  if(!R) return "";
+
+  const directa = urlTiendaDe(R);
+  if(directa){
+    R.shoppingUrl = directa;
+    return directa;
+  }
+
+  if(!CART_API_ENDPOINT || !CART_COUNTRIES.includes(R.country)){
+    R.shoppingUrl = "";
+    return "";
+  }
+
+  try{
+    const items = R.purchase.map(function(p){
+      return {
+        name: CART_SEARCH[p.id] || p.name,
+        quantity: p.unitsNeeded,
+        unit: p.unit === 'lb'
+          ? 'lb'
+          : (
+              p.unit === 'unidad' || p.unit === 'unidad_grande'
+                ? 'each'
+                : 'package'
+            )
+      };
+    });
+
+    const res = await fetch(CART_API_ENDPOINT, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        title:'COME PRO - ' + R.nombre,
+        items:items,
+        influencer:ACTIVE_INFLUENCER_SLUG || ''
+      })
+    });
+
+    if(res.ok){
+      const data = await res.json();
+      if(data && data.url){
+        R.shoppingUrl = data.url;
+        return data.url;
+      }
+    }
+  }catch(e){
+    if(typeof DEBUG_MODE !== 'undefined' && DEBUG_MODE){
+      console.warn("COME PRO: no se pudo preparar el carrito", e);
+    }
+  }
+
+  R.shoppingUrl = "";
+  return "";
+}
+
+/* ============================================================
+   CALENDARIO — iPhone + Android
+   ------------------------------------------------------------
+   Semanal: recordar la compra.
+   Mensual: actualizar peso y generar nueva dieta.
+
+   iPhone / iPad: archivo .ics estándar.
+   Android: Google Calendar con recurrencia; si falla, .ics.
+   ============================================================ */
+function calendarCopy(kind){
+  const lang = CURRENT_LANG || 'es';
+
+  const texts = {
+    es:{
+      weekly:{
+        title:"COME PRO — ¿Ya tienes tu comida de la semana?",
+        body:"Revisa tu lista y compra lo que te falta para seguir tu dieta."
+      },
+      monthly:{
+        title:"COME PRO — Actualiza tu dieta",
+        body:"Actualiza tu peso y genera tu nueva dieta del mes."
+      }
+    },
+    en:{
+      weekly:{
+        title:"COME PRO — Got your food for the week?",
+        body:"Check your list and buy what you need to stay on your diet."
+      },
+      monthly:{
+        title:"COME PRO — Update your diet",
+        body:"Update your weight and generate your new monthly diet."
+      }
+    }
+  };
+
+  const pack = texts[lang] || texts.es;
+  return pack[kind] || pack.weekly;
+}
+
+function fechaCalendario(offsetDays){
+  const d = new Date();
+  d.setDate(d.getDate() + (offsetDays || 0));
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return "" + y + m + day;
+}
+
+function escapeICS(v){
+  return String(v || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function crearICS(kind, R){
+  const copy = calendarCopy(kind);
+  const appUrl = comeProReferralUrl();
+  const shopUrl = shoppingUrlForImage(R);
+
+  let description = copy.body + "\n\nCOME PRO: " + appUrl;
+  if(kind === 'weekly' && shopUrl){
+    description += "\nCompras: " + shopUrl;
+  }
+
+  const start = fechaCalendario(kind === 'weekly' ? 7 : 30);
+  const d = new Date();
+  d.setDate(d.getDate() + (kind === 'weekly' ? 8 : 31));
+  const end = [
+    d.getFullYear(),
+    String(d.getMonth()+1).padStart(2,'0'),
+    String(d.getDate()).padStart(2,'0')
+  ].join("");
+
+  const rule = kind === 'weekly'
+    ? "RRULE:FREQ=WEEKLY;INTERVAL=1"
+    : "RRULE:FREQ=MONTHLY;INTERVAL=1";
+
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//COME PRO//Calendar//ES",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    "UID:" + Date.now() + "-" + Math.random().toString(36).slice(2) + "@come-pro.com",
+    "DTSTAMP:" + new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z"),
+    "DTSTART;VALUE=DATE:" + start,
+    "DTEND;VALUE=DATE:" + end,
+    rule,
+    "SUMMARY:" + escapeICS(copy.title),
+    "DESCRIPTION:" + escapeICS(description),
+    "URL:" + escapeICS(appUrl),
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+}
+
+function abrirICS(kind, R){
+  const ics = crearICS(kind, R);
+  const blob = new Blob([ics], {type:"text/calendar;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = kind === 'weekly'
+    ? 'COME_PRO_recordatorio_semanal.ics'
+    : 'COME_PRO_recordatorio_mensual.ics';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 30000);
+}
+
+function abrirGoogleCalendar(kind, R){
+  const copy = calendarCopy(kind);
+  const appUrl = comeProReferralUrl();
+  const shopUrl = shoppingUrlForImage(R);
+
+  let details = copy.body + "\n\nCOME PRO: " + appUrl;
+  if(kind === 'weekly' && shopUrl){
+    details += "\nCompras: " + shopUrl;
+  }
+
+  const start = fechaCalendario(kind === 'weekly' ? 7 : 30);
+  const d = new Date();
+  d.setDate(d.getDate() + (kind === 'weekly' ? 8 : 31));
+  const end = [
+    d.getFullYear(),
+    String(d.getMonth()+1).padStart(2,'0'),
+    String(d.getDate()).padStart(2,'0')
+  ].join("");
+
+  const recur = kind === 'weekly'
+    ? "RRULE:FREQ=WEEKLY;INTERVAL=1"
+    : "RRULE:FREQ=MONTHLY;INTERVAL=1";
+
+  const u = new URL("https://calendar.google.com/calendar/render");
+  u.searchParams.set("action", "TEMPLATE");
+  u.searchParams.set("text", copy.title);
+  u.searchParams.set("details", details);
+  u.searchParams.set("dates", start + "/" + end);
+  u.searchParams.set("recur", recur);
+
+  window.open(u.toString(), "_blank", "noopener");
+}
+
+function agregarRecordatorio(kind, R){
+  enviarEvento(
+    kind === 'weekly' ? 'calendario_semanal' : 'calendario_mensual',
+    Object.assign(datosPerfil(R), {detalle:kind})
+  );
+
+  const ua = navigator.userAgent || "";
+  const android = /Android/i.test(ua);
+
+  if(android){
+    try{
+      abrirGoogleCalendar(kind, R);
+      return;
+    }catch(e){}
+  }
+
+  abrirICS(kind, R);
+}
+
 function downloadCanvasAsPNG(canvas, filename){
 
   // Último recurso: mostrar la imagen para guardarla manualmente
@@ -5262,15 +5823,26 @@ initStepMode();
 applyUnitsForCountry(document.getElementById('pais').value);
 
 if(ACTIVE_INFLUENCER_SLUG){
-  if(IS_MODEL_1){
-    trackEvent('landing_view', {influencerId: ACTIVE_INFLUENCER.influencerId});
-  } else {
-    if(DEBUG_MODE) console.warn(`COME PRO: influencer "${ACTIVE_INFLUENCER_SLUG}" no encontrado — usando Modelo 0.`);
-    trackEvent('landing_view', {model:0});
-  }
+  trackEvent('landing_view', {
+    influencerId: ACTIVE_INFLUENCER_SLUG,
+    model: IS_MODEL_1 ? 1 : 0
+  });
 } else {
   trackEvent('landing_view', {model:0});
 }
+
+/* Registra una visita REAL en Worker/Supabase. Se espera a que termine
+   la carga pública del influencer para que sus enlaces estén disponibles,
+   pero la atribución usa el slug de ?i= desde el primer instante. */
+Promise.resolve(INFLUENCER_READY)
+  .catch(function(){ return null; })
+  .finally(function(){
+    enviarEvento('visita', {
+      referente: origenVisita(),
+      detalle: esNavegadorDeApp() ? 'navegador_de_app' : 'navegador_normal',
+      landing_url: window.location.href
+    });
+  });
 </script>
 </body>
 </html>
