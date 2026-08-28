@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
 <title>COME PRO — Administrador</title>
+
 <style>
 :root{
   --bg:#0e1512;
@@ -16,7 +18,11 @@
   --danger:#ef6a6a;
   --warning:#e6b85c;
 }
-*{box-sizing:border-box}
+
+*{
+  box-sizing:border-box;
+}
+
 body{
   margin:0;
   background:var(--bg);
@@ -24,11 +30,31 @@ body{
   font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
   padding:18px 14px 70px;
 }
-.wrap{max-width:1050px;margin:0 auto}
-h1{font-size:27px;margin:0 0 4px}
-h2{font-size:19px;margin:28px 0 10px}
-h3{font-size:15px;margin:0 0 10px}
-p{color:var(--muted)}
+
+.wrap{
+  max-width:1050px;
+  margin:0 auto;
+}
+
+h1{
+  font-size:27px;
+  margin:0 0 4px;
+}
+
+h2{
+  font-size:19px;
+  margin:28px 0 10px;
+}
+
+h3{
+  font-size:15px;
+  margin:0 0 10px;
+}
+
+p{
+  color:var(--muted);
+}
+
 .card{
   background:var(--card);
   border:1px solid var(--line);
@@ -36,6 +62,7 @@ p{color:var(--muted)}
   padding:16px;
   margin-bottom:14px;
 }
+
 .subcard{
   background:var(--card2);
   border:1px solid var(--line);
@@ -43,18 +70,24 @@ p{color:var(--muted)}
   padding:14px;
   margin-top:12px;
 }
+
 .grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  grid-template-columns:
+    repeat(auto-fit,minmax(220px,1fr));
   gap:12px;
 }
+
 label{
   display:block;
   font-size:12px;
   color:var(--muted);
   margin-bottom:6px;
 }
-input,select,textarea{
+
+input,
+select,
+textarea{
   width:100%;
   background:#101713;
   color:var(--text);
@@ -63,7 +96,12 @@ input,select,textarea{
   padding:12px;
   font:inherit;
 }
-textarea{min-height:90px;resize:vertical}
+
+textarea{
+  min-height:90px;
+  resize:vertical;
+}
+
 button{
   border:0;
   border-radius:10px;
@@ -72,12 +110,40 @@ button{
   cursor:pointer;
   font:inherit;
 }
-button:disabled{opacity:.55;cursor:not-allowed}
-.primary{background:var(--accent);color:#0e1512}
-.secondary{background:var(--card2);color:var(--text);border:1px solid var(--line)}
-.warning{background:var(--warning);color:#111}
-.danger{background:var(--danger);color:#111}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+button:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+.primary{
+  background:var(--accent);
+  color:#0e1512;
+}
+
+.secondary{
+  background:var(--card2);
+  color:var(--text);
+  border:1px solid var(--line);
+}
+
+.warning{
+  background:var(--warning);
+  color:#111;
+}
+
+.danger{
+  background:var(--danger);
+  color:#111;
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
 .status{
   padding:10px 12px;
   border-radius:10px;
@@ -85,9 +151,19 @@ button:disabled{opacity:.55;cursor:not-allowed}
   color:var(--muted);
   font-size:13px;
 }
-.ok{color:var(--accent)}
-.err{color:var(--danger)}
-.hidden{display:none!important}
+
+.ok{
+  color:var(--accent);
+}
+
+.err{
+  color:var(--danger);
+}
+
+.hidden{
+  display:none!important;
+}
+
 .result{
   white-space:pre-wrap;
   word-break:break-word;
@@ -95,18 +171,20 @@ button:disabled{opacity:.55;cursor:not-allowed}
   border:1px solid var(--line);
   border-radius:10px;
   padding:12px;
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
   font-size:12px;
 }
-.item{
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:10px;
-  border-bottom:1px solid var(--line);
-  padding:12px 0;
+
+.meta{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
 }
-.item:last-child{border-bottom:0}
-.meta{color:var(--muted);font-size:12px;margin-top:4px}
+
 .badge{
   display:inline-block;
   padding:3px 8px;
@@ -115,14 +193,39 @@ button:disabled{opacity:.55;cursor:not-allowed}
   font-size:11px;
   margin-right:6px;
 }
-.small{font-size:12px;color:var(--muted)}
-.section-note{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
-.provider-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-.provider-title strong{font-size:14px}
-.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:var(--muted)}
-hr{border:0;border-top:1px solid var(--line);margin:18px 0}
-@media(max-width:640px){
-  .item{grid-template-columns:1fr}
+
+.small{
+  font-size:12px;
+  color:var(--muted);
+}
+
+.section-note{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:6px;
+  line-height:1.5;
+}
+
+.provider-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+
+.provider-title strong{
+  font-size:14px;
+}
+
+.code{
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  font-size:11px;
+  color:var(--muted);
 }
 
 .influencer-card{
@@ -132,6 +235,7 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
   overflow:hidden;
   background:#111914;
 }
+
 .influencer-head{
   padding:14px;
   cursor:pointer;
@@ -140,693 +244,2108 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
   gap:10px;
   align-items:center;
 }
-.influencer-head:hover{background:#172119}
+
+.influencer-head:hover{
+  background:#172119;
+}
+
 .influencer-actions{
   padding:0 14px 14px;
   display:flex;
   gap:8px;
   flex-wrap:wrap;
 }
+
 .influencer-details{
   display:none;
   padding:14px;
   border-top:1px solid var(--line);
   background:#0d130f;
 }
-.influencer-card.open .influencer-details{display:block}
+
+.influencer-card.open
+.influencer-details{
+  display:block;
+}
+
 .detail-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  grid-template-columns:
+    repeat(auto-fit,minmax(210px,1fr));
   gap:10px;
 }
+
 .detail-box{
   border:1px solid var(--line);
   border-radius:10px;
   padding:10px;
   background:#111914;
 }
-.detail-box b{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
-.detail-box span{word-break:break-word}
-.link-list{display:grid;gap:8px;margin-top:10px}
+
+.detail-box b{
+  display:block;
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+
+.detail-box span{
+  word-break:break-word;
+}
+
+.link-list{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+}
+
 .link-row{
   border:1px solid var(--line);
   border-radius:10px;
   padding:10px;
   background:#111914;
 }
-.chevron{font-size:18px;color:var(--muted);transition:.2s}
-.influencer-card.open .chevron{transform:rotate(180deg)}
 
+.chevron{
+  font-size:18px;
+  color:var(--muted);
+  transition:.2s;
+}
+
+.influencer-card.open
+.chevron{
+  transform:rotate(180deg);
+}
+
+@media(max-width:640px){
+  .influencer-actions button{
+    flex:1 1 auto;
+  }
+}
 </style>
 </head>
+
 <body>
 
 <div class="wrap">
+
   <h1>COME PRO — Administrador</h1>
-  <p>Gestiona influencers, referidos y enlaces afiliados por producto y país.</p>
+
+  <p>
+    Gestiona influencers, referidos
+    y enlaces afiliados.
+  </p>
 
   <div class="card">
-    <h2 style="margin-top:0">1. Conexión</h2>
+
+    <h2 style="margin-top:0">
+      1. Conexión
+    </h2>
 
     <div class="grid">
+
       <div>
-        <label>API de COME PRO</label>
-        <input id="apiUrl" value="https://raspy-disk-10bc.el-0a6.workers.dev">
+        <label>
+          API de COME PRO
+        </label>
+
+        <input
+          id="apiUrl"
+          value="https://raspy-disk-10bc.el-0a6.workers.dev"
+        >
       </div>
 
       <div>
-        <label>PANEL_KEY</label>
-        <input id="panelKey" type="password" placeholder="Tu PANEL_KEY privada">
+        <label>
+          PANEL_KEY
+        </label>
+
+        <input
+          id="panelKey"
+          type="password"
+          placeholder="Tu PANEL_KEY privada"
+        >
       </div>
 
       <div>
-        <label>URL pública de COME PRO</label>
-        <input id="appUrl" value="https://come-pro.com/" placeholder="https://come-pro.com/">
+        <label>
+          URL pública de COME PRO
+        </label>
+
+        <input
+          id="appUrl"
+          value="https://come-pro.com/"
+        >
       </div>
+
     </div>
 
-    <div class="row" style="margin-top:12px">
-      <button class="primary" id="btnConnect">Conectar y cargar influencers</button>
-      <span class="status" id="connectionStatus">Sin conectar</span>
+    <div
+      class="row"
+      style="margin-top:12px"
+    >
+
+      <button
+        class="primary"
+        id="btnConnect"
+      >
+        Conectar y cargar influencers
+      </button>
+
+      <span
+        class="status"
+        id="connectionStatus"
+      >
+        Sin conectar
+      </span>
+
     </div>
 
-    <p class="small">La PANEL_KEY se guarda solo en esta pestaña con sessionStorage.</p>
   </div>
 
   <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <h2 style="margin:0" id="formTitle">2. Nuevo influencer</h2>
-      <button class="secondary hidden" id="btnCancelEdit">Cancelar edición</button>
+
+    <div
+      class="row"
+      style="justify-content:space-between"
+    >
+
+      <h2
+        style="margin:0"
+        id="formTitle"
+      >
+        2. Nuevo influencer
+      </h2>
+
+      <button
+        class="secondary hidden"
+        id="btnCancelEdit"
+      >
+        Cancelar edición
+      </button>
+
     </div>
 
-    <div class="grid" style="margin-top:14px">
-      <div><label>Nombre *</label><input id="name" placeholder="Carlos Fitness"></div>
-      <div><label>Slug opcional</label><input id="slug" placeholder="carlos-fitness"></div>
-      <div><label>Contacto</label><input id="contact" placeholder="Teléfono, DM, correo..."></div>
-      <div><label>Email</label><input id="email" type="email" placeholder="correo@ejemplo.com"></div>
-      <div><label>WhatsApp</label><input id="whatsapp" placeholder="+1..."></div>
-      <div><label>Instagram</label><input id="instagram" placeholder="@usuario"></div>
+    <div
+      class="grid"
+      style="margin-top:14px"
+    >
 
       <div>
-        <label>Referido por</label>
+        <label>Nombre *</label>
+        <input
+          id="name"
+          placeholder="Carlos Fitness"
+        >
+      </div>
+
+      <div>
+        <label>Slug opcional</label>
+        <input
+          id="slug"
+          placeholder="carlos-fitness"
+        >
+      </div>
+
+      <div>
+        <label>Contacto</label>
+        <input
+          id="contact"
+        >
+      </div>
+
+      <div>
+        <label>Email</label>
+        <input
+          id="email"
+          type="email"
+        >
+      </div>
+
+      <div>
+        <label>WhatsApp</label>
+        <input
+          id="whatsapp"
+        >
+      </div>
+
+      <div>
+        <label>Instagram</label>
+        <input
+          id="instagram"
+        >
+      </div>
+
+      <div>
+
+        <label>
+          Referido por
+        </label>
+
         <select id="referredBy">
-          <option value="">Nadie / directo</option>
+          <option value="">
+            Nadie / directo
+          </option>
         </select>
+
       </div>
 
       <div>
-        <label>Estado</label>
+
+        <label>
+          Estado
+        </label>
+
         <select id="status">
-          <option value="active">Activo</option>
-          <option value="pending">Pendiente</option>
-          <option value="paused">Pausado</option>
-          <option value="blocked">Bloqueado</option>
-          <option value="inactive">Inactivo / dado de baja</option>
+
+          <option value="active">
+            Activo
+          </option>
+
+          <option value="pending">
+            Pendiente
+          </option>
+
+          <option value="paused">
+            Pausado
+          </option>
+
+          <option value="blocked">
+            Bloqueado
+          </option>
+
+          <option value="inactive">
+            Inactivo / dado de baja
+          </option>
+
         </select>
+
       </div>
 
       <div>
-        <label>Comisión directa %</label>
-        <input id="directCommission" type="number" min="0" max="100" step="0.1" value="0">
+
+        <label>
+          Comisión directa %
+        </label>
+
+        <input
+          id="directCommission"
+          type="number"
+          min="0"
+          max="100"
+          step="0.1"
+          value="0"
+        >
+
       </div>
 
       <div>
-        <label>Comisión por referido directo %</label>
-        <input id="referralCommission" type="number" min="0" max="100" step="0.1" value="5">
+
+        <label>
+          Comisión por referido directo %
+        </label>
+
+        <input
+          id="referralCommission"
+          type="number"
+          min="0"
+          max="100"
+          step="0.1"
+          value="5"
+        >
+
       </div>
+
     </div>
 
     <div style="margin-top:12px">
-      <label>Notas internas</label>
-      <textarea id="notes" placeholder="Notas privadas..."></textarea>
+
+      <label>
+        Notas internas
+      </label>
+
+      <textarea
+        id="notes"
+        placeholder="Notas privadas..."
+      ></textarea>
+
     </div>
 
     <div class="subcard">
+
       <div class="provider-title">
-        <strong>Amazon — enlaces por producto</strong>
-        <span class="code">provider: amazon</span>
+
+        <strong>
+          Amazon — enlaces por producto
+        </strong>
+
+        <span class="code">
+          provider: amazon
+        </span>
+
       </div>
 
-      <div class="section-note">
-        Puedes dejar cualquier campo vacío. Si manejas solo 10 enlaces, deja vacío el producto que no uses.
-      </div>
+      <div
+        id="amazonFields"
+        class="grid"
+        style="margin-top:12px"
+      ></div>
 
-      <div id="amazonFields" class="grid" style="margin-top:12px"></div>
     </div>
 
     <div class="subcard">
+
       <div class="provider-title">
-        <strong>Supermercados por país</strong>
-        <span class="code">1 link por tienda/país</span>
+
+        <strong>
+          Supermercados por país
+        </strong>
+
       </div>
 
-      <div class="section-note">
-        Si todavía no te han aprobado en un supermercado, déjalo vacío. Luego podrás editar al influencer y agregar el enlace.
-      </div>
+      <div
+        id="storeFields"
+        class="grid"
+        style="margin-top:12px"
+      ></div>
 
-      <div id="storeFields" class="grid" style="margin-top:12px"></div>
     </div>
 
-    <div class="row" style="margin-top:14px">
-      <button class="primary" id="btnSaveInfluencer">Crear influencer</button>
-      <button class="secondary" id="btnClear">Limpiar</button>
+    <div
+      class="row"
+      style="margin-top:14px"
+    >
+
+      <button
+        class="primary"
+        id="btnSaveInfluencer"
+      >
+        Crear influencer
+      </button>
+
+      <button
+        class="secondary"
+        id="btnClear"
+      >
+        Limpiar
+      </button>
+
     </div>
+
   </div>
 
-  <div id="createdCard" class="card hidden">
-    <h2 style="margin-top:0">Resultado</h2>
-    <div id="createdResult" class="result"></div>
-    <div class="row" style="margin-top:12px">
-      <button class="primary" id="btnCopyLink">Copiar link COME PRO</button>
+  <div
+    id="createdCard"
+    class="card hidden"
+  >
+
+    <h2 style="margin-top:0">
+      Resultado
+    </h2>
+
+    <div
+      id="createdResult"
+      class="result"
+    ></div>
+
+    <div
+      class="row"
+      style="margin-top:12px"
+    >
+
+      <button
+        class="primary"
+        id="btnCopyLink"
+      >
+        Copiar link COME PRO
+      </button>
+
     </div>
+
   </div>
 
   <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <h2 style="margin:0">3. Influencers registrados</h2>
-      <button class="secondary" id="btnRefresh">Actualizar</button>
+
+    <div
+      class="row"
+      style="justify-content:space-between"
+    >
+
+      <h2 style="margin:0">
+        3. Influencers registrados
+      </h2>
+
+      <button
+        class="secondary"
+        id="btnRefresh"
+      >
+        Actualizar
+      </button>
+
     </div>
 
-    <div id="influencerList" style="margin-top:10px">
-      <div class="small">Conecta el panel para cargar los influencers.</div>
+    <div
+      id="influencerList"
+      style="margin-top:10px"
+    >
+      <div class="small">
+        Conecta el panel para cargar
+        los influencers.
+      </div>
     </div>
+
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0">Registro técnico</h2>
-    <div id="log" class="result">Listo.</div>
+
+    <div
+      class="row"
+      style="
+        justify-content:space-between;
+        align-items:center
+      "
+    >
+
+      <h2 style="margin:0">
+        4. Papelería
+      </h2>
+
+      <span
+        class="badge"
+        id="trashCount"
+      >
+        0
+      </span>
+
+    </div>
+
+    <div
+      class="small"
+      style="margin-top:8px"
+    >
+      Los influencers enviados aquí
+      desaparecen de la lista principal,
+      pero conservan todo su historial.
+    </div>
+
+    <div
+      id="trashList"
+      style="margin-top:10px"
+    >
+
+      <div class="small">
+        La papelería está vacía.
+      </div>
+
+    </div>
+
   </div>
+
+  <div class="card">
+
+    <h2 style="margin-top:0">
+      Registro técnico
+    </h2>
+
+    <div
+      id="log"
+      class="result"
+    >
+      Listo.
+    </div>
+
+  </div>
+
 </div>
 
 <script>
+
 const AMAZON_PRODUCTS = [
-  { label:"creatina", name:"Creatina monohidratada" },
-  { label:"proteina_polvo", name:"Proteína en polvo" },
-  { label:"proteina_sin_lactosa", name:"Proteína sin lactosa" },
-  { label:"omega_3", name:"Omega-3" },
-  { label:"vitamina_d", name:"Vitamina D" },
-  { label:"magnesio", name:"Magnesio" },
-  { label:"zinc", name:"Zinc" },
-  { label:"ashwagandha", name:"Ashwagandha" },
-  { label:"vitamina_e", name:"Vitamina E" },
-  { label:"bascula_cocina", name:"Báscula de cocina" },
-  { label:"guantes_gimnasio", name:"Guantes de gimnasio" }
+  {
+    label:"creatina",
+    name:"Creatina monohidratada"
+  },
+  {
+    label:"proteina_polvo",
+    name:"Proteína en polvo"
+  },
+  {
+    label:"proteina_sin_lactosa",
+    name:"Proteína sin lactosa"
+  },
+  {
+    label:"omega_3",
+    name:"Omega-3"
+  },
+  {
+    label:"vitamina_d",
+    name:"Vitamina D"
+  },
+  {
+    label:"magnesio",
+    name:"Magnesio"
+  },
+  {
+    label:"zinc",
+    name:"Zinc"
+  },
+  {
+    label:"ashwagandha",
+    name:"Ashwagandha"
+  },
+  {
+    label:"vitamina_e",
+    name:"Vitamina E"
+  },
+  {
+    label:"bascula_cocina",
+    name:"Báscula de cocina"
+  },
+  {
+    label:"guantes_gimnasio",
+    name:"Guantes de gimnasio"
+  }
 ];
 
 const STORE_PROVIDERS = [
-  { code:"instacart", country:"US", name:"🇺🇸 Estados Unidos — Instacart" },
-  { code:"rewe_de", country:"DE", name:"🇩🇪 Alemania — REWE DE" },
-  { code:"picnic_nl", country:"NL", name:"🇳🇱 Países Bajos — Picnic NL" },
-  { code:"iceland_uk", country:"GB", name:"🇬🇧 Reino Unido — Iceland Foods" },
-  { code:"jow_fr", country:"FR", name:"🇫🇷 Francia — Jow FR" },
-  { code:"carrefour_es", country:"ES", name:"🇪🇸 España — Carrefour España" }
+  {
+    code:"instacart",
+    country:"US",
+    name:"🇺🇸 Estados Unidos — Instacart"
+  },
+  {
+    code:"rewe_de",
+    country:"DE",
+    name:"🇩🇪 Alemania — REWE DE"
+  },
+  {
+    code:"picnic_nl",
+    country:"NL",
+    name:"🇳🇱 Países Bajos — Picnic NL"
+  },
+  {
+    code:"iceland_uk",
+    country:"GB",
+    name:"🇬🇧 Reino Unido — Iceland Foods"
+  },
+  {
+    code:"jow_fr",
+    country:"FR",
+    name:"🇫🇷 Francia — Jow FR"
+  },
+  {
+    code:"carrefour_es",
+    country:"ES",
+    name:"🇪🇸 España — Carrefour España"
+  }
 ];
 
-const $ = (id) => document.getElementById(id);
+const $ =
+  id =>
+    document.getElementById(id);
 
 let influencers = [];
-let editingInfluencerId = null;
-let lastGeneratedLink = "";
+
+let editingInfluencerId =
+  null;
+
+let lastGeneratedLink =
+  "";
 
 function renderAffiliateFields(){
-  $("amazonFields").innerHTML = AMAZON_PRODUCTS.map(p => `
-    <div>
-      <label>${escapeHtml(p.name)}</label>
-      <input id="amazon_${p.label}" placeholder="https://...">
-    </div>
-  `).join("");
 
-  $("storeFields").innerHTML = STORE_PROVIDERS.map(p => `
-    <div>
-      <label>${escapeHtml(p.name)}</label>
-      <input id="store_${p.code}" placeholder="https://...">
-    </div>
-  `).join("");
+  $("amazonFields").innerHTML =
+    AMAZON_PRODUCTS
+      .map(
+        p => `
+        <div>
+          <label>
+            ${escapeHtml(p.name)}
+          </label>
+
+          <input
+            id="amazon_${p.label}"
+            placeholder="https://..."
+          >
+        </div>
+        `
+      )
+      .join("");
+
+  $("storeFields").innerHTML =
+    STORE_PROVIDERS
+      .map(
+        p => `
+        <div>
+
+          <label>
+            ${escapeHtml(p.name)}
+          </label>
+
+          <input
+            id="store_${p.code}"
+            placeholder="https://..."
+          >
+
+        </div>
+        `
+      )
+      .join("");
 }
 
 function apiBase(){
-  return $("apiUrl").value.trim().replace(/\/+$/, "");
+
+  return $("apiUrl")
+    .value
+    .trim()
+    .replace(
+      /\/+$/,
+      ""
+    );
 }
 
 function panelKey(){
-  return $("panelKey").value.trim();
+
+  return $("panelKey")
+    .value
+    .trim();
 }
 
-function log(message, isError=false){
-  $("log").textContent = (isError ? "ERROR: " : "") + message;
+function log(
+  message,
+  isError=false
+){
+
+  $("log").textContent =
+    (
+      isError
+        ? "ERROR: "
+        : ""
+    ) +
+    message;
 }
 
-async function api(path, options={}){
-  const key = panelKey();
-  if(!key) throw new Error("Falta PANEL_KEY.");
+async function api(
+  path,
+  options={}
+){
 
-  const headers = new Headers(options.headers || {});
-  headers.set("X-Panel-Key", key);
+  const key =
+    panelKey();
 
-  if(options.body && !headers.has("Content-Type")){
-    headers.set("Content-Type", "application/json");
+  if(!key){
+    throw new Error(
+      "Falta PANEL_KEY."
+    );
   }
 
-  const res = await fetch(apiBase() + path, {...options, headers});
-  const text = await res.text();
+  const headers =
+    new Headers(
+      options.headers ||
+      {}
+    );
+
+  headers.set(
+    "X-Panel-Key",
+    key
+  );
+
+  if(
+    options.body &&
+    !headers.has(
+      "Content-Type"
+    )
+  ){
+    headers.set(
+      "Content-Type",
+      "application/json"
+    );
+  }
+
+  const res =
+    await fetch(
+      apiBase() + path,
+      {
+        ...options,
+        headers
+      }
+    );
+
+  const text =
+    await res.text();
 
   let data;
+
   try{
-    data = text ? JSON.parse(text) : {};
+    data =
+      text
+        ? JSON.parse(text)
+        : {};
   }catch{
-    data = { raw:text };
+    data = {
+      raw:text
+    };
   }
 
   if(!res.ok){
-    throw new Error((data && data.error) || ("HTTP " + res.status));
+
+    throw new Error(
+      (
+        data &&
+        data.error
+      ) ||
+      (
+        "HTTP " +
+        res.status
+      )
+    );
   }
 
   return data;
 }
 
 function saveSessionSettings(){
-  sessionStorage.setItem("comepro_api_url", $("apiUrl").value.trim());
-  sessionStorage.setItem("comepro_panel_key", $("panelKey").value);
-  sessionStorage.setItem("comepro_app_url", $("appUrl").value.trim());
+
+  sessionStorage.setItem(
+    "comepro_api_url",
+    $("apiUrl").value.trim()
+  );
+
+  sessionStorage.setItem(
+    "comepro_panel_key",
+    $("panelKey").value
+  );
+
+  sessionStorage.setItem(
+    "comepro_app_url",
+    $("appUrl").value.trim()
+  );
 }
 
 function restoreSessionSettings(){
-  const a = sessionStorage.getItem("comepro_api_url");
-  const k = sessionStorage.getItem("comepro_panel_key");
-  const u = sessionStorage.getItem("comepro_app_url");
 
-  if(a) $("apiUrl").value = a;
-  if(k) $("panelKey").value = k;
-  if(u) $("appUrl").value = u;
+  const a =
+    sessionStorage.getItem(
+      "comepro_api_url"
+    );
+
+  const k =
+    sessionStorage.getItem(
+      "comepro_panel_key"
+    );
+
+  const u =
+    sessionStorage.getItem(
+      "comepro_app_url"
+    );
+
+  if(a){
+    $("apiUrl").value = a;
+  }
+
+  if(k){
+    $("panelKey").value = k;
+  }
+
+  if(u){
+    $("appUrl").value = u;
+  }
 }
 
 async function loadInfluencers(){
+
   saveSessionSettings();
 
-  $("connectionStatus").textContent = "Cargando...";
-  $("connectionStatus").className = "status";
+  $("connectionStatus").textContent =
+    "Cargando...";
 
-  const data = await api("/influencers");
-  influencers = data.influencers || [];
+  $("connectionStatus").className =
+    "status";
 
-  $("connectionStatus").textContent = "Conectado";
-  $("connectionStatus").className = "status ok";
+  const data =
+    await api(
+      "/influencers"
+    );
+
+  influencers =
+    data.influencers ||
+    [];
+
+  $("connectionStatus").textContent =
+    "Conectado";
+
+  $("connectionStatus").className =
+    "status ok";
 
   renderReferralOptions();
   renderInfluencers();
-  log("Conexión correcta. Influencers cargados: " + influencers.length);
+
+  log(
+    "Conexión correcta. Influencers cargados: " +
+    influencers.length
+  );
 }
 
 function renderReferralOptions(){
-  const select = $("referredBy");
-  const current = select.value;
 
-  select.innerHTML = '<option value="">Nadie / directo</option>';
+  const select =
+    $("referredBy");
+
+  const current =
+    select.value;
+
+  select.innerHTML =
+    '<option value="">Nadie / directo</option>';
 
   influencers
-    .filter(inf => inf.id !== editingInfluencerId)
-    .forEach(inf => {
-      const opt = document.createElement("option");
-      opt.value = inf.id;
-      opt.textContent = inf.name + " (" + inf.slug + ")";
-      select.appendChild(opt);
-    });
+    .filter(
+      inf =>
+        inf.id !==
+        editingInfluencerId &&
+        String(
+          inf.status ||
+          ""
+        ).toLowerCase() !==
+        "trashed"
+    )
+    .forEach(
+      inf => {
 
-  if([...select.options].some(o => o.value === current)){
-    select.value = current;
+        const opt =
+          document.createElement(
+            "option"
+          );
+
+        opt.value =
+          inf.id;
+
+        opt.textContent =
+          inf.name +
+          " (" +
+          inf.slug +
+          ")";
+
+        select.appendChild(
+          opt
+        );
+      }
+    );
+
+  if(
+    [
+      ...select.options
+    ].some(
+      o =>
+        o.value ===
+        current
+    )
+  ){
+    select.value =
+      current;
   }
 }
 
 function renderInfluencers(){
-  const box = $("influencerList");
 
-  if(!influencers.length){
-    box.innerHTML = '<div class="small">No hay influencers todavía.</div>';
-    return;
+  const box =
+    $("influencerList");
+
+  const trashBox =
+    $("trashList");
+
+  const mainInfluencers =
+    influencers.filter(
+      inf =>
+        String(
+          inf.status ||
+          ""
+        ).toLowerCase() !==
+        "trashed"
+    );
+
+  const trashedInfluencers =
+    influencers.filter(
+      inf =>
+        String(
+          inf.status ||
+          ""
+        ).toLowerCase() ===
+        "trashed"
+    );
+
+  $("trashCount").textContent =
+    String(
+      trashedInfluencers.length
+    );
+
+  if(
+    !mainInfluencers.length
+  ){
+
+    box.innerHTML =
+      '<div class="small">No hay influencers activos o dados de baja.</div>';
+
+  }else{
+
+    box.innerHTML =
+      "";
+
+    mainInfluencers.forEach(
+      inf => {
+
+        const card =
+          buildInfluencerCard(
+            inf,
+            false
+          );
+
+        box.appendChild(
+          card
+        );
+      }
+    );
   }
 
-  box.innerHTML = "";
+  if(
+    !trashedInfluencers.length
+  ){
 
-  influencers.forEach(inf => {
-    const card = document.createElement("div");
-    card.className = "influencer-card";
+    trashBox.innerHTML =
+      '<div class="small">La papelería está vacía.</div>';
 
-    const head = document.createElement("div");
-    head.className = "influencer-head";
+  }else{
 
-    const left = document.createElement("div");
-    const parent = inf.referred_by_name
-      ? ("Referido por: " + inf.referred_by_name)
+    trashBox.innerHTML =
+      "";
+
+    trashedInfluencers.forEach(
+      inf => {
+
+        const card =
+          buildInfluencerCard(
+            inf,
+            true
+          );
+
+        trashBox.appendChild(
+          card
+        );
+      }
+    );
+  }
+}
+
+function buildInfluencerCard(
+  inf,
+  inTrash
+){
+
+  const card =
+    document.createElement(
+      "div"
+    );
+
+  card.className =
+    "influencer-card";
+
+  const head =
+    document.createElement(
+      "div"
+    );
+
+  head.className =
+    "influencer-head";
+
+  const left =
+    document.createElement(
+      "div"
+    );
+
+  const parent =
+    inf.referred_by_name
+      ? (
+          "Referido por: " +
+          inf.referred_by_name
+        )
       : "Sin referidor";
 
-    left.innerHTML =
-      '<strong>' + escapeHtml(inf.name) + '</strong>' +
-      '<div class="meta">' + escapeHtml(inf.slug) + ' · ' + escapeHtml(parent) + '</div>' +
-      '<div class="meta">' +
-        '<span class="badge">' + escapeHtml(inf.status || "") + '</span>' +
-        '<span class="badge">' + Number(inf.direct_referrals || 0) + ' referidos directos</span>' +
-      '</div>';
+  left.innerHTML =
+    '<strong>' +
+    escapeHtml(
+      inf.name
+    ) +
+    '</strong>' +
 
-    const chev = document.createElement("div");
-    chev.className = "chevron";
-    chev.textContent = "⌄";
+    '<div class="meta">' +
+    escapeHtml(
+      inf.slug
+    ) +
+    ' · ' +
+    escapeHtml(
+      parent
+    ) +
+    '</div>' +
 
-    head.appendChild(left);
-    head.appendChild(chev);
+    '<div class="meta">' +
 
-    const details = document.createElement("div");
-    details.className = "influencer-details";
-    details.innerHTML = '<div class="small">Toca para cargar la información…</div>';
+    '<span class="badge">' +
+    escapeHtml(
+      inf.status ||
+      ""
+    ) +
+    '</span>' +
 
-    let loaded = false;
+    '<span class="badge">' +
+    Number(
+      inf.direct_referrals ||
+      0
+    ) +
+    ' referidos directos</span>' +
 
-    head.onclick = async () => {
-      card.classList.toggle("open");
+    '</div>';
 
-      if(card.classList.contains("open") && !loaded){
-        details.innerHTML = '<div class="small">Cargando información…</div>';
+  const chev =
+    document.createElement(
+      "div"
+    );
+
+  chev.className =
+    "chevron";
+
+  chev.textContent =
+    "⌄";
+
+  head.appendChild(
+    left
+  );
+
+  head.appendChild(
+    chev
+  );
+
+  const details =
+    document.createElement(
+      "div"
+    );
+
+  details.className =
+    "influencer-details";
+
+  details.innerHTML =
+    '<div class="small">Toca para cargar la información…</div>';
+
+  let loaded =
+    false;
+
+  head.onclick =
+    async () => {
+
+      card.classList.toggle(
+        "open"
+      );
+
+      if(
+        card.classList.contains(
+          "open"
+        ) &&
+        !loaded
+      ){
+
+        details.innerHTML =
+          '<div class="small">Cargando información…</div>';
+
         try{
-          const detail = await api(
-            "/influencer-summary?id=" + encodeURIComponent(inf.id) + "&days=30"
+
+          const detail =
+            await api(
+              "/influencer-summary?id=" +
+              encodeURIComponent(
+                inf.id
+              ) +
+              "&days=30"
+            );
+
+          renderInfluencerDetails(
+            details,
+            detail,
+            inf
           );
-          renderInfluencerDetails(details, detail, inf);
-          loaded = true;
+
+          loaded =
+            true;
+
         }catch(e){
+
           details.innerHTML =
-            '<div class="err">ERROR: ' + escapeHtml(e.message) + '</div>';
+            '<div class="err">ERROR: ' +
+            escapeHtml(
+              e.message
+            ) +
+            '</div>';
         }
       }
     };
 
-    const actions = document.createElement("div");
-    actions.className = "influencer-actions";
+  const actions =
+    document.createElement(
+      "div"
+    );
 
-    const copyBtn = document.createElement("button");
-    copyBtn.className = "secondary";
-    copyBtn.textContent = "Copiar link";
-    copyBtn.onclick = async (ev) => {
-      ev.stopPropagation();
-      try{
-        const link = buildInfluencerLink($("appUrl").value.trim(), inf.slug);
-        await copyText(link);
-        log("Link copiado: " + link);
-      }catch(e){
-        log(e.message, true);
-      }
-    };
+  actions.className =
+    "influencer-actions";
 
-    const editBtn = document.createElement("button");
-    editBtn.className = "secondary";
-    editBtn.textContent = "Editar";
-    editBtn.onclick = async (ev) => {
-      ev.stopPropagation();
-      try{
-        await loadInfluencerForEdit(inf.id);
-      }catch(e){
-        log(e.message, true);
-      }
-    };
+  if(inTrash){
 
-    const statusLower = String(inf.status || "").toLowerCase();
+    const restoreBtn =
+      document.createElement(
+        "button"
+      );
 
-    const stateBtn = document.createElement("button");
-    if(statusLower === "inactive"){
-      stateBtn.className = "primary";
-      stateBtn.textContent = "Reactivar";
-      stateBtn.onclick = async (ev) => {
+    restoreBtn.className =
+      "primary";
+
+    restoreBtn.textContent =
+      "Restaurar";
+
+    restoreBtn.onclick =
+      async ev => {
+
         ev.stopPropagation();
-        await reactivateInfluencer(inf);
+
+        await restoreInfluencer(
+          inf
+        );
       };
+
+    actions.appendChild(
+      restoreBtn
+    );
+
+  }else{
+
+    const copyBtn =
+      document.createElement(
+        "button"
+      );
+
+    copyBtn.className =
+      "secondary";
+
+    copyBtn.textContent =
+      "Copiar link";
+
+    copyBtn.onclick =
+      async ev => {
+
+        ev.stopPropagation();
+
+        try{
+
+          const link =
+            buildInfluencerLink(
+              $("appUrl").value.trim(),
+              inf.slug
+            );
+
+          await copyText(
+            link
+          );
+
+          log(
+            "Link copiado: " +
+            link
+          );
+
+        }catch(e){
+
+          log(
+            e.message,
+            true
+          );
+        }
+      };
+
+    const editBtn =
+      document.createElement(
+        "button"
+      );
+
+    editBtn.className =
+      "secondary";
+
+    editBtn.textContent =
+      "Editar";
+
+    editBtn.onclick =
+      async ev => {
+
+        ev.stopPropagation();
+
+        try{
+
+          await loadInfluencerForEdit(
+            inf.id
+          );
+
+        }catch(e){
+
+          log(
+            e.message,
+            true
+          );
+        }
+      };
+
+    const statusLower =
+      String(
+        inf.status ||
+        ""
+      ).toLowerCase();
+
+    const stateBtn =
+      document.createElement(
+        "button"
+      );
+
+    if(
+      statusLower ===
+      "inactive"
+    ){
+
+      stateBtn.className =
+        "primary";
+
+      stateBtn.textContent =
+        "Reactivar";
+
+      stateBtn.onclick =
+        async ev => {
+
+          ev.stopPropagation();
+
+          await reactivateInfluencer(
+            inf
+          );
+        };
+
     }else{
-      stateBtn.className = "warning";
-      stateBtn.textContent = "Dar de baja";
-      stateBtn.onclick = async (ev) => {
-        ev.stopPropagation();
-        await deactivateInfluencer(inf);
-      };
+
+      stateBtn.className =
+        "warning";
+
+      stateBtn.textContent =
+        "Dar de baja";
+
+      stateBtn.onclick =
+        async ev => {
+
+          ev.stopPropagation();
+
+          await deactivateInfluencer(
+            inf
+          );
+        };
     }
 
-    const deleteBtn = document.createElement("button");
-    deleteBtn.className = "danger";
-    deleteBtn.textContent = "Eliminar";
-    deleteBtn.onclick = async (ev) => {
-      ev.stopPropagation();
-      await purgeInfluencer(inf);
-    };
+    const trashBtn =
+      document.createElement(
+        "button"
+      );
 
-    actions.appendChild(copyBtn);
-    actions.appendChild(editBtn);
-    actions.appendChild(stateBtn);
-    actions.appendChild(deleteBtn);
+    trashBtn.className =
+      "danger";
 
-    card.appendChild(head);
-    card.appendChild(details);
-    card.appendChild(actions);
-    box.appendChild(card);
-  });
-}
+    trashBtn.textContent =
+      "Papelería";
 
-function renderInfluencerDetails(container, detail, fallbackInf){
-  const inf = detail.influencer || fallbackInf || {};
-  const links = detail.affiliateLinks || [];
-  const summary = detail.summary || {};
+    trashBtn.onclick =
+      async ev => {
 
-  const comeProLink = buildInfluencerLink(
-    $("appUrl").value.trim() || "https://come-pro.com/",
-    inf.slug || fallbackInf.slug
+        ev.stopPropagation();
+
+        await trashInfluencer(
+          inf
+        );
+      };
+
+    actions.appendChild(
+      copyBtn
+    );
+
+    actions.appendChild(
+      editBtn
+    );
+
+    actions.appendChild(
+      stateBtn
+    );
+
+    actions.appendChild(
+      trashBtn
+    );
+  }
+
+  card.appendChild(
+    head
   );
 
-  const amazonLinks = links.filter(x => x.providerCode === "amazon");
-  const storeLinks = links.filter(x => x.providerCode !== "amazon");
+  card.appendChild(
+    details
+  );
+
+  card.appendChild(
+    actions
+  );
+
+  return card;
+}
+
+function renderInfluencerDetails(
+  container,
+  detail,
+  fallbackInf
+){
+
+  const inf =
+    detail.influencer ||
+    fallbackInf ||
+    {};
+
+  const links =
+    detail.affiliateLinks ||
+    [];
+
+  const summary =
+    detail.summary ||
+    {};
+
+  const comeProLink =
+    buildInfluencerLink(
+      $("appUrl").value.trim() ||
+      "https://come-pro.com/",
+      inf.slug ||
+      fallbackInf.slug
+    );
+
+  const amazonLinks =
+    links.filter(
+      x =>
+        x.providerCode ===
+        "amazon"
+    );
+
+  const storeLinks =
+    links.filter(
+      x =>
+        x.providerCode !==
+        "amazon"
+    );
 
   container.innerHTML = `
+
     <div class="detail-grid">
-      <div class="detail-box"><b>Nombre</b><span>${escapeHtml(inf.name || "")}</span></div>
-      <div class="detail-box"><b>Slug</b><span>${escapeHtml(inf.slug || "")}</span></div>
-      <div class="detail-box"><b>Estado</b><span>${escapeHtml(inf.status || "")}</span></div>
-      <div class="detail-box"><b>Contacto</b><span>${escapeHtml(inf.contact || "—")}</span></div>
-      <div class="detail-box"><b>Email</b><span>${escapeHtml(inf.email || "—")}</span></div>
-      <div class="detail-box"><b>WhatsApp</b><span>${escapeHtml(inf.whatsapp || "—")}</span></div>
-      <div class="detail-box"><b>Instagram</b><span>${escapeHtml(inf.instagram || "—")}</span></div>
-      <div class="detail-box"><b>Referido por</b><span>${escapeHtml(
-        fallbackInf.referred_by_name || "Nadie / directo"
-      )}</span></div>
-      <div class="detail-box"><b>Referidos directos</b><span>${Number(
-        fallbackInf.direct_referrals || 0
-      )}</span></div>
-      <div class="detail-box"><b>Comisión directa</b><span>${Number(
-        inf.directCommissionPct || 0
-      )}%</span></div>
-      <div class="detail-box"><b>Comisión por referido</b><span>${Number(
-        inf.referralCommissionPct || 0
-      )}%</span></div>
-      <div class="detail-box"><b>Creado</b><span>${escapeHtml(
-        formatDate(inf.createdAt || "")
-      )}</span></div>
+
+      <div class="detail-box">
+        <b>Nombre</b>
+        <span>${escapeHtml(inf.name || "")}</span>
+      </div>
+
+      <div class="detail-box">
+        <b>Slug</b>
+        <span>${escapeHtml(inf.slug || "")}</span>
+      </div>
+
+      <div class="detail-box">
+        <b>Estado</b>
+        <span>${escapeHtml(inf.status || "")}</span>
+      </div>
+
+      <div class="detail-box">
+        <b>Contacto</b>
+        <span>${escapeHtml(inf.contact || "—")}</span>
+      </div>
+
+      <div class="detail-box">
+        <b>Email</b>
+        <span>${escapeHtml(inf.email || "—")}</span>
+      </div>
+
+      <div class="detail-box">
+        <b>WhatsApp</b>
+        <span>${escapeHtml(inf.whatsapp || "—")}</span>
+      </div>
+
+      <div class="detail-box">
+        <b>Instagram</b>
+        <span>${escapeHtml(inf.instagram || "—")}</span>
+      </div>
+
+      <div class="detail-box">
+        <b>Referido por</b>
+        <span>
+          ${
+            escapeHtml(
+              fallbackInf.referred_by_name ||
+              "Nadie / directo"
+            )
+          }
+        </span>
+      </div>
+
+      <div class="detail-box">
+        <b>Referidos directos</b>
+        <span>
+          ${
+            Number(
+              fallbackInf.direct_referrals ||
+              0
+            )
+          }
+        </span>
+      </div>
+
+      <div class="detail-box">
+        <b>Comisión directa</b>
+        <span>
+          ${
+            Number(
+              inf.directCommissionPct ||
+              0
+            )
+          }%
+        </span>
+      </div>
+
+      <div class="detail-box">
+        <b>Comisión por referido</b>
+        <span>
+          ${
+            Number(
+              inf.referralCommissionPct ||
+              0
+            )
+          }%
+        </span>
+      </div>
+
+      <div class="detail-box">
+        <b>Creado</b>
+        <span>
+          ${
+            escapeHtml(
+              formatDate(
+                inf.createdAt ||
+                ""
+              )
+            )
+          }
+        </span>
+      </div>
+
     </div>
 
     <div class="subcard">
-      <div class="provider-title"><strong>Link COME PRO</strong></div>
-      <div class="result">${escapeHtml(comeProLink)}</div>
+
+      <div class="provider-title">
+        <strong>
+          Link COME PRO
+        </strong>
+      </div>
+
+      <div class="result">
+        ${escapeHtml(comeProLink)}
+      </div>
+
     </div>
 
     <div class="subcard">
-      <div class="provider-title"><strong>Amazon</strong><span class="code">${amazonLinks.length} enlaces</span></div>
+
+      <div class="provider-title">
+
+        <strong>
+          Amazon
+        </strong>
+
+        <span class="code">
+          ${amazonLinks.length} enlaces
+        </span>
+
+      </div>
+
       <div class="link-list">
         ${renderLinkRows(amazonLinks)}
       </div>
+
     </div>
 
     <div class="subcard">
-      <div class="provider-title"><strong>Supermercados</strong><span class="code">${storeLinks.length} enlaces</span></div>
+
+      <div class="provider-title">
+
+        <strong>
+          Supermercados
+        </strong>
+
+        <span class="code">
+          ${storeLinks.length} enlaces
+        </span>
+
+      </div>
+
       <div class="link-list">
         ${renderLinkRows(storeLinks)}
       </div>
+
     </div>
 
     <div class="subcard">
-      <div class="provider-title"><strong>Resumen disponible</strong></div>
-      <div class="result">${escapeHtml(JSON.stringify(summary, null, 2))}</div>
+
+      <div class="provider-title">
+        <strong>
+          Resumen disponible
+        </strong>
+      </div>
+
+      <div class="result">
+        ${
+          escapeHtml(
+            JSON.stringify(
+              summary,
+              null,
+              2
+            )
+          )
+        }
+      </div>
+
     </div>
   `;
 }
 
-function renderLinkRows(links){
-  if(!links.length){
-    return '<div class="small">Sin enlaces guardados.</div>';
+function renderLinkRows(
+  links
+){
+
+  if(
+    !links.length
+  ){
+
+    return (
+      '<div class="small">' +
+      'Sin enlaces guardados.' +
+      '</div>'
+    );
   }
 
-  return links.map(link => `
-    <div class="link-row">
-      <strong>${escapeHtml(link.providerName || link.providerCode || "")}</strong>
-      <div class="meta">${escapeHtml(link.label || "default")} ${link.countryCode ? "· " + escapeHtml(link.countryCode) : ""}</div>
-      <div class="small">${escapeHtml(link.url || "")}</div>
-    </div>
-  `).join("");
+  return links
+    .map(
+      link => `
+
+      <div class="link-row">
+
+        <strong>
+          ${
+            escapeHtml(
+              link.providerName ||
+              link.providerCode ||
+              ""
+            )
+          }
+        </strong>
+
+        <div class="meta">
+
+          ${
+            escapeHtml(
+              link.label ||
+              "default"
+            )
+          }
+
+          ${
+            link.countryCode
+              ? " · " +
+                escapeHtml(
+                  link.countryCode
+                )
+              : ""
+          }
+
+        </div>
+
+        <div class="small">
+          ${
+            escapeHtml(
+              link.url ||
+              ""
+            )
+          }
+        </div>
+
+      </div>
+      `
+    )
+    .join("");
 }
 
-function formatDate(value){
-  if(!value) return "—";
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString();
-}
+function formatDate(
+  value
+){
 
-async function deactivateInfluencer(inf){
-  const ok = confirm(
-    `Dar de baja a "${inf.name}"?\n\n` +
-    "Se conservarán sus visitas, métricas, comisiones y relaciones históricas."
-  );
-
-  if(!ok) return;
-
-  try{
-    const data = await api(
-      "/influencers/" + encodeURIComponent(inf.id),
-      { method:"DELETE" }
-    );
-
-    log(
-      (data.message || "Influencer dado de baja correctamente.") +
-      "\nHistorial conservado."
-    );
-
-    await loadInfluencers();
-  }catch(e){
-    log(e.message, true);
+  if(!value){
+    return "—";
   }
-}
 
-async function reactivateInfluencer(inf){
-  const ok = confirm(`¿Reactivar a "${inf.name}"?`);
-  if(!ok) return;
-
-  try{
-    await api(
-      "/influencers/" + encodeURIComponent(inf.id),
-      {
-        method:"PATCH",
-        body:JSON.stringify({ status:"active" })
-      }
+  const d =
+    new Date(
+      value
     );
 
-    log("Influencer reactivado correctamente: " + inf.name);
-    await loadInfluencers();
-  }catch(e){
-    log(e.message, true);
-  }
+  return Number.isNaN(
+    d.getTime()
+  )
+    ? String(value)
+    : d.toLocaleString();
 }
 
-async function purgeInfluencer(inf){
-  const first = confirm(
-    `ELIMINAR DEFINITIVAMENTE a "${inf.name}"?\n\n` +
-    "Esto borrará también sus eventos, sesiones, conversiones, comisiones, pagos, métricas, campañas y enlaces afiliados asociados.\n\n" +
-    "Esta acción NO se puede deshacer."
-  );
+async function deactivateInfluencer(
+  inf
+){
 
-  if(!first) return;
+  const ok =
+    confirm(
+      `Dar de baja a "${inf.name}"?\n\n` +
+      "Se conservarán sus visitas, métricas, comisiones y relaciones históricas."
+    );
 
-  const typed = prompt(
-    'Para confirmar, escribe exactamente:\n\nELIMINAR'
-  );
-
-  if(typed !== "ELIMINAR"){
-    log("Eliminación cancelada.");
+  if(!ok){
     return;
   }
 
   try{
-    const data = await api(
-      "/influencers/" + encodeURIComponent(inf.id) + "?purge=1",
-      { method:"DELETE" }
-    );
+
+    const data =
+      await api(
+        "/influencers/" +
+        encodeURIComponent(
+          inf.id
+        ),
+        {
+          method:"DELETE"
+        }
+      );
 
     log(
-      data.message ||
-      ("Influencer eliminado definitivamente: " + inf.name)
+      (
+        data.message ||
+        "Influencer dado de baja correctamente."
+      ) +
+      "\nHistorial conservado."
     );
 
     await loadInfluencers();
+
   }catch(e){
-    log(e.message, true);
+
+    log(
+      e.message,
+      true
+    );
   }
 }
 
-function buildInfluencerLink(baseUrl, slug){
-  const base = baseUrl || "https://come-pro.com/";
+async function reactivateInfluencer(
+  inf
+){
+
+  const ok =
+    confirm(
+      `¿Reactivar a "${inf.name}"?`
+    );
+
+  if(!ok){
+    return;
+  }
 
   try{
-    const u = new URL(base);
-    u.searchParams.set("i", slug);
-    return u.toString();
-  }catch{
-    const sep = base.includes("?") ? "&" : "?";
-    return base + sep + "i=" + encodeURIComponent(slug);
+
+    await api(
+      "/influencers/" +
+      encodeURIComponent(
+        inf.id
+      ),
+      {
+        method:"PATCH",
+        body:
+          JSON.stringify({
+            status:"active"
+          })
+      }
+    );
+
+    log(
+      "Influencer reactivado correctamente: " +
+      inf.name
+    );
+
+    await loadInfluencers();
+
+  }catch(e){
+
+    log(
+      e.message,
+      true
+    );
   }
 }
 
-function slugify(v){
-  return String(v || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0,80);
+/*
+  PAPELERÍA
+
+  No elimina la fila.
+  Solo cambia status a "trashed".
+*/
+async function trashInfluencer(
+  inf
+){
+
+  const ok =
+    confirm(
+      `¿Enviar a "${inf.name}" a la papelería?\n\n` +
+      "Desaparecerá de la lista principal, pero conservará su historial, enlaces, referidos y métricas."
+    );
+
+  if(!ok){
+    return;
+  }
+
+  try{
+
+    await api(
+      "/influencers/" +
+      encodeURIComponent(
+        inf.id
+      ),
+      {
+        method:"PATCH",
+
+        body:
+          JSON.stringify({
+            status:"trashed"
+          })
+      }
+    );
+
+    log(
+      "Enviado a papelería: " +
+      inf.name
+    );
+
+    await loadInfluencers();
+
+  }catch(e){
+
+    log(
+      e.message,
+      true
+    );
+  }
 }
 
-async function saveAffiliateLink(influencerId, providerCode, countryCode, label, url){
-  const cleanUrl = String(url || "").trim();
-  if(!cleanUrl) return null;
+async function restoreInfluencer(
+  inf
+){
 
-  return api("/affiliate-links", {
-    method:"POST",
-    body:JSON.stringify({
-      influencer_id:influencerId,
-      provider_code:providerCode,
-      country_code:countryCode,
-      label,
-      url:cleanUrl,
-      active:true,
-      priority:100
-    })
-  });
+  const ok =
+    confirm(
+      `¿Restaurar a "${inf.name}"?`
+    );
+
+  if(!ok){
+    return;
+  }
+
+  try{
+
+    await api(
+      "/influencers/" +
+      encodeURIComponent(
+        inf.id
+      ),
+      {
+        method:"PATCH",
+
+        body:
+          JSON.stringify({
+            status:"active"
+          })
+      }
+    );
+
+    log(
+      "Influencer restaurado: " +
+      inf.name
+    );
+
+    await loadInfluencers();
+
+  }catch(e){
+
+    log(
+      e.message,
+      true
+    );
+  }
+}
+
+function buildInfluencerLink(
+  baseUrl,
+  slug
+){
+
+  const base =
+    baseUrl ||
+    "https://come-pro.com/";
+
+  try{
+
+    const u =
+      new URL(
+        base
+      );
+
+    u.searchParams.set(
+      "i",
+      slug
+    );
+
+    return u.toString();
+
+  }catch{
+
+    const sep =
+      base.includes("?")
+        ? "&"
+        : "?";
+
+    return (
+      base +
+      sep +
+      "i=" +
+      encodeURIComponent(
+        slug
+      )
+    );
+  }
+}
+
+function slugify(
+  v
+){
+
+  return String(
+    v ||
+    ""
+  )
+    .normalize(
+      "NFD"
+    )
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .toLowerCase()
+    .trim()
+    .replace(
+      /[^a-z0-9]+/g,
+      "-"
+    )
+    .replace(
+      /^-+|-+$/g,
+      ""
+    )
+    .slice(
+      0,
+      80
+    );
+}
+
+async function saveAffiliateLink(
+  influencerId,
+  providerCode,
+  countryCode,
+  label,
+  url
+){
+
+  const cleanUrl =
+    String(
+      url ||
+      ""
+    ).trim();
+
+  if(!cleanUrl){
+    return null;
+  }
+
+  return api(
+    "/affiliate-links",
+    {
+      method:"POST",
+
+      body:
+        JSON.stringify({
+          influencer_id:
+            influencerId,
+
+          provider_code:
+            providerCode,
+
+          country_code:
+            countryCode,
+
+          label,
+
+          url:
+            cleanUrl,
+
+          active:
+            true,
+
+          priority:
+            100
+        })
+    }
+  );
 }
 
 function collectInfluencerPayload(){
-  const name = $("name").value.trim();
-  if(!name) throw new Error("El nombre es obligatorio.");
+
+  const name =
+    $("name")
+      .value
+      .trim();
+
+  if(!name){
+
+    throw new Error(
+      "El nombre es obligatorio."
+    );
+  }
 
   return {
+
     name,
-    slug:slugify($("slug").value.trim() || name),
-    contact:$("contact").value.trim(),
-    email:$("email").value.trim(),
-    whatsapp:$("whatsapp").value.trim(),
-    instagram:$("instagram").value.trim(),
-    referred_by:$("referredBy").value || null,
-    status:$("status").value,
-    direct_commission_pct:Number($("directCommission").value || 0),
-    referral_commission_pct:Number($("referralCommission").value || 5),
-    notes:$("notes").value.trim()
+
+    slug:
+      slugify(
+        $("slug")
+          .value
+          .trim() ||
+        name
+      ),
+
+    contact:
+      $("contact")
+        .value
+        .trim(),
+
+    email:
+      $("email")
+        .value
+        .trim(),
+
+    whatsapp:
+      $("whatsapp")
+        .value
+        .trim(),
+
+    instagram:
+      $("instagram")
+        .value
+        .trim(),
+
+    referred_by:
+      $("referredBy")
+        .value ||
+      null,
+
+    status:
+      $("status")
+        .value,
+
+    direct_commission_pct:
+      Number(
+        $("directCommission")
+          .value ||
+        0
+      ),
+
+    referral_commission_pct:
+      Number(
+        $("referralCommission")
+          .value ||
+        5
+      ),
+
+    notes:
+      $("notes")
+        .value
+        .trim()
   };
 }
 
-async function saveAllAffiliateLinks(influencerId){
-  let saved = 0;
+async function saveAllAffiliateLinks(
+  influencerId
+){
 
-  for(const p of AMAZON_PRODUCTS){
-    const url = $("amazon_" + p.label).value.trim();
+  let saved =
+    0;
+
+  for(
+    const p
+    of AMAZON_PRODUCTS
+  ){
+
+    const url =
+      $("amazon_" + p.label)
+        .value
+        .trim();
+
     if(url){
-      await saveAffiliateLink(influencerId, "amazon", "", p.label, url);
+
+      await saveAffiliateLink(
+        influencerId,
+        "amazon",
+        "",
+        p.label,
+        url
+      );
+
       saved++;
     }
   }
 
-  for(const p of STORE_PROVIDERS){
-    const url = $("store_" + p.code).value.trim();
+  for(
+    const p
+    of STORE_PROVIDERS
+  ){
+
+    const url =
+      $("store_" + p.code)
+        .value
+        .trim();
+
     if(url){
-      await saveAffiliateLink(influencerId, p.code, p.country, "default", url);
+
+      await saveAffiliateLink(
+        influencerId,
+        p.code,
+        p.country,
+        "default",
+        url
+      );
+
       saved++;
     }
   }
@@ -835,172 +2354,392 @@ async function saveAllAffiliateLinks(influencerId){
 }
 
 async function createInfluencer(){
-  const payload = collectInfluencerPayload();
-  payload.app_base_url = $("appUrl").value.trim() || "https://come-pro.com/";
 
-  const created = await api("/influencers", {
-    method:"POST",
-    body:JSON.stringify(payload)
-  });
+  const payload =
+    collectInfluencerPayload();
 
-  const inf = created.influencer;
-  if(!inf || !inf.id){
-    throw new Error("La API no devolvió el influencer creado.");
+  payload.app_base_url =
+    $("appUrl")
+      .value
+      .trim() ||
+    "https://come-pro.com/";
+
+  const created =
+    await api(
+      "/influencers",
+      {
+        method:"POST",
+
+        body:
+          JSON.stringify(
+            payload
+          )
+      }
+    );
+
+  const inf =
+    created.influencer;
+
+  if(
+    !inf ||
+    !inf.id
+  ){
+
+    throw new Error(
+      "La API no devolvió el influencer creado."
+    );
   }
 
-  const linksSaved = await saveAllAffiliateLinks(inf.id);
+  const linksSaved =
+    await saveAllAffiliateLinks(
+      inf.id
+    );
 
   lastGeneratedLink =
     created.generated_link ||
-    buildInfluencerLink($("appUrl").value.trim(), inf.slug);
+    buildInfluencerLink(
+      $("appUrl")
+        .value
+        .trim(),
+      inf.slug
+    );
 
   $("createdResult").textContent =
     "Influencer creado correctamente\n\n" +
-    "Nombre: " + inf.name + "\n" +
-    "Slug: " + inf.slug + "\n" +
-    "ID: " + inf.id + "\n" +
-    "Links afiliados guardados: " + linksSaved + "\n\n" +
-    "Link COME PRO:\n" + lastGeneratedLink;
+    "Nombre: " +
+    inf.name +
+    "\n" +
 
-  $("createdCard").classList.remove("hidden");
+    "Slug: " +
+    inf.slug +
+    "\n" +
 
-  log("Influencer creado. Links afiliados guardados: " + linksSaved);
+    "ID: " +
+    inf.id +
+    "\n" +
+
+    "Links afiliados guardados: " +
+    linksSaved +
+    "\n\n" +
+
+    "Link COME PRO:\n" +
+    lastGeneratedLink;
+
+  $("createdCard")
+    .classList
+    .remove(
+      "hidden"
+    );
+
+  log(
+    "Influencer creado. Links afiliados guardados: " +
+    linksSaved
+  );
+
   await loadInfluencers();
 }
 
 async function updateInfluencer(){
-  if(!editingInfluencerId){
-    throw new Error("No hay influencer en edición.");
+
+  if(
+    !editingInfluencerId
+  ){
+
+    throw new Error(
+      "No hay influencer en edición."
+    );
   }
 
-  const payload = collectInfluencerPayload();
+  const payload =
+    collectInfluencerPayload();
 
-  const updated = await api(
-    "/influencers/" + encodeURIComponent(editingInfluencerId),
-    {
-      method:"PATCH",
-      body:JSON.stringify(payload)
-    }
-  );
+  const updated =
+    await api(
+      "/influencers/" +
+      encodeURIComponent(
+        editingInfluencerId
+      ),
+      {
+        method:"PATCH",
 
-  const inf = updated.influencer;
-  if(!inf || !inf.id){
-    throw new Error("La API no devolvió el influencer actualizado.");
+        body:
+          JSON.stringify(
+            payload
+          )
+      }
+    );
+
+  const inf =
+    updated.influencer;
+
+  if(
+    !inf ||
+    !inf.id
+  ){
+
+    throw new Error(
+      "La API no devolvió el influencer actualizado."
+    );
   }
 
-  const linksSaved = await saveAllAffiliateLinks(inf.id);
+  const linksSaved =
+    await saveAllAffiliateLinks(
+      inf.id
+    );
 
   lastGeneratedLink =
-    buildInfluencerLink($("appUrl").value.trim(), inf.slug);
+    buildInfluencerLink(
+      $("appUrl")
+        .value
+        .trim(),
+      inf.slug
+    );
 
   $("createdResult").textContent =
     "Influencer actualizado correctamente\n\n" +
-    "Nombre: " + inf.name + "\n" +
-    "Slug: " + inf.slug + "\n" +
-    "Links guardados/actualizados: " + linksSaved + "\n\n" +
-    "Link COME PRO:\n" + lastGeneratedLink;
+    "Nombre: " +
+    inf.name +
+    "\n" +
 
-  $("createdCard").classList.remove("hidden");
+    "Slug: " +
+    inf.slug +
+    "\n" +
 
-  log("Influencer actualizado. Links guardados/actualizados: " + linksSaved);
+    "Links guardados/actualizados: " +
+    linksSaved +
+    "\n\n" +
 
-  cancelEdit(false);
+    "Link COME PRO:\n" +
+    lastGeneratedLink;
+
+  $("createdCard")
+    .classList
+    .remove(
+      "hidden"
+    );
+
+  log(
+    "Influencer actualizado. Links guardados/actualizados: " +
+    linksSaved
+  );
+
+  cancelEdit(
+    false
+  );
+
   await loadInfluencers();
 }
 
 async function saveInfluencer(){
-  $("btnSaveInfluencer").disabled = true;
+
+  $("btnSaveInfluencer").disabled =
+    true;
+
   $("btnSaveInfluencer").textContent =
-    editingInfluencerId ? "Guardando..." : "Creando...";
+    editingInfluencerId
+      ? "Guardando..."
+      : "Creando...";
 
   try{
-    if(editingInfluencerId){
+
+    if(
+      editingInfluencerId
+    ){
+
       await updateInfluencer();
+
     }else{
+
       await createInfluencer();
     }
+
   }finally{
-    $("btnSaveInfluencer").disabled = false;
+
+    $("btnSaveInfluencer").disabled =
+      false;
+
     $("btnSaveInfluencer").textContent =
-      editingInfluencerId ? "Guardar cambios" : "Crear influencer";
+      editingInfluencerId
+        ? "Guardar cambios"
+        : "Crear influencer";
   }
 }
 
-async function loadInfluencerForEdit(id){
-  const detail = await api(
-    "/influencer-summary?id=" +
-    encodeURIComponent(id) +
-    "&days=30"
-  );
+async function loadInfluencerForEdit(
+  id
+){
 
-  const inf = detail.influencer;
-
-  if(!inf){
-    throw new Error("No se pudo cargar el influencer.");
-  }
-
-  editingInfluencerId = inf.id;
-
-  $("formTitle").textContent = "2. Editar influencer";
-  $("btnSaveInfluencer").textContent = "Guardar cambios";
-  $("btnCancelEdit").classList.remove("hidden");
-
-  $("name").value = inf.name || "";
-  $("slug").value = inf.slug || "";
-  $("contact").value = inf.contact || "";
-  $("email").value = inf.email || "";
-  $("whatsapp").value = inf.whatsapp || "";
-  $("instagram").value = inf.instagram || "";
-  $("status").value = inf.status || "active";
-  $("directCommission").value = Number(inf.directCommissionPct || 0);
-  $("referralCommission").value = Number(inf.referralCommissionPct || 5);
-  $("notes").value = inf.notes || "";
-
-  renderReferralOptions();
-  $("referredBy").value = inf.referredById || "";
-
-  AMAZON_PRODUCTS.forEach(p => {
-    $("amazon_" + p.label).value = "";
-  });
-
-  STORE_PROVIDERS.forEach(p => {
-    $("store_" + p.code).value = "";
-  });
-
-  const links = detail.affiliateLinks || [];
-
-  links.forEach(link => {
-    if(link.providerCode === "amazon"){
-      const fieldId = "amazon_" + link.label;
-      if($(fieldId)){
-        $(fieldId).value = link.url || "";
-      }
-      return;
-    }
-
-    const store = STORE_PROVIDERS.find(
-      p => p.code === link.providerCode
+  const detail =
+    await api(
+      "/influencer-summary?id=" +
+      encodeURIComponent(
+        id
+      ) +
+      "&days=30"
     );
 
-    if(store){
-      $("store_" + store.code).value = link.url || "";
+  const inf =
+    detail.influencer;
+
+  if(!inf){
+
+    throw new Error(
+      "No se pudo cargar el influencer."
+    );
+  }
+
+  editingInfluencerId =
+    inf.id;
+
+  $("formTitle").textContent =
+    "2. Editar influencer";
+
+  $("btnSaveInfluencer").textContent =
+    "Guardar cambios";
+
+  $("btnCancelEdit")
+    .classList
+    .remove(
+      "hidden"
+    );
+
+  $("name").value =
+    inf.name ||
+    "";
+
+  $("slug").value =
+    inf.slug ||
+    "";
+
+  $("contact").value =
+    inf.contact ||
+    "";
+
+  $("email").value =
+    inf.email ||
+    "";
+
+  $("whatsapp").value =
+    inf.whatsapp ||
+    "";
+
+  $("instagram").value =
+    inf.instagram ||
+    "";
+
+  $("status").value =
+    inf.status ||
+    "active";
+
+  $("directCommission").value =
+    Number(
+      inf.directCommissionPct ||
+      0
+    );
+
+  $("referralCommission").value =
+    Number(
+      inf.referralCommissionPct ||
+      5
+    );
+
+  $("notes").value =
+    inf.notes ||
+    "";
+
+  renderReferralOptions();
+
+  $("referredBy").value =
+    inf.referredById ||
+    "";
+
+  AMAZON_PRODUCTS.forEach(
+    p => {
+
+      $("amazon_" + p.label).value =
+        "";
     }
-  });
+  );
+
+  STORE_PROVIDERS.forEach(
+    p => {
+
+      $("store_" + p.code).value =
+        "";
+    }
+  );
+
+  const links =
+    detail.affiliateLinks ||
+    [];
+
+  links.forEach(
+    link => {
+
+      if(
+        link.providerCode ===
+        "amazon"
+      ){
+
+        const fieldId =
+          "amazon_" +
+          link.label;
+
+        if($(fieldId)){
+
+          $(fieldId).value =
+            link.url ||
+            "";
+        }
+
+        return;
+      }
+
+      const store =
+        STORE_PROVIDERS.find(
+          p =>
+            p.code ===
+            link.providerCode
+        );
+
+      if(store){
+
+        $("store_" + store.code).value =
+          link.url ||
+          "";
+      }
+    }
+  );
 
   window.scrollTo({
     top:0,
     behavior:"smooth"
   });
 
-  log("Editando: " + inf.name);
+  log(
+    "Editando: " +
+    inf.name
+  );
 }
 
-function cancelEdit(clear=true){
-  editingInfluencerId = null;
+function cancelEdit(
+  clear=true
+){
 
-  $("formTitle").textContent = "2. Nuevo influencer";
-  $("btnSaveInfluencer").textContent = "Crear influencer";
-  $("btnCancelEdit").classList.add("hidden");
+  editingInfluencerId =
+    null;
+
+  $("formTitle").textContent =
+    "2. Nuevo influencer";
+
+  $("btnSaveInfluencer").textContent =
+    "Crear influencer";
+
+  $("btnCancelEdit")
+    .classList
+    .add(
+      "hidden"
+    );
 
   renderReferralOptions();
 
@@ -1010,6 +2749,7 @@ function cancelEdit(clear=true){
 }
 
 function clearForm(){
+
   [
     "name",
     "slug",
@@ -1018,97 +2758,238 @@ function clearForm(){
     "whatsapp",
     "instagram",
     "notes"
-  ].forEach(id => {
-    $(id).value = "";
-  });
+  ].forEach(
+    id => {
 
-  $("referredBy").value = "";
-  $("status").value = "active";
-  $("directCommission").value = "0";
-  $("referralCommission").value = "5";
+      $(id).value =
+        "";
+    }
+  );
 
-  AMAZON_PRODUCTS.forEach(p => {
-    $("amazon_" + p.label).value = "";
-  });
+  $("referredBy").value =
+    "";
 
-  STORE_PROVIDERS.forEach(p => {
-    $("store_" + p.code).value = "";
-  });
+  $("status").value =
+    "active";
 
-  $("createdCard").classList.add("hidden");
-  lastGeneratedLink = "";
+  $("directCommission").value =
+    "0";
+
+  $("referralCommission").value =
+    "5";
+
+  AMAZON_PRODUCTS.forEach(
+    p => {
+
+      $("amazon_" + p.label).value =
+        "";
+    }
+  );
+
+  STORE_PROVIDERS.forEach(
+    p => {
+
+      $("store_" + p.code).value =
+        "";
+    }
+  );
+
+  $("createdCard")
+    .classList
+    .add(
+      "hidden"
+    );
+
+  lastGeneratedLink =
+    "";
 }
 
-async function copyText(text){
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    await navigator.clipboard.writeText(text);
+async function copyText(
+  text
+){
+
+  if(
+    navigator.clipboard &&
+    navigator.clipboard.writeText
+  ){
+
+    await navigator.clipboard.writeText(
+      text
+    );
+
     return;
   }
 
-  const ta = document.createElement("textarea");
-  ta.value = text;
-  document.body.appendChild(ta);
+  const ta =
+    document.createElement(
+      "textarea"
+    );
+
+  ta.value =
+    text;
+
+  document.body.appendChild(
+    ta
+  );
+
   ta.select();
-  document.execCommand("copy");
+
+  document.execCommand(
+    "copy"
+  );
+
   ta.remove();
 }
 
-function escapeHtml(value){
-  return String(value ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+function escapeHtml(
+  value
+){
+
+  return String(
+    value ??
+    ""
+  )
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 }
 
-$("btnConnect").addEventListener("click", async () => {
-  try{
-    await loadInfluencers();
-  }catch(e){
-    $("connectionStatus").textContent = "Error";
-    $("connectionStatus").className = "status err";
-    log(e.message, true);
-  }
-});
+$("btnConnect")
+  .addEventListener(
+    "click",
+    async () => {
 
-$("btnRefresh").addEventListener("click", async () => {
-  try{
-    await loadInfluencers();
-  }catch(e){
-    log(e.message, true);
-  }
-});
+      try{
 
-$("btnSaveInfluencer").addEventListener("click", async () => {
-  try{
-    await saveInfluencer();
-  }catch(e){
-    log(e.message, true);
-  }
-});
+        await loadInfluencers();
 
-$("btnClear").addEventListener("click", clearForm);
+      }catch(e){
 
-$("btnCancelEdit").addEventListener("click", () => {
-  cancelEdit(true);
-});
+        $("connectionStatus").textContent =
+          "Error";
 
-$("btnCopyLink").addEventListener("click", async () => {
-  try{
-    if(!lastGeneratedLink){
-      throw new Error("No hay link para copiar.");
+        $("connectionStatus").className =
+          "status err";
+
+        log(
+          e.message,
+          true
+        );
+      }
     }
+  );
 
-    await copyText(lastGeneratedLink);
-    log("Link copiado: " + lastGeneratedLink);
-  }catch(e){
-    log(e.message, true);
-  }
-});
+$("btnRefresh")
+  .addEventListener(
+    "click",
+    async () => {
+
+      try{
+
+        await loadInfluencers();
+
+      }catch(e){
+
+        log(
+          e.message,
+          true
+        );
+      }
+    }
+  );
+
+$("btnSaveInfluencer")
+  .addEventListener(
+    "click",
+    async () => {
+
+      try{
+
+        await saveInfluencer();
+
+      }catch(e){
+
+        log(
+          e.message,
+          true
+        );
+      }
+    }
+  );
+
+$("btnClear")
+  .addEventListener(
+    "click",
+    clearForm
+  );
+
+$("btnCancelEdit")
+  .addEventListener(
+    "click",
+    () => {
+
+      cancelEdit(
+        true
+      );
+    }
+  );
+
+$("btnCopyLink")
+  .addEventListener(
+    "click",
+    async () => {
+
+      try{
+
+        if(
+          !lastGeneratedLink
+        ){
+
+          throw new Error(
+            "No hay link para copiar."
+          );
+        }
+
+        await copyText(
+          lastGeneratedLink
+        );
+
+        log(
+          "Link copiado: " +
+          lastGeneratedLink
+        );
+
+      }catch(e){
+
+        log(
+          e.message,
+          true
+        );
+      }
+    }
+  );
 
 renderAffiliateFields();
 restoreSessionSettings();
+
 </script>
+
 </body>
 </html>
