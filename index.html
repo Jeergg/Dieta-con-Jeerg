@@ -4,7 +4,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>window.COME_PRO_BUILD = "2026-08-28.7";</script>
+<script>window.COME_PRO_BUILD = "2026-08-28.8-analytics";</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COME PRO — Versión prueba</title>
@@ -3393,6 +3393,16 @@ function swapFoodItem(R, dayIdx, mealKey, slotId, newFoodId){
   const day = R.days[dayIdx-1];
   const item = day.tmpl[mealKey].find(it=> it.slotId === slotId);
   if(!item) return;
+
+  const oldFoodId = item.id;
+  enviarEvento(
+    'cambio_alimento',
+    Object.assign(datosPerfil(R), {
+      detalle: String(oldFoodId || '') + ' → ' + String(newFoodId || ''),
+      paso: 'resultado'
+    })
+  );
+
   item.id = newFoodId; // conserva el mismo baseG del puesto — solo cambia QUÉ alimento lo ocupa
   scaleDayToTarget(day.tmpl, R.calorieTarget, R.proteinTarget, R.carbTarget, R.fatTarget);
   day.totals = dayTotals(day.tmpl);
@@ -3718,9 +3728,23 @@ function datosPerfil(R){
 enviarEvento('visita', { referente: origenVisita(),
   detalle: esNavegadorDeApp() ? 'navegador_de_app' : 'navegador_normal' });
 
-// Tiempo total al salir
+// Tiempo total al salir + abandono del embudo si no llegó al resultado
 window.addEventListener('pagehide', function(){
-  enviarEvento('salida', { paso: (typeof PASO_ACTUAL !== 'undefined' ? 'paso' + PASO_ACTUAL : '') });
+  const pasoSalida = (typeof PASO_ACTUAL !== 'undefined' ? 'paso' + PASO_ACTUAL : '');
+  const segundosSalida = Math.round((Date.now() - INICIO_APP) / 1000);
+
+  enviarEvento('salida', {
+    paso: pasoSalida,
+    segundos: segundosSalida
+  });
+
+  if(typeof PASO_ACTUAL !== 'undefined' && PASO_ACTUAL < 3){
+    enviarEvento('abandono', {
+      paso: pasoSalida,
+      segundos: segundosSalida,
+      detalle: 'salida_antes_de_generar_dieta'
+    });
+  }
 });
 
 
