@@ -4,7 +4,69 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>window.COME_PRO_BUILD = "2026-08-28.9-tracking-event";</script>
+<script>window.COME_PRO_BUILD = "2026-08-29.2-browser-compat-formfix";</script>
+<script>
+/* COME PRO — capa de compatibilidad para navegadores móviles/WebViews.
+   No cambia la dieta; evita que APIs DOM auxiliares rompan el flujo. */
+(function(){
+  if(!Object.assign){
+    Object.assign=function(target){
+      if(target==null) throw new TypeError('Object.assign target');
+      var to=Object(target);
+      for(var i=1;i<arguments.length;i++){
+        var src=arguments[i];
+        if(src!=null){
+          for(var k in src){
+            if(Object.prototype.hasOwnProperty.call(src,k)) to[k]=src[k];
+          }
+        }
+      }
+      return to;
+    };
+  }
+  if(!Array.from){
+    Array.from=function(x){ return Array.prototype.slice.call(x || []); };
+  }
+  if(window.NodeList && !NodeList.prototype.forEach){
+    NodeList.prototype.forEach=Array.prototype.forEach;
+  }
+  if(window.HTMLCollection && !HTMLCollection.prototype.forEach){
+    HTMLCollection.prototype.forEach=Array.prototype.forEach;
+  }
+  if(window.Element && !Element.prototype.matches){
+    Element.prototype.matches=Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
+  }
+  if(window.Element && !Element.prototype.closest){
+    Element.prototype.closest=function(sel){
+      var el=this;
+      while(el && el.nodeType===1){
+        if(el.matches && el.matches(sel)) return el;
+        el=el.parentElement || el.parentNode;
+      }
+      return null;
+    };
+  }
+  if(window.Element && !Element.prototype.remove){
+    Element.prototype.remove=function(){
+      if(this.parentNode) this.parentNode.removeChild(this);
+    };
+  }
+  if(window.Element && !Element.prototype.prepend){
+    Element.prototype.prepend=function(node){
+      if(this.firstChild) this.insertBefore(node,this.firstChild);
+      else this.appendChild(node);
+    };
+  }
+  if(!String.prototype.padStart){
+    String.prototype.padStart=function(len,fill){
+      var str=String(this), f=String(fill===undefined?' ':fill);
+      if(str.length>=len) return str;
+      while(f.length < len-str.length) f += f;
+      return f.slice(0,len-str.length)+str;
+    };
+  }
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>COME PRO — Versión prueba</title>
@@ -325,6 +387,21 @@
   .join-mail{ margin-top:7px; font-size:11px; color:var(--muted); }
   .m1-modal-close{ position:absolute; top:14px; right:16px; background:var(--surface2); border:none;
     width:30px; height:30px; border-radius:50%; color:var(--text); cursor:pointer; font-size:14px; }
+
+
+  /* Compatibilidad: error visible si un navegador bloquea la generación */
+  .generation-error{
+    margin-top:12px;
+    padding:12px 14px;
+    border:1px solid #d9534f;
+    border-radius:10px;
+    background:rgba(217,83,79,.12);
+    color:var(--text);
+    font-size:14px;
+    line-height:1.45;
+  }
+  .generation-error.hidden{display:none!important;}
+  #generateDietBtn[disabled]{opacity:.72;cursor:wait;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -363,7 +440,7 @@
         <div class="step-label" id="stepLabel"></div>
         <div class="step-dots" id="stepDots"></div>
       </div>
-      <form id="dietForm">
+      <form id="dietForm" novalidate>
         <div class="step-pane" data-step="1">
         <div class="card">
           <div class="card-head">
@@ -515,10 +592,11 @@
           <label data-i18n="lblRestricciones"></label>
           <div class="chips" id="allergyChips"></div>
 
-          <button type="submit" class="primary">
+          <button type="submit" class="primary" id="generateDietBtn">
             <span data-i18n="btnGenerar"></span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
+          <div id="generationError" class="generation-error hidden" role="alert" aria-live="assertive"></div>
           <div class="lockhint">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
             <span data-i18n="lockhint"></span>
@@ -1694,7 +1772,19 @@ const SUPPLEMENT_CATALOG = [
 ];
 
 function getUrlParam(name){
-  return new URLSearchParams(window.location.search).get(name);
+  try{
+    var query=String(window.location.search || '').replace(/^\?/,'');
+    if(!query) return null;
+    var parts=query.split('&');
+    for(var i=0;i<parts.length;i++){
+      var pair=parts[i].split('=');
+      var key=decodeURIComponent((pair.shift() || '').replace(/\+/g,' '));
+      if(key===name){
+        return decodeURIComponent((pair.join('=') || '').replace(/\+/g,' '));
+      }
+    }
+  }catch(e){}
+  return null;
 }
 
 /* ============================================================
@@ -1841,7 +1931,7 @@ try{
   if(!SESSION_ID){ SESSION_ID = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); sessionStorage.setItem('comepro_session', SESSION_ID); }
 }catch(e){ SESSION_ID = 'sess_nostoreage'; }
 
-const DEBUG_MODE = new URLSearchParams(window.location.search).get('debug') === '1';
+const DEBUG_MODE = getUrlParam('debug') === '1';
 function trackEvent(eventName, data){
   const payload = {
     event: eventName,
@@ -2530,14 +2620,14 @@ function setWeightUnit(u){
   });
 }
 function setHeightUnit(u){
-  if(u === unitHeight) return;
+  const mismaUnidad = (u === unitHeight);
   const cmInput = document.getElementById('altura');
   const ftI = document.getElementById('alturaFt');
   const inI = document.getElementById('alturaIn');
   /* CONVERTIR el valor ya escrito en vez de perderlo.
      Antes solo se ocultaban/mostraban campos: si escribías 175 cm y
      cambiabas a pies, el dato desaparecía. */
-  if(cmInput && ftI && inI){
+  if(cmInput && ftI && inI && !mismaUnidad){
     if(u === 'ft' && unitHeight === 'cm'){
       const cm = parseFloat(cmInput.value);
       if(cm > 0){
@@ -2560,6 +2650,20 @@ function setHeightUnit(u){
   if(cmInput && document.getElementById('ftInRow')){
     cmInput.classList.toggle('hidden', u === 'ft');
     document.getElementById('ftInRow').classList.toggle('hidden', u !== 'ft');
+
+    /* Safari y algunos WebViews bloquean el evento submit si existe un
+       input required oculto y vacío. En pies/pulgadas, altura(cm) queda
+       oculta; por eso sincronizamos required/disabled con la unidad visible. */
+    cmInput.required = (u !== 'ft');
+    cmInput.disabled = (u === 'ft');
+    if(ftI){
+      ftI.required = (u === 'ft');
+      ftI.disabled = (u !== 'ft');
+    }
+    if(inI){
+      inI.required = false; // 0 pulgadas es un valor válido.
+      inI.disabled = (u !== 'ft');
+    }
   }
 }
 /* Devuelve SIEMPRE kg, sin importar cómo lo escribió el usuario */
@@ -3023,6 +3127,61 @@ document.getElementById('paisSearch').addEventListener('input', (e)=>{
 });
 
 /* ============================================================
+   COMPATIBILIDAD DE GENERACIÓN
+   ============================================================ */
+function activeSegmentValue(id, fallback){
+  try{
+    var box=document.getElementById(id);
+    if(!box) return fallback;
+    var active=box.querySelector('.seg-btn.active');
+    if(!active){
+      active=box.querySelector('.seg-btn');
+      if(active && active.classList) active.classList.add('active');
+    }
+    if(!active) return fallback;
+    return (active.getAttribute('data-val') || fallback);
+  }catch(e){
+    return fallback;
+  }
+}
+
+function mostrarErrorGeneracion(mensaje, error){
+  try{
+    var box=document.getElementById('generationError');
+    if(box){
+      box.textContent=mensaje || 'No pudimos generar tu dieta. Revisa los datos e inténtalo nuevamente.';
+      box.classList.remove('hidden');
+      try{ box.scrollIntoView({block:'center'}); }catch(e1){ try{ box.scrollIntoView(); }catch(e2){} }
+    }
+  }catch(e){}
+  if(typeof console!=='undefined' && console.error){
+    console.error('COME PRO: error al generar dieta', error || mensaje || '');
+  }
+}
+
+function ocultarErrorGeneracion(){
+  try{
+    var box=document.getElementById('generationError');
+    if(box){ box.textContent=''; box.classList.add('hidden'); }
+  }catch(e){}
+}
+
+function estadoBotonGenerar(cargando){
+  try{
+    var btn=document.getElementById('generateDietBtn');
+    if(!btn) return;
+    btn.disabled=!!cargando;
+    btn.setAttribute('aria-busy', cargando ? 'true' : 'false');
+  }catch(e){}
+}
+
+function scrollSeguro(el){
+  if(!el) return;
+  try{ el.scrollIntoView({behavior:'smooth',block:'center'}); }
+  catch(e1){ try{ el.scrollIntoView(); }catch(e2){} }
+}
+
+/* ============================================================
    4) CÁLCULO PRINCIPAL
    ============================================================
    Fórmulas usadas (fuentes):
@@ -3041,30 +3200,43 @@ document.getElementById('paisSearch').addEventListener('input', (e)=>{
    ============================================================ */
 document.getElementById('dietForm').addEventListener('submit', function(e){
   e.preventDefault();
+  ocultarErrorGeneracion();
+  if(window.COME_PRO_GENERATING) return;
+  window.COME_PRO_GENERATING = true;
+  estadoBotonGenerar(true);
+
+  try{
 
   const nombre = document.getElementById('nombre').value.trim() || "—";
   const edad = parseFloat(document.getElementById('edad').value);
   const peso = getWeightKg();    // siempre en kg, sin importar la unidad elegida
   const altura = getHeightCm();  // siempre en cm
-  const sexo = document.querySelector('#sexoSeg .seg-btn.active').dataset.val;
-  const actFactor = parseFloat(document.querySelector('#actSeg .seg-btn.active').dataset.val);
+  const sexo = activeSegmentValue('sexoSeg', 'hombre');
+  const actFactor = parseFloat(activeSegmentValue('actSeg', '1.2')) || 1.2;
   const diasEntreno = parseFloat(document.getElementById('diasEntreno').value) || 0;
-  const intensidad = (document.querySelector('#intensidadSeg .seg-btn.active') || {dataset:{}}).dataset.val || 'moderada';
+  const intensidad = activeSegmentValue('intensidadSeg', 'moderada');
   const embarazo = document.getElementById('embarazo').value;
   const minutosSesion = parseFloat(document.getElementById('minutosSesion').value) || 0;
-  const tipoEntreno = document.querySelector('#tipoSeg .seg-btn.active').dataset.val;
-  const goal = document.querySelector('#goalSeg .seg-btn.active').dataset.val;
+  const tipoEntreno = activeSegmentValue('tipoSeg', 'mixto');
+  const goal = activeSegmentValue('goalSeg', 'recomp');
   const condicion = document.getElementById('condicion').value;
   const country = document.getElementById('pais').value;
   const excludedAllergy = Array.from(document.querySelectorAll('#allergyChips .chip.active')).map(c=>c.dataset.id);
   const condRule = CONDITION_RULES[condicion] || CONDITION_RULES.ninguna;
   const excluded = Array.from(new Set([...excludedAllergy, ...customExcluded, ...condRule.exclude]));
 
-  if(!peso || !altura || !edad){ return; }
+  if(!peso || !altura || !edad){
+    mostrarErrorGeneracion(
+      CURRENT_LANG==='en'
+        ? 'Please check age, weight and height before generating your plan.'
+        : 'Revisa edad, peso y altura antes de generar tu dieta.'
+    );
+    return;
+  }
   if(!country){ // sin país no hay moneda ni precios que aplicar
     const paisSel = document.getElementById('pais');
     clearFieldError(paisSel); showFieldError(paisSel, t('errPais'));
-    paisSel.scrollIntoView({behavior:'smooth', block:'center'});
+    scrollSeguro(paisSel);
     return;
   }
 
@@ -3301,6 +3473,24 @@ document.getElementById('dietForm').addEventListener('submit', function(e){
                   // Para la analitica: nivel real de actividad y costo comparable
                   actEfectivo, pesoKg: peso,
                   costoUsd: costoEnDolares(totalCost, country)});
+
+  }catch(errorGeneracion){
+    mostrarErrorGeneracion(
+      CURRENT_LANG==='en'
+        ? 'We could not generate your plan on this browser. Please try again.'
+        : 'No pudimos generar tu dieta en este navegador. Inténtalo nuevamente.',
+      errorGeneracion
+    );
+    try{
+      enviarEvento('error_generacion', {
+        paso:'generar',
+        detalle:String(errorGeneracion && (errorGeneracion.message || errorGeneracion) || 'error').slice(0,150)
+      });
+    }catch(e){}
+  }finally{
+    window.COME_PRO_GENERATING = false;
+    estadoBotonGenerar(false);
+  }
 });
 
 /* ============================================================
@@ -3447,7 +3637,6 @@ document.addEventListener('click', function(e){
    nombre, peso, altura ni condición médica.
    ============================================================ */
 const ANALYTICS_URL = COME_PRO_API;
-const ANALYTICS_EVENT_URL = COME_PRO_API.replace(/\/+$/, '') + '/event';
 const LEGACY_ANALYTICS_URL = "https://script.google.com/macros/s/AKfycbw-PzaIQy8Gk8QyBWFo1-qaIyBnRdJMLikJjL-CNp0WkXpYug6Gz632oTyK8qDislvZ/exec";
 
 /* Paso en el que está la persona: si cierra la app aquí, sabremos
@@ -3661,36 +3850,6 @@ function enviarEventoA(url, cuerpo, texto, dentroApp, etiqueta){
   }
 }
 
-function enviarEventoWorker(cuerpo){
-  const texto = JSON.stringify(cuerpo);
-
-  /* El Worker tiene una ruta dedicada /event.
-     Primero intentamos POST JSON real. Esto funciona en Safari/Chrome y,
-     cuando el navegador interno lo permite, también en Instagram/Facebook/TikTok. */
-  try{
-    fetch(ANALYTICS_EVENT_URL, {
-      method:'POST',
-      mode:'cors',
-      redirect:'follow',
-      keepalive:true,
-      cache:'no-store',
-      credentials:'omit',
-      headers:{'Content-Type':'application/json'},
-      body:texto
-    }).catch(function(){});
-  }catch(e){}
-
-  /* Respaldo universal por GET. /event acepta GET directamente y el mismo
-     event_id permite que Supabase ignore duplicados si llegan ambos envíos. */
-  try{
-    enviarPixelA(ANALYTICS_EVENT_URL, cuerpo, 'pixel_worker');
-  }catch(e){}
-
-  try{
-    enviarGetRespaldoA(ANALYTICS_EVENT_URL, cuerpo, 'fetch_get_worker');
-  }catch(e){}
-}
-
 function enviarEvento(evento, extra){
   try{
     const nuevoEventId = crearEventoId();
@@ -3721,9 +3880,7 @@ function enviarEvento(evento, extra){
        2) Google Apps Script sigue recibiéndolo para que el panel de estadísticas
           anterior continúe contando Safari, Chrome e Instagram.
        Ambos reciben el mismo eventId para poder deduplicar respaldos. */
-    /* Worker/Supabase: ruta /event con POST JSON + dos respaldos GET.
-       Google Apps Script se conserva como estaba para no romper el panel viejo. */
-    enviarEventoWorker(cuerpo);
+    enviarEventoA(ANALYTICS_URL, cuerpo, texto, dentroApp, 'worker');
     enviarEventoA(LEGACY_ANALYTICS_URL, cuerpo, texto, dentroApp, 'legacy');
 
   }catch(e){}
@@ -3732,7 +3889,7 @@ function enviarEvento(evento, extra){
 /* Prueba opcional: abre la app con ?analytics_test=1 (o añádelo al enlace)
    para enviar un evento de diagnóstico que no altera las visitas/dietas. */
 try{
-  if(new URLSearchParams(window.location.search).get('analytics_test') === '1'){
+  if(getUrlParam('analytics_test') === '1'){
     setTimeout(function(){
       enviarEvento('prueba_tracking', {
         referente: origenVisita(),
