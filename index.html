@@ -4,7 +4,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>window.COME_PRO_BUILD = "2026-08-29.2-browser-compat-formfix";</script>
+<script>window.COME_PRO_BUILD = "2026-08-29.11-calendar-realmente-abajo";</script>
 <script>
 /* COME PRO — capa de compatibilidad para navegadores móviles/WebViews.
    No cambia la dieta; evita que APIs DOM auxiliares rompan el flujo. */
@@ -616,6 +616,10 @@
       <div id="results" class="hidden"></div>
     </div>
   </div>
+
+  <!-- Recordatorios: se insertan aquí DESPUÉS de todo el bloque de formulario + resultados.
+       Así nunca quedan dentro de la columna superior de resultados. -->
+  <div id="postDietCalendarSlot"></div>
 
   <!-- Navegación rápida (aparece solo cuando hay resultado) -->
   <nav class="quicknav hidden" id="quickNav">
@@ -3980,8 +3984,11 @@ function destacarRecordatoriosTrasDescarga(){
 }
 
 function mostrarRecordatoriosEnResultados(R){
-  const results = document.getElementById('results');
-  if(!results || !R) return;
+  /* IMPORTANTE: el calendario vive fuera de #results.
+     #results pertenece a la columna superior derecha; por eso appendChild(results)
+     podía hacer que el calendario pareciera estar arriba en algunos tamaños. */
+  const slot = document.getElementById('postDietCalendarSlot');
+  if(!slot || !R) return;
 
   let card = document.getElementById('comeProCalendarCard');
   if(card) card.remove();
@@ -4008,7 +4015,7 @@ function mostrarRecordatoriosEnResultados(R){
       '✓ Mensual: “Actualiza tu dieta”.' +
     '</div>';
 
-  results.prepend(card);
+  slot.appendChild(card);
 
   const activate = document.getElementById('calendarActivateBtn');
   if(activate){
@@ -4044,8 +4051,8 @@ function renderResults(R, opts){
     renderResultsModel0(R, el, opts);
   }
 
-  /* El calendario aparece inmediatamente al terminar de generar la dieta,
-     tanto en Safari/Chrome como en el navegador interno de Instagram. */
+  /* El calendario aparece al final del resultado, después de la dieta,
+     como último paso de retención tanto en Safari/Chrome como en navegadores internos. */
   mostrarRecordatoriosEnResultados(R);
 }
 
