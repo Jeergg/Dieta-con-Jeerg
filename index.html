@@ -4,7 +4,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>window.COME_PRO_BUILD = "2026-08-29.11-calendar-realmente-abajo";</script>
+<script>window.COME_PRO_BUILD = "2026-08-29.12-modal-suplementos-antes-dieta";</script>
 <script>
 /* COME PRO — capa de compatibilidad para navegadores móviles/WebViews.
    No cambia la dieta; evita que APIs DOM auxiliares rompan el flujo. */
@@ -402,6 +402,65 @@
   }
   .generation-error.hidden{display:none!important;}
   #generateDietBtn[disabled]{opacity:.72;cursor:wait;}
+
+  /* MODAL DE SUPLEMENTOS — después de generar y antes de la dieta */
+  .supp-pre-modal{
+    position:fixed; inset:0; z-index:99999; display:flex; align-items:center;
+    justify-content:center; padding:18px; background:rgba(0,0,0,.68);
+    -webkit-backdrop-filter:blur(7px); backdrop-filter:blur(7px);
+  }
+  .supp-pre-modal.hidden{display:none!important;}
+  .supp-pre-dialog{
+    width:min(620px,100%); max-height:min(88vh,760px); overflow:auto;
+    -webkit-overflow-scrolling:touch; background:var(--surface); color:var(--text);
+    border:1px solid var(--line); border-radius:18px;
+    box-shadow:0 24px 80px rgba(0,0,0,.35); padding:18px;
+  }
+  .supp-pre-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;}
+  .supp-pre-title{font-family:'Fraunces',serif;font-size:24px;line-height:1.08;margin:0;}
+  .supp-pre-sub{color:var(--muted);font-size:13px;line-height:1.45;margin:6px 0 0;}
+  .supp-pre-badge{
+    display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;
+    background:var(--surface2);border:1px solid var(--line);color:var(--muted);
+    font-size:11px;white-space:nowrap;
+  }
+  .supp-pre-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;}
+  .supp-pre-item{
+    display:flex;gap:10px;align-items:center;min-height:78px;padding:11px;
+    border:1px solid var(--line);border-radius:12px;background:var(--surface2);
+  }
+  .supp-pre-item.is-clickable{cursor:pointer;}
+  .supp-pre-emoji{
+    width:42px;height:42px;border-radius:11px;background:var(--surface);
+    display:flex;align-items:center;justify-content:center;flex:0 0 auto;font-size:24px;
+  }
+  .supp-pre-info{min-width:0;}
+  .supp-pre-info b{display:block;font-size:13px;line-height:1.2;color:var(--text);}
+  .supp-pre-info span{display:block;margin-top:3px;color:var(--muted);font-size:11px;line-height:1.3;}
+  .supp-pre-buy{display:inline-block!important;margin-top:6px!important;font-size:11px!important;font-weight:800;color:var(--accent)!important;}
+  .supp-pre-note{
+    border:1px solid var(--line);border-radius:11px;padding:10px 12px;
+    background:var(--surface2);color:var(--muted);font-size:11px;line-height:1.4;margin:0 0 12px;
+  }
+  .supp-pre-actions{
+    display:grid;grid-template-columns:1fr;gap:8px;position:sticky;bottom:-18px;
+    padding:12px 0 2px;background:linear-gradient(to bottom,rgba(0,0,0,0),var(--surface) 24%);
+  }
+  .supp-pre-continue{
+    width:100%;min-height:56px;border:0;border-radius:999px;font-weight:900;
+    font-size:15px;background:var(--accent);color:#fff;cursor:pointer;
+  }
+  .supp-pre-skip{
+    border:0;background:transparent;color:var(--muted);font-size:12px;padding:8px;cursor:pointer;
+  }
+  body.supp-modal-open{overflow:hidden;}
+  @media (max-width:560px){
+    .supp-pre-modal{align-items:flex-end;padding:0;}
+    .supp-pre-dialog{width:100%;max-height:92vh;border-radius:20px 20px 0 0;padding:16px;}
+    .supp-pre-list{grid-template-columns:1fr;}
+    .supp-pre-title{font-size:22px;}
+  }
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 </head>
@@ -3471,12 +3530,16 @@ document.getElementById('dietForm').addEventListener('submit', function(e){
   const avg = days.reduce((s,d)=>({kcal:s.kcal+d.totals.kcal, p:s.p+d.totals.p, c:s.c+d.totals.c, f:s.f+d.totals.f}), {kcal:0,p:0,c:0,f:0});
   Object.keys(avg).forEach(k=> avg[k] = avg[k]/30);
 
-  renderResults({nombre, edad, sexo, peso, altura, bmi, bmr, tdee, calorieTarget, proteinTarget, carbTarget, fatTarget,
+  var resultadoGenerado = {nombre, edad, sexo, peso, altura, bmi, bmr, tdee, calorieTarget, proteinTarget, carbTarget, fatTarget,
                   floorApplied, objetivoMuyAlto, esGestante, embarazo, country, priceSet, usedFallbackCountry, days, purchase, totalCost, avg, goal, condicion,
                   diasEntreno, minutosSesion, tipoEntreno,
                   // Para la analitica: nivel real de actividad y costo comparable
                   actEfectivo, pesoKg: peso,
-                  costoUsd: costoEnDolares(totalCost, country)});
+                  costoUsd: costoEnDolares(totalCost, country)};
+
+  /* Primero se muestran recomendaciones opcionales.
+     La dieta aparece solo después de tocar CONTINUAR. */
+  mostrarModalSuplementosAntesDeDieta(resultadoGenerado);
 
   }catch(errorGeneracion){
     mostrarErrorGeneracion(
@@ -3496,6 +3559,169 @@ document.getElementById('dietForm').addEventListener('submit', function(e){
     estadoBotonGenerar(false);
   }
 });
+
+
+/* ============================================================
+   SUPLEMENTOS ANTES DE MOSTRAR LA DIETA
+   Generar -> recomendaciones opcionales -> continuar -> dieta.
+   ============================================================ */
+function textoModalSuplementos(){
+  var packs = {
+    es:{title:"Suplementos recomendados",sub:"Opciones que pueden complementar tu alimentación y entrenamiento.",badge:"Opcional",note:"Tu dieta funciona sin suplementos. Algunos enlaces pueden ser de afiliados y COME PRO puede recibir una comisión sin costo adicional para ti.",buy:"Ver opción",cont:"CONTINUAR A MI DIETA",skip:"Continuar sin suplementos"},
+    en:{title:"Recommended supplements",sub:"Options that may complement your nutrition and training.",badge:"Optional",note:"Your diet works without supplements. Some links may be affiliate links and COME PRO may earn a commission at no extra cost to you.",buy:"View option",cont:"CONTINUE TO MY DIET",skip:"Continue without supplements"},
+    pt:{title:"Suplementos recomendados",sub:"Opções que podem complementar sua alimentação e treino.",badge:"Opcional",note:"Sua dieta funciona sem suplementos. Alguns links podem ser de afiliados e o COME PRO pode receber uma comissão sem custo adicional para você.",buy:"Ver opção",cont:"CONTINUAR PARA MINHA DIETA",skip:"Continuar sem suplementos"},
+    fr:{title:"Compléments recommandés",sub:"Des options qui peuvent compléter votre alimentation et votre entraînement.",badge:"Facultatif",note:"Votre alimentation fonctionne sans compléments. Certains liens peuvent être affiliés et COME PRO peut recevoir une commission sans coût supplémentaire pour vous.",buy:"Voir l’option",cont:"CONTINUER VERS MON RÉGIME",skip:"Continuer sans compléments"},
+    de:{title:"Empfohlene Nahrungsergänzung",sub:"Optionen, die Ernährung und Training ergänzen können.",badge:"Optional",note:"Dein Ernährungsplan funktioniert ohne Nahrungsergänzung. Einige Links können Affiliate-Links sein; für dich entstehen dadurch keine Mehrkosten.",buy:"Option ansehen",cont:"WEITER ZU MEINEM PLAN",skip:"Ohne Ergänzung fortfahren"},
+    it:{title:"Integratori consigliati",sub:"Opzioni che possono integrare alimentazione e allenamento.",badge:"Facoltativo",note:"La dieta funziona anche senza integratori. Alcuni link possono essere affiliati e COME PRO può ricevere una commissione senza costi extra per te.",buy:"Vedi opzione",cont:"CONTINUA ALLA MIA DIETA",skip:"Continua senza integratori"}
+  };
+  return packs[CURRENT_LANG] || packs.es;
+}
+
+function suplementosPrioritariosPara(R){
+  var ids = (R && R.goal === "perder")
+    ? ["proteina","creatina","omega3","magnesio","zinc"]
+    : ["creatina","proteina","omega3","magnesio","zinc"];
+  var out = [];
+  for(var i=0;i<ids.length;i++){
+    for(var j=0;j<SUPPLEMENT_CATALOG.length;j++){
+      if(SUPPLEMENT_CATALOG[j].productId === ids[i]){
+        out.push(SUPPLEMENT_CATALOG[j]);
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+function destinoSuplemento(s){
+  if(!s) return "";
+  var labelMap = {
+    creatina:"creatina", proteina:"proteina_polvo", proteina_sl:"proteina_sin_lactosa",
+    omega3:"omega_3", vitaminad:"vitamina_d", magnesio:"magnesio", zinc:"zinc",
+    ashwagandha:"ashwagandha", vitaminae:"vitamina_e", bascula:"bascula_cocina",
+    guantes:"guantes_gimnasio"
+  };
+  var remotoAmazon = affiliateLinkFor("amazon", labelMap[s.productId] || s.productId);
+  return (remotoAmazon && remotoAmazon.url) || s.affiliateUrl || "";
+}
+
+function cerrarModalSuplementos(){
+  var modal = document.getElementById("suppPreDietModal");
+  if(modal && modal.parentNode) modal.parentNode.removeChild(modal);
+  try{ document.body.classList.remove("supp-modal-open"); }catch(e){}
+}
+
+function continuarDesdeModalSuplementos(R, origen){
+  cerrarModalSuplementos();
+  try{
+    enviarEvento("continuar_dieta", Object.assign(datosPerfil(R), {detalle:origen || "modal_suplementos"}));
+  }catch(e){}
+  renderResults(R);
+}
+
+function mostrarModalSuplementosAntesDeDieta(R){
+  try{
+    cerrarModalSuplementos();
+
+    var copy = textoModalSuplementos();
+    var items = suplementosPrioritariosPara(R);
+    var modal = document.createElement("div");
+    modal.id = "suppPreDietModal";
+    modal.className = "supp-pre-modal";
+    modal.setAttribute("role","dialog");
+    modal.setAttribute("aria-modal","true");
+    modal.setAttribute("aria-labelledby","suppPreDietTitle");
+
+    var cards = "";
+    for(var i=0;i<items.length;i++){
+      var s = items[i];
+      var destino = destinoSuplemento(s);
+      cards +=
+        '<div class="supp-pre-item' + (destino ? ' is-clickable' : '') + '" data-supp-product="' + String(s.productId || '') + '">' +
+          '<div class="supp-pre-emoji">' + (s.emoji || '💊') + '</div>' +
+          '<div class="supp-pre-info">' +
+            '<b>' + String(s.name || '') + '</b>' +
+            '<span>' + String(s.description || '') + '</span>' +
+            (destino ? '<span class="supp-pre-buy">' + copy.buy + '</span>' : '') +
+          '</div>' +
+        '</div>';
+    }
+
+    modal.innerHTML =
+      '<div class="supp-pre-dialog">' +
+        '<div class="supp-pre-top">' +
+          '<div><h2 class="supp-pre-title" id="suppPreDietTitle">' + copy.title + '</h2>' +
+          '<p class="supp-pre-sub">' + copy.sub + '</p></div>' +
+          '<span class="supp-pre-badge">✓ ' + copy.badge + '</span>' +
+        '</div>' +
+        '<div class="supp-pre-list">' + cards + '</div>' +
+        '<div class="supp-pre-note">' + copy.note + '</div>' +
+        '<div class="supp-pre-actions">' +
+          '<button type="button" class="supp-pre-continue" id="suppPreContinue">' + copy.cont + '</button>' +
+          '<button type="button" class="supp-pre-skip" id="suppPreSkip">' + copy.skip + '</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(modal);
+    try{ document.body.classList.add("supp-modal-open"); }catch(e){}
+
+    try{
+      enviarEvento("suplementos_mostrados", Object.assign(datosPerfil(R), {detalle:"antes_dieta"}));
+    }catch(e){}
+
+    var continueBtn = document.getElementById("suppPreContinue");
+    var skipBtn = document.getElementById("suppPreSkip");
+
+    if(continueBtn){
+      continueBtn.addEventListener("click", function(){
+        continuarDesdeModalSuplementos(R, "continuar");
+      });
+    }
+    if(skipBtn){
+      skipBtn.addEventListener("click", function(){
+        continuarDesdeModalSuplementos(R, "sin_suplementos");
+      });
+    }
+
+    var suppCards = modal.querySelectorAll("[data-supp-product]");
+    for(var k=0;k<suppCards.length;k++){
+      suppCards[k].addEventListener("click", function(){
+        var productId = this.getAttribute("data-supp-product");
+        var s = null;
+        for(var q=0;q<SUPPLEMENT_CATALOG.length;q++){
+          if(SUPPLEMENT_CATALOG[q].productId === productId){
+            s = SUPPLEMENT_CATALOG[q];
+            break;
+          }
+        }
+        var destino = destinoSuplemento(s);
+        if(!s || !destino) return;
+
+        try{
+          enviarEvento("suplemento_click", Object.assign(datosPerfil(R), {detalle:productId}));
+          enviarEvento("amazon", Object.assign(datosPerfil(R), {detalle:productId}));
+          trackEvent("affiliate_product_clicked", {productId:productId, ubicacion:"antes_dieta"});
+        }catch(e){}
+
+        try{
+          var win = window.open(destino, "_blank", "noopener");
+          if(!win) window.location.href = destino;
+        }catch(e){
+          try{ window.location.href = destino; }catch(e2){}
+        }
+      });
+    }
+
+    setTimeout(function(){
+      try{ if(continueBtn) continueBtn.focus(); }catch(e){}
+    }, 40);
+
+  }catch(errorModal){
+    try{ console.warn("COME PRO: modal de suplementos no disponible", errorModal); }catch(e){}
+    renderResults(R);
+  }
+}
+
 
 /* ============================================================
    5) RENDER DE RESULTADOS
