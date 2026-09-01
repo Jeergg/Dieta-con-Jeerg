@@ -4012,48 +4012,1021 @@ culinaryGroupDay = function(day){
 /* Biblioteca local de imágenes culinarias v17.
    Las fotos viven dentro de /images/meals/ para que la app no dependa
    de Unsplash ni de servicios externos en tiempo de uso. */
-const CULINARY_IMAGES = {
-  pollo:['images/meals/chicken_1.webp','images/meals/chicken_2.webp','images/meals/chicken_3.webp','images/meals/chicken_4.webp','images/meals/chicken_5.webp','images/meals/chicken_6.webp'],
-  carne:['images/meals/beef_1.webp','images/meals/beef_2.webp','images/meals/beef_3.webp','images/meals/beef_4.webp','images/meals/beef_5.webp'],
-  atun:['images/meals/tuna_1.webp','images/meals/tuna_2.webp','images/meals/tuna_3.webp','images/meals/tuna_4.webp'],
-  salmon:['images/meals/salmon_1.webp','images/meals/salmon_2.webp','images/meals/salmon_3.webp'],
-  huevo:['images/meals/eggs_1.webp','images/meals/eggs_2.webp','images/meals/eggs_3.webp','images/meals/eggs_4.webp'],
-  arroz:['images/meals/rice_1.webp','images/meals/rice_2.webp'],
-  pasta:['images/meals/pasta_1.webp'],
-  papa:['images/meals/potato_1.webp'],
-  batata:['images/meals/sweet_potato_1.webp'],
-  manzana:['images/meals/apple_1.webp'],
-  guineoMaduro:['images/meals/banana_1.webp'],
-  fresas:['images/meals/strawberry_1.webp'],
-  frutos_secos:['images/meals/nuts_1.webp'],
-  aguacate:['images/meals/avocado_1.webp']
-};
+/* COME PRO — IMÁGENES GASTRONÓMICAS: 68 ESCENAS
+   Las imágenes son composiciones completas generadas para cada combinación.
+   Se selecciona primero la combinación exacta; si la receta trae ingredientes
+   técnicos no visibles (p. ej. sal/canela), se permite el mejor subconjunto.
+*/
+const CULINARY_SCENE_IMAGES = [
+  {
+    "scene": 1,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "ciruelasPasas",
+      "fresas",
+      "frutos_secos",
+      "huevo"
+    ],
+    "filename": "escena_01_desayuno__avena_cafe_ciruelas_pasas_fresas_frutos_secos_mixtos_huevo.png",
+    "path": "./images/escena_01_desayuno__avena_cafe_ciruelas_pasas_fresas_frutos_secos_mixtos_huevo.png"
+  },
+  {
+    "scene": 2,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "ciruelasPasas",
+      "fresas",
+      "huevo"
+    ],
+    "filename": "escena_02_desayuno__avena_cafe_ciruelas_pasas_fresas_huevo.png",
+    "path": "./images/escena_02_desayuno__avena_cafe_ciruelas_pasas_fresas_huevo.png"
+  },
+  {
+    "scene": 3,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "ciruelasPasas",
+      "frutos_secos",
+      "huevo",
+      "naranja"
+    ],
+    "filename": "escena_03_desayuno__avena_cafe_ciruelas_pasas_frutos_secos_mixtos_huevo_naranja.png",
+    "path": "./images/escena_03_desayuno__avena_cafe_ciruelas_pasas_frutos_secos_mixtos_huevo_naranja.png"
+  },
+  {
+    "scene": 4,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "ciruelasPasas",
+      "guineoMaduro",
+      "huevo"
+    ],
+    "filename": "escena_04_desayuno__avena_cafe_ciruelas_pasas_guineo_maduro_huevo.png",
+    "path": "./images/escena_04_desayuno__avena_cafe_ciruelas_pasas_guineo_maduro_huevo.png"
+  },
+  {
+    "scene": 5,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "ciruelasPasas",
+      "guineoMaduro",
+      "huevo",
+      "semillas"
+    ],
+    "filename": "escena_05_desayuno__avena_cafe_ciruelas_pasas_guineo_maduro_huevo_semillas_chia_o_lino.png",
+    "path": "./images/escena_05_desayuno__avena_cafe_ciruelas_pasas_guineo_maduro_huevo_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 6,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "ciruelasPasas",
+      "huevo",
+      "manzana"
+    ],
+    "filename": "escena_06_desayuno__avena_cafe_ciruelas_pasas_huevo_manzana.png",
+    "path": "./images/escena_06_desayuno__avena_cafe_ciruelas_pasas_huevo_manzana.png"
+  },
+  {
+    "scene": 7,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "ciruelasPasas",
+      "huevo",
+      "naranja"
+    ],
+    "filename": "escena_07_desayuno__avena_cafe_ciruelas_pasas_huevo_naranja.png",
+    "path": "./images/escena_07_desayuno__avena_cafe_ciruelas_pasas_huevo_naranja.png"
+  },
+  {
+    "scene": 8,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "ciruelasPasas",
+      "huevo",
+      "piña"
+    ],
+    "filename": "escena_08_desayuno__avena_cafe_ciruelas_pasas_huevo_piña.png",
+    "path": "./images/escena_08_desayuno__avena_cafe_ciruelas_pasas_huevo_piña.png"
+  },
+  {
+    "scene": 9,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "ciruelasPasas",
+      "huevo",
+      "piña",
+      "semillas"
+    ],
+    "filename": "escena_09_desayuno__avena_cafe_ciruelas_pasas_huevo_piña_semillas_chia_o_lino.png",
+    "path": "./images/escena_09_desayuno__avena_cafe_ciruelas_pasas_huevo_piña_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 10,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "ciruelasPasas",
+      "huevo",
+      "sandia"
+    ],
+    "filename": "escena_10_desayuno__avena_cafe_ciruelas_pasas_huevo_sandia.png",
+    "path": "./images/escena_10_desayuno__avena_cafe_ciruelas_pasas_huevo_sandia.png"
+  },
+  {
+    "scene": 11,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "fresas",
+      "frutos_secos",
+      "guineoMaduro",
+      "huevo"
+    ],
+    "filename": "escena_11_desayuno__avena_cafe_fresas_frutos_secos_mixtos_guineo_maduro_huevo.png",
+    "path": "./images/escena_11_desayuno__avena_cafe_fresas_frutos_secos_mixtos_guineo_maduro_huevo.png"
+  },
+  {
+    "scene": 12,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "fresas",
+      "frutos_secos",
+      "huevo"
+    ],
+    "filename": "escena_12_desayuno__avena_cafe_fresas_frutos_secos_mixtos_huevo.png",
+    "path": "./images/escena_12_desayuno__avena_cafe_fresas_frutos_secos_mixtos_huevo.png"
+  },
+  {
+    "scene": 13,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "fresas",
+      "frutos_secos",
+      "huevo",
+      "manzana"
+    ],
+    "filename": "escena_13_desayuno__avena_cafe_fresas_frutos_secos_mixtos_huevo_manzana.png",
+    "path": "./images/escena_13_desayuno__avena_cafe_fresas_frutos_secos_mixtos_huevo_manzana.png"
+  },
+  {
+    "scene": 14,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "fresas",
+      "frutos_secos",
+      "huevo",
+      "naranja"
+    ],
+    "filename": "escena_14_desayuno__avena_cafe_fresas_frutos_secos_mixtos_huevo_naranja.png",
+    "path": "./images/escena_14_desayuno__avena_cafe_fresas_frutos_secos_mixtos_huevo_naranja.png"
+  },
+  {
+    "scene": 15,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "fresas",
+      "guineoMaduro",
+      "huevo"
+    ],
+    "filename": "escena_15_desayuno__avena_cafe_fresas_guineo_maduro_huevo.png",
+    "path": "./images/escena_15_desayuno__avena_cafe_fresas_guineo_maduro_huevo.png"
+  },
+  {
+    "scene": 16,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "fresas",
+      "huevo"
+    ],
+    "filename": "escena_16_desayuno__avena_cafe_fresas_huevo.png",
+    "path": "./images/escena_16_desayuno__avena_cafe_fresas_huevo.png"
+  },
+  {
+    "scene": 17,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "fresas",
+      "huevo",
+      "manzana"
+    ],
+    "filename": "escena_17_desayuno__avena_cafe_fresas_huevo_manzana.png",
+    "path": "./images/escena_17_desayuno__avena_cafe_fresas_huevo_manzana.png"
+  },
+  {
+    "scene": 18,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "fresas",
+      "huevo",
+      "naranja"
+    ],
+    "filename": "escena_18_desayuno__avena_cafe_fresas_huevo_naranja.png",
+    "path": "./images/escena_18_desayuno__avena_cafe_fresas_huevo_naranja.png"
+  },
+  {
+    "scene": 19,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "fresas",
+      "huevo",
+      "sandia"
+    ],
+    "filename": "escena_19_desayuno__avena_cafe_fresas_huevo_sandia.png",
+    "path": "./images/escena_19_desayuno__avena_cafe_fresas_huevo_sandia.png"
+  },
+  {
+    "scene": 20,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "frutos_secos",
+      "guineoMaduro",
+      "huevo",
+      "naranja"
+    ],
+    "filename": "escena_20_desayuno__avena_cafe_frutos_secos_mixtos_guineo_maduro_huevo_naranja.png",
+    "path": "./images/escena_20_desayuno__avena_cafe_frutos_secos_mixtos_guineo_maduro_huevo_naranja.png"
+  },
+  {
+    "scene": 21,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "guineoMaduro",
+      "huevo",
+      "manzana"
+    ],
+    "filename": "escena_21_desayuno__avena_cafe_guineo_maduro_huevo_manzana.png",
+    "path": "./images/escena_21_desayuno__avena_cafe_guineo_maduro_huevo_manzana.png"
+  },
+  {
+    "scene": 22,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "guineoMaduro",
+      "huevo",
+      "manzana",
+      "semillas"
+    ],
+    "filename": "escena_22_desayuno__avena_cafe_guineo_maduro_huevo_manzana_semillas_chia_o_lino.png",
+    "path": "./images/escena_22_desayuno__avena_cafe_guineo_maduro_huevo_manzana_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 23,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "guineoMaduro",
+      "huevo",
+      "naranja"
+    ],
+    "filename": "escena_23_desayuno__avena_cafe_guineo_maduro_huevo_naranja.png",
+    "path": "./images/escena_23_desayuno__avena_cafe_guineo_maduro_huevo_naranja.png"
+  },
+  {
+    "scene": 24,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "guineoMaduro",
+      "huevo",
+      "naranja",
+      "semillas"
+    ],
+    "filename": "escena_24_desayuno__avena_cafe_guineo_maduro_huevo_naranja_semillas_chia_o_lino.png",
+    "path": "./images/escena_24_desayuno__avena_cafe_guineo_maduro_huevo_naranja_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 25,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "guineoMaduro",
+      "huevo",
+      "piña"
+    ],
+    "filename": "escena_25_desayuno__avena_cafe_guineo_maduro_huevo_piña.png",
+    "path": "./images/escena_25_desayuno__avena_cafe_guineo_maduro_huevo_piña.png"
+  },
+  {
+    "scene": 26,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "guineoMaduro",
+      "huevo",
+      "piña",
+      "semillas"
+    ],
+    "filename": "escena_26_desayuno__avena_cafe_guineo_maduro_huevo_piña_semillas_chia_o_lino.png",
+    "path": "./images/escena_26_desayuno__avena_cafe_guineo_maduro_huevo_piña_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 27,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "huevo",
+      "manzana",
+      "naranja"
+    ],
+    "filename": "escena_27_desayuno__avena_cafe_huevo_manzana_naranja.png",
+    "path": "./images/escena_27_desayuno__avena_cafe_huevo_manzana_naranja.png"
+  },
+  {
+    "scene": 28,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "huevo",
+      "manzana",
+      "piña"
+    ],
+    "filename": "escena_28_desayuno__avena_cafe_huevo_manzana_piña.png",
+    "path": "./images/escena_28_desayuno__avena_cafe_huevo_manzana_piña.png"
+  },
+  {
+    "scene": 29,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "huevo",
+      "manzana",
+      "piña",
+      "semillas"
+    ],
+    "filename": "escena_29_desayuno__avena_cafe_huevo_manzana_piña_semillas_chia_o_lino.png",
+    "path": "./images/escena_29_desayuno__avena_cafe_huevo_manzana_piña_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 30,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "huevo",
+      "manzana",
+      "sandia"
+    ],
+    "filename": "escena_30_desayuno__avena_cafe_huevo_manzana_sandia.png",
+    "path": "./images/escena_30_desayuno__avena_cafe_huevo_manzana_sandia.png"
+  },
+  {
+    "scene": 31,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "huevo",
+      "piña",
+      "sandia"
+    ],
+    "filename": "escena_31_desayuno__avena_cafe_huevo_piña_sandia.png",
+    "path": "./images/escena_31_desayuno__avena_cafe_huevo_piña_sandia.png"
+  },
+  {
+    "scene": 32,
+    "meal": "desayuno",
+    "ingredients": [
+      "avena",
+      "cafe",
+      "huevo",
+      "piña",
+      "sandia",
+      "semillas"
+    ],
+    "filename": "escena_32_desayuno__avena_cafe_huevo_piña_sandia_semillas_chia_o_lino.png",
+    "path": "./images/escena_32_desayuno__avena_cafe_huevo_piña_sandia_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 33,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "fresas",
+      "frutos_secos",
+      "huevo",
+      "naranja"
+    ],
+    "filename": "escena_33_desayuno__cafe_fresas_frutos_secos_mixtos_huevo_naranja.png",
+    "path": "./images/escena_33_desayuno__cafe_fresas_frutos_secos_mixtos_huevo_naranja.png"
+  },
+  {
+    "scene": 34,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "fresas",
+      "huevo",
+      "naranja"
+    ],
+    "filename": "escena_34_desayuno__cafe_fresas_huevo_naranja.png",
+    "path": "./images/escena_34_desayuno__cafe_fresas_huevo_naranja.png"
+  },
+  {
+    "scene": 35,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "fresas",
+      "huevo",
+      "sandia"
+    ],
+    "filename": "escena_35_desayuno__cafe_fresas_huevo_sandia.png",
+    "path": "./images/escena_35_desayuno__cafe_fresas_huevo_sandia.png"
+  },
+  {
+    "scene": 36,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "frutos_secos",
+      "huevo",
+      "naranja",
+      "sandia"
+    ],
+    "filename": "escena_36_desayuno__cafe_frutos_secos_mixtos_huevo_naranja_sandia.png",
+    "path": "./images/escena_36_desayuno__cafe_frutos_secos_mixtos_huevo_naranja_sandia.png"
+  },
+  {
+    "scene": 37,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "guineoMaduro",
+      "huevo"
+    ],
+    "filename": "escena_37_desayuno__cafe_guineo_maduro_huevo.png",
+    "path": "./images/escena_37_desayuno__cafe_guineo_maduro_huevo.png"
+  },
+  {
+    "scene": 38,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "guineoMaduro",
+      "huevo",
+      "semillas"
+    ],
+    "filename": "escena_38_desayuno__cafe_guineo_maduro_huevo_semillas_chia_o_lino.png",
+    "path": "./images/escena_38_desayuno__cafe_guineo_maduro_huevo_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 39,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "huevo",
+      "manzana",
+      "sandia"
+    ],
+    "filename": "escena_39_desayuno__cafe_huevo_manzana_sandia.png",
+    "path": "./images/escena_39_desayuno__cafe_huevo_manzana_sandia.png"
+  },
+  {
+    "scene": 40,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "huevo",
+      "naranja",
+      "sandia"
+    ],
+    "filename": "escena_40_desayuno__cafe_huevo_naranja_sandia.png",
+    "path": "./images/escena_40_desayuno__cafe_huevo_naranja_sandia.png"
+  },
+  {
+    "scene": 41,
+    "meal": "desayuno",
+    "ingredients": [
+      "batata",
+      "cafe",
+      "fresas",
+      "huevo",
+      "piña"
+    ],
+    "filename": "escena_41_desayuno__batata_cafe_fresas_huevo_piña.png",
+    "path": "./images/escena_41_desayuno__batata_cafe_fresas_huevo_piña.png"
+  },
+  {
+    "scene": 42,
+    "meal": "desayuno",
+    "ingredients": [
+      "batata",
+      "cafe",
+      "fresas",
+      "huevo",
+      "piña",
+      "semillas"
+    ],
+    "filename": "escena_42_desayuno__batata_cafe_fresas_huevo_piña_semillas_chia_o_lino.png",
+    "path": "./images/escena_42_desayuno__batata_cafe_fresas_huevo_piña_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 43,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "fresas",
+      "frutos_secos",
+      "huevo",
+      "naranja",
+      "papa"
+    ],
+    "filename": "escena_43_desayuno__cafe_fresas_frutos_secos_mixtos_huevo_naranja_papa.png",
+    "path": "./images/escena_43_desayuno__cafe_fresas_frutos_secos_mixtos_huevo_naranja_papa.png"
+  },
+  {
+    "scene": 44,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "fresas",
+      "huevo",
+      "naranja",
+      "papa"
+    ],
+    "filename": "escena_44_desayuno__cafe_fresas_huevo_naranja_papa.png",
+    "path": "./images/escena_44_desayuno__cafe_fresas_huevo_naranja_papa.png"
+  },
+  {
+    "scene": 45,
+    "meal": "desayuno",
+    "ingredients": [
+      "cafe",
+      "huevo",
+      "manzana",
+      "papa",
+      "piña"
+    ],
+    "filename": "escena_45_desayuno__cafe_huevo_manzana_papa_piña.png",
+    "path": "./images/escena_45_desayuno__cafe_huevo_manzana_papa_piña.png"
+  },
+  {
+    "scene": 46,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "aguacate",
+      "ajo",
+      "arroz",
+      "brocoli",
+      "carne",
+      "espinaca",
+      "limon"
+    ],
+    "filename": "escena_46_almuerzo__aceite_aguacate_ajo_arroz_brocoli_carne_molida_90_10_espinaca_limon.png",
+    "path": "./images/escena_46_almuerzo__aceite_aguacate_ajo_arroz_brocoli_carne_molida_90_10_espinaca_limon.png"
+  },
+  {
+    "scene": 47,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "aguacate",
+      "ajo",
+      "arroz",
+      "brocoli",
+      "carne",
+      "limon"
+    ],
+    "filename": "escena_47_almuerzo__aceite_aguacate_ajo_arroz_brocoli_carne_molida_90_10_limon.png",
+    "path": "./images/escena_47_almuerzo__aceite_aguacate_ajo_arroz_brocoli_carne_molida_90_10_limon.png"
+  },
+  {
+    "scene": 48,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "aguacate",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "espinaca",
+      "limon"
+    ],
+    "filename": "escena_48_almuerzo__aceite_aguacate_ajo_arroz_carne_molida_90_10_cebolla_espinaca_limon.png",
+    "path": "./images/escena_48_almuerzo__aceite_aguacate_ajo_arroz_carne_molida_90_10_cebolla_espinaca_limon.png"
+  },
+  {
+    "scene": 49,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "aguacate",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "limon"
+    ],
+    "filename": "escena_49_almuerzo__aceite_aguacate_ajo_arroz_carne_molida_90_10_cebolla_limon.png",
+    "path": "./images/escena_49_almuerzo__aceite_aguacate_ajo_arroz_carne_molida_90_10_cebolla_limon.png"
+  },
+  {
+    "scene": 50,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "aguacate",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "limon",
+      "pasta"
+    ],
+    "filename": "escena_50_almuerzo__aceite_aguacate_ajo_arroz_carne_molida_90_10_cebolla_limon_pasta.png",
+    "path": "./images/escena_50_almuerzo__aceite_aguacate_ajo_arroz_carne_molida_90_10_cebolla_limon_pasta.png"
+  },
+  {
+    "scene": 51,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajiRojo",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "guineoMaduro",
+      "limon",
+      "pasta"
+    ],
+    "filename": "escena_51_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_guineo_maduro_limon_pasta.png",
+    "path": "./images/escena_51_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_guineo_maduro_limon_pasta.png"
+  },
+  {
+    "scene": 52,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajiRojo",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "guineoMaduro",
+      "limon",
+      "pasta",
+      "semillas"
+    ],
+    "filename": "escena_52_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_guineo_maduro_limon_pasta_semillas_chia_o_lino.png",
+    "path": "./images/escena_52_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_guineo_maduro_limon_pasta_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 53,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajiRojo",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "habichuelas",
+      "limon",
+      "rojas"
+    ],
+    "filename": "escena_53_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_habichuelas_rojas_limon.png",
+    "path": "./images/escena_53_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_habichuelas_rojas_limon.png"
+  },
+  {
+    "scene": 54,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajiRojo",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "habichuelas",
+      "limon",
+      "rojas",
+      "semillas"
+    ],
+    "filename": "escena_54_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_habichuelas_rojas_limon_semillas_chia_o_lino.png",
+    "path": "./images/escena_54_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_habichuelas_rojas_limon_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 55,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajiRojo",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "limon",
+      "pasta"
+    ],
+    "filename": "escena_55_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_limon_pasta.png",
+    "path": "./images/escena_55_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_limon_pasta.png"
+  },
+  {
+    "scene": 56,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajiRojo",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "limon",
+      "pasta",
+      "semillas"
+    ],
+    "filename": "escena_56_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_limon_pasta_semillas_chia_o_lino.png",
+    "path": "./images/escena_56_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_cebolla_limon_pasta_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 57,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajiRojo",
+      "ajo",
+      "arroz",
+      "carne",
+      "espinaca",
+      "limon"
+    ],
+    "filename": "escena_57_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_espinaca_limon.png",
+    "path": "./images/escena_57_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_espinaca_limon.png"
+  },
+  {
+    "scene": 58,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajiRojo",
+      "ajo",
+      "arroz",
+      "carne",
+      "habichuelas",
+      "limon",
+      "rojas",
+      "semillas"
+    ],
+    "filename": "escena_58_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_habichuelas_rojas_limon_semillas_chia_o_lino.png",
+    "path": "./images/escena_58_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_habichuelas_rojas_limon_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 59,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajiRojo",
+      "ajo",
+      "arroz",
+      "carne",
+      "limon"
+    ],
+    "filename": "escena_59_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_limon.png",
+    "path": "./images/escena_59_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_limon.png"
+  },
+  {
+    "scene": 60,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajiRojo",
+      "ajo",
+      "arroz",
+      "carne",
+      "limon",
+      "semillas"
+    ],
+    "filename": "escena_60_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_limon_semillas_chia_o_lino.png",
+    "path": "./images/escena_60_almuerzo__aceite_aji_rojo_ajo_arroz_carne_molida_90_10_limon_semillas_chia_o_lino.png"
+  },
+  {
+    "scene": 61,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajo",
+      "arroz",
+      "berenjena",
+      "carne",
+      "espinaca",
+      "limon"
+    ],
+    "filename": "escena_61_almuerzo__aceite_ajo_arroz_berenjena_carne_molida_90_10_espinaca_limon.png",
+    "path": "./images/escena_61_almuerzo__aceite_ajo_arroz_berenjena_carne_molida_90_10_espinaca_limon.png"
+  },
+  {
+    "scene": 62,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajo",
+      "arroz",
+      "brocoli",
+      "carne",
+      "espinaca",
+      "limon"
+    ],
+    "filename": "escena_62_almuerzo__aceite_ajo_arroz_brocoli_carne_molida_90_10_espinaca_limon.png",
+    "path": "./images/escena_62_almuerzo__aceite_ajo_arroz_brocoli_carne_molida_90_10_espinaca_limon.png"
+  },
+  {
+    "scene": 63,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajo",
+      "arroz",
+      "brocoli",
+      "carne",
+      "limon"
+    ],
+    "filename": "escena_63_almuerzo__aceite_ajo_arroz_brocoli_carne_molida_90_10_limon.png",
+    "path": "./images/escena_63_almuerzo__aceite_ajo_arroz_brocoli_carne_molida_90_10_limon.png"
+  },
+  {
+    "scene": 64,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "espinaca",
+      "limon"
+    ],
+    "filename": "escena_64_almuerzo__aceite_ajo_arroz_carne_molida_90_10_cebolla_espinaca_limon.png",
+    "path": "./images/escena_64_almuerzo__aceite_ajo_arroz_carne_molida_90_10_cebolla_espinaca_limon.png"
+  },
+  {
+    "scene": 65,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "frutos_secos",
+      "limon"
+    ],
+    "filename": "escena_65_almuerzo__aceite_ajo_arroz_carne_molida_90_10_cebolla_frutos_secos_mixtos_limon.png",
+    "path": "./images/escena_65_almuerzo__aceite_ajo_arroz_carne_molida_90_10_cebolla_frutos_secos_mixtos_limon.png"
+  },
+  {
+    "scene": 66,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "limon"
+    ],
+    "filename": "escena_66_almuerzo__aceite_ajo_arroz_carne_molida_90_10_cebolla_limon.png",
+    "path": "./images/escena_66_almuerzo__aceite_ajo_arroz_carne_molida_90_10_cebolla_limon.png"
+  },
+  {
+    "scene": 67,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "limon",
+      "papa"
+    ],
+    "filename": "escena_67_almuerzo__aceite_ajo_arroz_carne_molida_90_10_cebolla_limon_papa.png",
+    "path": "./images/escena_67_almuerzo__aceite_ajo_arroz_carne_molida_90_10_cebolla_limon_papa.png"
+  },
+  {
+    "scene": 68,
+    "meal": "almuerzo",
+    "ingredients": [
+      "aceite",
+      "ajo",
+      "arroz",
+      "carne",
+      "cebolla",
+      "limon",
+      "pasta"
+    ],
+    "filename": "escena_68_almuerzo__aceite_ajo_arroz_carne_molida_90_10_cebolla_limon_pasta.png",
+    "path": "./images/escena_68_almuerzo__aceite_ajo_arroz_carne_molida_90_10_cebolla_limon_pasta.png"
+  }
+];
 
-/* Selector v16 estricto:
-   - cada archivo es un retrato fotográfico de UN SOLO alimento;
-   - la app solo puede elegirlo si ese alimento aparece realmente en la receta;
-   - por eso la foto nunca introduce arroz, pan, yogur, queso, frutas, etc.
-     que no estén presentes en la comida.
-   Si no existe retrato local para ninguno de los ingredientes del plato,
-   se usa el fallback visual en vez de mostrar una foto falsa. */
-const CULINARY_IMAGE_PRIORITY = {
-  desayuno:['huevo','guineoMaduro','manzana','fresas','frutos_secos','aguacate','papa','batata'],
-  almuerzo:['pollo','carne','salmon','atun','arroz','pasta','papa','batata','aguacate'],
-  merienda:['atun','huevo','manzana','guineoMaduro','fresas','frutos_secos','aguacate'],
-  cena:['pollo','carne','salmon','atun','arroz','pasta','papa','batata','aguacate']
-};
-function culinaryImageHash(mealKey,dayIdx,id){
-  const s=`${mealKey}|${dayIdx||0}|${id||''}`;
-  let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0;
-  return h;
+function culinaryNormalizeImageIngredient(id){
+  const aliases={
+    ajiRojo:'ajiRojo', aji_rojo:'ajiRojo',
+    guineoMaduro:'guineoMaduro', guineo_maduro:'guineoMaduro',
+    ciruelasPasas:'ciruelasPasas', ciruelas_pasas:'ciruelasPasas',
+    frutos_secos:'frutos_secos', frutos_secos_mixtos:'frutos_secos',
+    semillas:'semillas', semillas_chia_o_lino:'semillas',
+    cafe:'cafe', café:'cafe',
+    huevo:'huevo', huevos:'huevo',
+    piña:'piña', pina:'piña',
+    brocoli:'brocoli', brócoli:'brocoli',
+    arroz:'arroz', pasta:'pasta', papa:'papa', batata:'batata',
+    carne:'carne', carne_molida:'carne',
+    aceite:'aceite', ajo:'ajo', cebolla:'cebolla',
+    espinaca:'espinaca', berenjena:'berenjena', limon:'limon',
+    manzana:'manzana', naranja:'naranja', fresas:'fresas',
+    sandia:'sandia', aguacate:'aguacate', habichuelas:'habichuelas',
+    lentejas:'lentejas', avena:'avena'
+  };
+  return aliases[id] || id;
 }
+
+function culinaryImageIngredientSet(items){
+  return new Set((items||[]).filter(x=>x && x.g>0).map(x=>
+    culinaryNormalizeImageIngredient(x.id)
+  ));
+}
+
+function culinarySceneSignature(set){
+  return [...set].sort().join('|');
+}
+
 function culinaryMealImage(mealKey,items,dayIdx){
-  const ids=new Set((items||[]).filter(x=>x&&x.g>0).map(x=>x.id));
-  const pref=CULINARY_IMAGE_PRIORITY[mealKey]||[];
-  const chosen=pref.find(id=>ids.has(id) && CULINARY_IMAGES[id] && CULINARY_IMAGES[id].length);
-  if(!chosen) return null;
-  const arr=CULINARY_IMAGES[chosen];
-  return arr[culinaryImageHash(mealKey,dayIdx,chosen)%arr.length];
+  const ids=culinaryImageIngredientSet(items);
+  const candidates=CULINARY_SCENE_IMAGES.filter(s=>s.meal===mealKey);
+
+  // 1) Coincidencia exacta: la opción más segura.
+  const exact=candidates.find(s=>
+    culinarySceneSignature(new Set(s.ingredients))===culinarySceneSignature(ids)
+  );
+  if(exact) return exact.path;
+
+  // 2) Algunas recetas pueden contener ingredientes técnicos que no aparecen
+  //    en la fotografía. Elegimos la escena que cubra más ingredientes reales.
+  let best=null, bestScore=-1;
+  candidates.forEach(s=>{
+    const sceneSet=new Set(s.ingredients);
+    let score=0;
+    sceneSet.forEach(id=>{ if(ids.has(id)) score++; });
+    const coversAll=[...sceneSet].every(id=>ids.has(id));
+    if(coversAll && score>bestScore){
+      best=s; bestScore=score;
+    }
+  });
+  return best ? best.path : null;
 }
 
 function culinaryMealFallbackEmoji(mealKey){ return mealKey==='desayuno'?'🍳':mealKey==='almuerzo'?'🥗':mealKey==='merienda'?'🍓':'🍽️'; }
