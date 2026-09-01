@@ -82,7 +82,7 @@
     --radius:16px; --shadow:0 2px 14px rgba(0,0,0,.35);
   }
   [data-theme="light"]{
-    --bg:#f5f7f3; --surface:#ffffff; --surface2:#f0f3ee; --card:#ffffff;
+    --bg:#ffffff; --surface:#ffffff; --surface2:#f4f6f2; --card:#ffffff;
     --line:#e3e8de; --text:#1c231a; --muted:#6b7566;
     --accent:#4caf3e; --accent2:#2e9bd6; --accent-dim:#3d8a30;
     --pink:#e0568e; --purple:#7a63d6; --orange:#e08e2e; --blue:#3f7fd6; --amber:#d4a02e;
@@ -98,8 +98,8 @@
   .wrap{ max-width:1180px; margin:0 auto; padding:0 16px; }
 
   /* Topbar */
-  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:18px 0; }
-  .brand{ display:flex; flex-direction:column; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:6px 0 2px; }
+  .brand{ display:flex; flex-direction:column; margin-top:4px; }
   .brand-row{ display:flex; align-items:center; gap:8px; }
   .leaf{ width:30px; height:30px; }
   /* Logo con fondo propio: así "COME" se mantiene BLANCO en modo día y en
@@ -124,7 +124,7 @@
   .aviso-comision{ font-size:10.5px; line-height:1.4; color:var(--muted);
     opacity:.45; text-align:center; margin-top:9px; }
 
-  .brand-logo{ height:46px; width:auto; display:block; }
+  .brand-logo{ height:38px; width:auto; display:block; }
   .brand-logo-wrap{ background:#141a11; border-radius:12px; padding:8px 14px;
     display:inline-flex; align-items:center; }
   .brand-plate{ display:inline-flex; align-items:center; gap:2px; background:#141a11;
@@ -146,16 +146,40 @@
   .lang-menu button:hover{ background:var(--surface2); }
 
   /* Layout */
-  .app-grid{ display:grid; grid-template-columns:1fr; gap:16px; margin-top:6px; }
+  .app-grid{ display:grid; grid-template-columns:1fr; gap:16px; margin-top:0; }
   @media(min-width:900px){ .app-grid{ grid-template-columns: 1fr 1fr; align-items:start; } }
 
+  /* ============================================================
+     Paso 1 a pantalla completa en móvil: en vez de calcular alturas
+     fijas en px (que nunca coinciden entre un iPhone SE, un iPhone
+     15 y un Android), dejamos que flexbox reparta el alto real de
+     CADA pantalla, usando dvh (alto de viewport dinámico: tiene en
+     cuenta que Safari/Chrome esconden su barra de direcciones).
+     Solo el paso 1 se ve afectado; los pasos 2 y 3 (resultados,
+     mucho más largos) siguen desplazándose con scroll normal.
+     ============================================================ */
+  @media (max-width:899px){
+    html, body{ height:100%; }
+    body{ min-height:100vh; min-height:100dvh; }
+    .wrap{ min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+    .topbar{ flex:0 0 auto; }
+    .app-grid{ flex:1 1 auto; min-height:0; }
+    .app-grid > div:first-child{ display:flex; flex-direction:column; min-height:0; }
+    #dietForm{ display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+    .step-pane{ min-height:0; }
+    .step-pane[data-step="1"]{ flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+    .step-pane[data-step="1"] .card{ flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+    .step-pane[data-step="1"] .cp-vitals-card{ flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+    .step-pane[data-step="1"] .cp-stage{ flex:1 1 auto; height:auto; min-height:120px; }
+  }
+
   .card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-    padding:20px; box-shadow:var(--shadow); margin-bottom:16px; }
-  .card-head{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+    padding:14px 16px 16px; box-shadow:var(--shadow); margin-bottom:12px; }
+  .card-head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
   .card-head .ic{ width:22px; height:22px; color:var(--accent); flex:none; }
   .card-head h3{ font-size:15px; letter-spacing:.02em; }
 
-  label{ display:block; font-size:12.5px; color:var(--muted); margin:14px 0 6px; font-weight:600;}
+  label{ display:block; font-size:12.5px; color:var(--muted); margin:8px 0 4px; font-weight:600;}
   label:first-of-type{margin-top:0;}
   input, select{
     width:100%; background:var(--surface2); border:1px solid var(--line); color:var(--text);
@@ -345,7 +369,7 @@
   .placeholder-summary p{ margin:0; }
 
   /* Pasos (Modelo 1) */
-  .step-indicator{ margin-bottom:14px; }
+  .step-indicator{ margin-bottom:8px; }
   .step-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.12em;
     text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:7px; }
   .step-dots{ display:flex; gap:6px; }
@@ -356,6 +380,93 @@
   .step-back{ width:100%; margin-top:10px; background:none; border:none; color:var(--muted);
     font-size:13px; cursor:pointer; padding:10px; font-family:'Inter',sans-serif; }
   .field-error{ color:var(--pink); font-size:11.5px; margin-top:4px; font-weight:600; }
+  /* ============================================================
+     COME PRO — widgets visuales de recolección de datos (paso 1)
+     Usa exactamente las variables de color ya definidas arriba
+     (--accent, --pink, --card, --surface2, --line, --muted, --text),
+     así que respeta el tema claro/oscuro automáticamente y no
+     introduce ninguna paleta nueva.
+     ============================================================ */
+  .cp-vitals-card{ margin-top:4px; }
+  .cp-avatar-toggle{ display:flex; gap:8px; margin-bottom:8px; }
+  .cp-sex-btn{
+    flex:1; padding:10px 0; border-radius:10px; border:1px solid var(--line);
+    background:var(--surface2); color:var(--muted); font-family:'Inter',sans-serif;
+    font-weight:700; font-size:13.5px; cursor:pointer; transition:all .2s ease;
+  }
+  .cp-sex-btn.active{ border-color:var(--accent); color:var(--accent); background:rgba(126,217,87,.12); }
+  [data-theme="light"] .cp-sex-btn.active{ background:rgba(76,175,62,.12); }
+  .cp-sex-btn[data-sex="mujer"].active{ border-color:var(--pink); color:var(--pink); background:rgba(236,111,163,.12); }
+  .cp-otro-link-wrap{ text-align:center; margin:-4px 0 8px; }
+  .cp-otro-link-wrap a{ font-size:11.5px; color:var(--muted); text-decoration:underline; cursor:pointer; }
+  .cp-otro-link-wrap a.active{ color:var(--accent2); font-weight:700; }
+
+  .cp-stage{ display:flex; align-items:stretch; gap:10px; height:clamp(190px, 34vh, 340px); }
+  .cp-figure-col{ flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .cp-figure-well{
+    flex:1; position:relative; border-radius:14px; background:#f4f6f2;
+    border:1px solid var(--line); overflow:hidden; display:flex; align-items:flex-end;
+    justify-content:center; padding:8px; min-height:0;
+  }
+  .cp-ground{
+    position:absolute; left:14px; right:14px; bottom:16px; height:1px;
+    background:linear-gradient(90deg, transparent, var(--line) 20%, var(--line) 80%, transparent);
+  }
+  .cp-readout{ position:absolute; top:10px; font-family:'Fraunces',serif; font-weight:700; font-size:17px; color:var(--text); z-index:2; }
+  .cp-readout small{ display:block; font-family:'Inter',sans-serif; font-weight:600; font-size:10.5px; color:var(--muted); margin-top:1px; }
+  .cp-readout-left{ left:12px; } .cp-readout-right{ right:12px; text-align:right; }
+  .cp-figure-anchor{ position:relative; flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center; min-height:0; }
+  .cp-breathe{ animation:cpBreathe 3.6s ease-in-out infinite; height:100%; display:flex; align-items:flex-end; }
+  @keyframes cpBreathe{ 0%,100%{ transform:translateY(0) scaleY(1);} 50%{ transform:translateY(-2px) scaleY(1.012);} }
+  .cp-sway{ animation:cpSway 4.6s ease-in-out infinite; height:100%; display:flex; align-items:flex-end; }
+  @keyframes cpSway{ 0%,100%{ transform:rotate(-0.6deg);} 50%{ transform:rotate(0.6deg);} }
+  #cpFigureSvg{ height:100%; width:100%; display:flex; align-items:flex-end; justify-content:center; overflow:visible; }
+  #cpFigureSvg svg{ max-height:100%; max-width:100%; width:auto; height:auto; display:block; }
+  #cpFigureSvg svg *{ transition:all .06s linear; }
+
+  .cp-rail-label{ font-size:10.5px; color:var(--muted); font-weight:700; letter-spacing:.02em; }
+  .cp-unit-slot .unit-switch{ margin:0; }
+
+  .cp-weight-rail{ border-radius:12px; border:1px solid var(--line); background:var(--surface2); padding:8px 12px 10px; touch-action:none; }
+  .cp-rail-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .cp-h-track{ position:relative; height:6px; border-radius:6px; background:var(--line); margin:0 10px; touch-action:none; }
+  .cp-h-fill{ position:absolute; top:0; bottom:0; left:0; border-radius:6px; background:linear-gradient(90deg, var(--accent-dim), var(--accent)); }
+  .cp-h-handle{
+    position:absolute; top:50%; transform:translate(-50%,-50%); width:20px; height:26px; border-radius:7px;
+    background:var(--text); box-shadow:0 3px 8px rgba(0,0,0,.3); cursor:grab; touch-action:none;
+  }
+
+  .cp-height-rail{
+    width:56px; border-radius:14px; border:1px solid var(--line); background:var(--surface2);
+    display:flex; flex-direction:column; align-items:center; padding:10px 0 12px; gap:6px; touch-action:none;
+  }
+  .cp-v-track{ position:relative; flex:1; width:6px; border-radius:6px; background:var(--line); margin:2px 0 4px; touch-action:none; }
+  .cp-v-fill{ position:absolute; bottom:0; left:0; right:0; border-radius:6px; background:linear-gradient(180deg, var(--accent), var(--accent-dim)); }
+  .cp-v-handle{
+    position:absolute; left:50%; transform:translate(-50%,50%); width:24px; height:18px; border-radius:7px;
+    background:var(--text); box-shadow:0 3px 8px rgba(0,0,0,.3); cursor:grab; touch-action:none;
+  }
+
+  .cp-age-rail{ border-radius:12px; border:1px solid var(--line); background:var(--surface2); padding:6px 14px 8px; margin:8px 0 2px; touch-action:none; }
+  .cp-age-value-wrap{ text-align:center; margin-bottom:2px; line-height:1; }
+  .cp-age-value{ font-family:'Fraunces',serif; font-weight:700; color:var(--accent); font-size:22px; display:inline-block; transition:font-size .12s ease-out; }
+  .cp-age-value.grow{ font-size:32px; }
+  .cp-age-unit{ font-size:11px; color:var(--muted); font-weight:600; margin-left:5px; }
+  .cp-age-track{ position:relative; height:20px; margin:0 6px; border-bottom:2px solid var(--line); touch-action:none; }
+  .cp-age-ticks{ position:absolute; left:0; right:0; bottom:0; height:100%; }
+  .cp-age-tick{ position:absolute; bottom:0; width:1px; background:var(--line); }
+  .cp-age-tick.major{ width:1.5px; background:var(--muted); }
+  .cp-age-tick-label{ position:absolute; bottom:-14px; transform:translateX(-50%); font-size:8px; color:var(--muted); font-weight:600; }
+  .cp-age-handle{ position:absolute; bottom:-3px; transform:translateX(-50%); width:3px; height:16px; border-radius:3px; background:var(--accent); cursor:grab; touch-action:none; }
+  .cp-age-handle::after{
+    content:''; position:absolute; left:50%; top:-6px; transform:translateX(-50%); width:12px; height:12px;
+    border-radius:50%; background:var(--accent); box-shadow:0 2px 6px rgba(126,217,87,.5);
+  }
+
+  .cp-sexo-native-wrap{ margin-top:14px; }
+  .cp-hidden-native{ display:none; }
+
+  #paisSearch{ display:none; }
   .unit-switch{ display:inline-flex; background:var(--surface2); border:1px solid var(--line);
     border-radius:8px; padding:2px; margin-top:7px; gap:2px; }
   .unit-opt{ border:none; background:transparent; color:var(--muted); font-size:11.5px; font-weight:700;
@@ -517,51 +628,100 @@
             <h3 data-i18n="s1title"></h3>
           </div>
 
-          <label for="nombre" data-i18n="lblNombre"></label>
-          <input id="nombre" type="text" data-i18n-placeholder="phNombre" required>
-
           <div class="row2">
             <div>
-              <label for="edad" data-i18n="lblEdad"></label>
-              <input id="edad" type="number" min="18" max="90" data-i18n-placeholder="phEdad" required>
+              <label for="nombre" data-i18n="lblNombre"></label>
+              <input id="nombre" type="text" data-i18n-placeholder="phNombre" required>
             </div>
             <div>
-              <label data-i18n="lblSexo"></label>
-              <div class="segmented" id="sexoSeg">
-                <div class="seg-btn active" data-val="hombre" data-i18n="sexoH"></div>
-                <div class="seg-btn" data-val="mujer" data-i18n="sexoM"></div>
-                <div class="seg-btn" data-val="otro" data-i18n="sexoO"></div>
-              </div>
+              <label for="pais" data-i18n="lblPais"></label>
+              <input type="text" id="paisSearch" aria-label="Buscar país" data-i18n-placeholder="phBuscarPais" style="margin-bottom:6px;">
+              <select id="pais"></select>
             </div>
           </div>
-
-          <div class="row2">
-            <div>
-              <label for="peso" data-i18n="lblPeso"></label>
-              <input id="peso" type="number" step="0.1" data-i18n-placeholder="phPeso" required>
-              <div class="unit-switch" id="pesoUnitSwitch">
-                <button type="button" class="unit-opt active" data-unit="kg">kg</button>
-                <button type="button" class="unit-opt" data-unit="lb">lb</button>
-              </div>
-            </div>
-            <div>
-              <label for="altura" data-i18n="lblAltura"></label>
-              <input id="altura" type="number" data-i18n-placeholder="phAltura" required>
-              <div class="row2 hidden" id="ftInRow" style="gap:6px;">
-                <input id="alturaFt" type="number" placeholder="ft" min="3" max="8" aria-label="Pies">
-                <input id="alturaIn" type="number" placeholder="in" min="0" max="11" aria-label="Pulgadas">
-              </div>
-              <div class="unit-switch" id="alturaUnitSwitch">
-                <button type="button" class="unit-opt active" data-unit="cm">cm</button>
-                <button type="button" class="unit-opt" data-unit="ft">ft / in</button>
-              </div>
-            </div>
-          </div>
-
-          <label for="pais" data-i18n="lblPais"></label>
-          <input type="text" id="paisSearch" aria-label="Buscar país" data-i18n-placeholder="phBuscarPais" style="margin-bottom:6px;">
-          <select id="pais"></select>
           <div class="hint" id="priceHint"></div>
+
+          <div class="cp-vitals-card">
+            <div class="cp-avatar-toggle" id="cpSexToggle">
+              <button type="button" class="cp-sex-btn active" data-sex="hombre" data-i18n="sexoH"></button>
+              <button type="button" class="cp-sex-btn" data-sex="mujer" data-i18n="sexoM"></button>
+            </div>
+            <div class="cp-otro-link-wrap">
+              <a href="#" id="cpOtroLink" data-i18n="sexoO"></a>
+            </div>
+
+            <div class="cp-stage">
+              <div class="cp-figure-col">
+                <div class="cp-figure-well">
+                  <div class="cp-readout cp-readout-left" id="cpHeightReadout"></div>
+                  <div class="cp-readout cp-readout-right" id="cpWeightReadout"></div>
+                  <div class="cp-ground"></div>
+                  <div class="cp-figure-anchor"><div class="cp-breathe"><div class="cp-sway" id="cpFigureSvg"></div></div></div>
+                </div>
+                <div class="cp-weight-rail">
+                  <div class="cp-rail-top">
+                    <span class="cp-rail-label" data-i18n="lblPeso"></span>
+                    <div class="cp-unit-slot" id="cpPesoUnitSlot"></div>
+                  </div>
+                  <div class="cp-h-track" id="cpWeightTrack">
+                    <div class="cp-h-fill" id="cpWeightFill"></div>
+                    <div class="cp-h-handle" id="cpWeightHandle"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="cp-height-rail">
+                <span class="cp-rail-label" data-i18n="lblAltura"></span>
+                <div class="cp-v-track" id="cpHeightTrack">
+                  <div class="cp-v-fill" id="cpHeightFill"></div>
+                  <div class="cp-v-handle" id="cpHeightHandle"></div>
+                </div>
+                <div class="cp-unit-slot" id="cpAlturaUnitSlot"></div>
+              </div>
+            </div>
+
+            <div class="cp-age-rail">
+              <div class="cp-age-value-wrap">
+                <span class="cp-age-value" id="cpAgeValue">30</span><span class="cp-age-unit" data-i18n="lblEdad"></span>
+              </div>
+              <div class="cp-age-track" id="cpAgeTrack">
+                <div class="cp-age-ticks" id="cpAgeTicks"></div>
+                <div class="cp-age-handle" id="cpAgeHandle"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Campos reales que usa el generador de dieta: siguen aquí, sin
+               cambios de id/lógica, solo ocultos visualmente. Los widgets
+               de arriba (avatar + sliders) los rellenan por JS al final del script. -->
+          <div class="cp-hidden-native">
+            <label data-i18n="lblSexo"></label>
+            <div class="segmented" id="sexoSeg">
+              <div class="seg-btn active" data-val="hombre" data-i18n="sexoH"></div>
+              <div class="seg-btn" data-val="mujer" data-i18n="sexoM"></div>
+              <div class="seg-btn" data-val="otro" data-i18n="sexoO"></div>
+            </div>
+            <label for="edad" data-i18n="lblEdad"></label>
+            <input id="edad" type="number" min="15" max="90" data-i18n-placeholder="phEdad" required>
+            <label for="peso" data-i18n="lblPeso"></label>
+            <input id="peso" type="number" step="0.1" data-i18n-placeholder="phPeso" required>
+            <div class="unit-switch" id="pesoUnitSwitch">
+              <button type="button" class="unit-opt active" data-unit="kg">kg</button>
+              <button type="button" class="unit-opt" data-unit="lb">lb</button>
+            </div>
+            <label for="altura" data-i18n="lblAltura"></label>
+            <input id="altura" type="number" data-i18n-placeholder="phAltura" required>
+            <div class="row2 hidden" id="ftInRow" style="gap:6px;">
+              <input id="alturaFt" type="number" placeholder="ft" min="3" max="8" aria-label="Pies">
+              <input id="alturaIn" type="number" placeholder="in" min="0" max="11" aria-label="Pulgadas">
+            </div>
+            <div class="unit-switch" id="alturaUnitSwitch">
+              <button type="button" class="unit-opt active" data-unit="cm">cm</button>
+              <button type="button" class="unit-opt" data-unit="ft">ft / in</button>
+            </div>
+          </div>
+
         </div>
 
         <div class="ad-slot" id="adSlotForm1"><span class="ad-label">Publicidad</span></div>
@@ -2301,6 +2461,13 @@ function countryDisplayName(c){
   }catch(e){}
   return c[CURRENT_LANG] || (CURRENT_LANG==='en'?c.en:c.es) || c.code;
 }
+function countryFlagEmoji(code){
+  if(!code) return '';
+  if(code === 'GEN') return '🌍';
+  if(code.length !== 2) return '';
+  const A = 0x1F1E6;
+  return code.toUpperCase().split('').map(c => String.fromCodePoint(A + (c.charCodeAt(0) - 65))).join('');
+}
 function populateCountrySelect(){
   const sel = document.getElementById('pais');
   const prevValue = sel.value || "";
@@ -2317,7 +2484,8 @@ function populateCountrySelect(){
     if(!list.length) return '';
     const opts = list.map(c=>{
       const name = countryDisplayName(c);
-      return `<option value="${c.code}">${name} — ${c.symbol}</option>`;
+      const flag = countryFlagEmoji(c.code);
+      return `<option value="${c.code}">${flag ? flag+' ' : ''}${name} — ${c.symbol}</option>`;
     }).join('');
     return `<optgroup label="${region}">${opts}</optgroup>`;
   }).join('');
@@ -9174,6 +9342,374 @@ if(ACTIVE_INFLUENCER_SLUG){
    INFLUENCER_READY continúa cargando los datos y enlaces del influencer
    en segundo plano, sin duplicar la visita. */
 Promise.resolve(INFLUENCER_READY).catch(function(){ return null; });
+
+/* ============================================================
+   COME PRO — widgets visuales de recolección de datos (paso 1)
+   No reemplaza nada de la lógica de generación: solo escribe en
+   los mismos inputs reales (#peso, #altura/#alturaFt/#alturaIn,
+   #edad, #sexoSeg) que el resto de la app ya sabe leer, y reutiliza
+   setWeightUnit/setHeightUnit/getWeightKg/getHeightCm tal cual
+   estaban. Si esto se quita, el paso 1 vuelve a los inputs de
+   siempre sin romper nada más.
+   ============================================================ */
+(function(){
+  const pesoInputEl = document.getElementById('peso');
+  const alturaInputEl = document.getElementById('altura');
+  const alturaFtEl = document.getElementById('alturaFt');
+  const alturaInEl = document.getElementById('alturaIn');
+  const edadInputEl = document.getElementById('edad');
+  if(!pesoInputEl || !alturaInputEl || !edadInputEl) return; // por si algún día cambia el HTML
+
+  // Reubica los botones reales de unidad (ya con su lógica intacta)
+  // dentro de los slots visibles junto a cada slider.
+  const pesoSlot = document.getElementById('cpPesoUnitSlot');
+  const alturaSlot = document.getElementById('cpAlturaUnitSlot');
+  const pesoUnitSwitchEl = document.getElementById('pesoUnitSwitch');
+  const alturaUnitSwitchEl = document.getElementById('alturaUnitSwitch');
+  if(pesoSlot && pesoUnitSwitchEl) pesoSlot.appendChild(pesoUnitSwitchEl);
+  if(alturaSlot && alturaUnitSwitchEl) alturaSlot.appendChild(alturaUnitSwitchEl);
+
+  function fireEvents(el){
+    el.dispatchEvent(new Event('input', {bubbles:true}));
+    el.dispatchEvent(new Event('change', {bubbles:true}));
+  }
+  function cpColor(varName, fallback){
+    try{
+      const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+      return v || fallback;
+    }catch(e){ return fallback; }
+  }
+
+  // ---------- estado interno (siempre en kg / cm, sin importar la unidad mostrada) ----------
+  let cpSex = 'hombre';
+  let cpHeightCm = 170;
+  let cpWeightKg = 70;
+  let cpAge = 30;
+
+  const MIN_H_CM = 130, MAX_H_CM = 210;
+  const MIN_H_PX = 170, MAX_H_PX = 280;
+  const MIN_W_KG = 35, MAX_W_KG = 160;
+  const MIN_W_SCALE = 0.80, MAX_W_SCALE = 1.50;
+  const MIN_AGE = 15, MAX_AGE = 90;
+
+  function kgToLbRaw(kg){ return kg * 2.2046226218; }
+  function lbToKg(lb){ return lb / 2.2046226218; }
+  const MIN_W_LB = Math.round(kgToLbRaw(MIN_W_KG));
+  const MAX_W_LB = Math.round(kgToLbRaw(MAX_W_KG));
+
+  function heightCmToPx(cm){
+    const t = (cm - MIN_H_CM) / (MAX_H_CM - MIN_H_CM);
+    return MIN_H_PX + t * (MAX_H_PX - MIN_H_PX);
+  }
+  function weightKgToScale(kg){
+    const t = (kg - MIN_W_KG) / (MAX_W_KG - MIN_W_KG);
+    return MIN_W_SCALE + t * (MAX_W_SCALE - MIN_W_SCALE);
+  }
+  function cmToFtIn(cm){
+    const totalIn = cm / 2.54;
+    let ft = Math.floor(totalIn / 12);
+    let inch = Math.round(totalIn - ft*12);
+    if(inch === 12){ ft += 1; inch = 0; }
+    return ft + "'" + inch + '"';
+  }
+
+  // ---------- figura SVG (placeholder — Jeremi eligirá el diseño final más adelante) ----------
+  function cpBodyShapes(uid, cx, headR, shoulderY, shoulderW, waistW, hipY, legsStartY, legsH, legW, legGap, armLen, armW, isM, skirtFlareW){
+    const neckTopY = shoulderY - 6;
+    const torsoTopH = (hipY - shoulderY) * 0.56;
+    const torsoBotH = (hipY - shoulderY) * 0.60;
+    const armTopY = shoulderY - torsoTopH*0.15;
+    let s = '';
+    s += `<rect x="${cx-legGap/2-legW}" y="${legsStartY}" width="${legW}" height="${legsH}" rx="${legW/2}" fill="url(#cpBody-${uid})"/>`;
+    s += `<rect x="${cx+legGap/2}" y="${legsStartY}" width="${legW}" height="${legsH}" rx="${legW/2}" fill="url(#cpBody-${uid})"/>`;
+    if(!isM){
+      s += `<path d="M ${cx-waistW/2-3} ${hipY-6}
+              L ${cx+waistW/2+3} ${hipY-6}
+              L ${cx+skirtFlareW/2} ${hipY+30}
+              Q ${cx+skirtFlareW/2-6} ${hipY+36} ${cx+skirtFlareW/2-14} ${hipY+34}
+              L ${cx-skirtFlareW/2+14} ${hipY+34}
+              Q ${cx-skirtFlareW/2+6} ${hipY+36} ${cx-skirtFlareW/2} ${hipY+30}
+              Z" fill="url(#cpBody-${uid})"/>`;
+    }
+    s += `<rect x="${cx-waistW/2}" y="${hipY-torsoBotH}" width="${waistW}" height="${torsoBotH+8}" rx="${waistW*0.42}" fill="url(#cpBody-${uid})"/>`;
+    s += `<rect x="${cx-shoulderW/2}" y="${shoulderY}" width="${shoulderW}" height="${torsoTopH+torsoBotH*0.5}" rx="${shoulderW*0.30}" fill="url(#cpBody-${uid})"/>`;
+    s += `<rect x="${cx-shoulderW/2-armW*0.62}" y="${armTopY}" width="${armW}" height="${armLen}" rx="${armW/2}" fill="url(#cpBody-${uid})"/>`;
+    s += `<rect x="${cx+shoulderW/2-armW*0.38}" y="${armTopY}" width="${armW}" height="${armLen}" rx="${armW/2}" fill="url(#cpBody-${uid})"/>`;
+    s += `<rect x="${cx-7}" y="${neckTopY}" width="14" height="${shoulderY-neckTopY+8}" rx="6" fill="url(#cpBody-${uid})"/>`;
+    s += `<circle cx="${cx}" cy="${headR+2}" r="${headR}" fill="url(#cpBody-${uid})"/>`;
+    if(!isM){
+      s += `<path d="M ${cx+headR-4} ${headR-4}
+              Q ${cx+headR+11} ${headR} ${cx+headR+8} ${headR+15}
+              Q ${cx+headR+16} ${headR+7} ${cx+headR+9} ${headR-2}
+              Q ${cx+headR+4} ${headR-8} ${cx+headR-4} ${headR-4} Z" fill="url(#cpBody-${uid})"/>`;
+    }
+    return s;
+  }
+
+  function cpFigureSVG(sex, heightPx, wScale){
+    const isM = sex === 'hombre';
+    const uid = isM ? 'm' : 'f';
+    const topColor = isM ? cpColor('--accent', '#7ed957') : cpColor('--pink', '#ec6fa3');
+    const botColor = isM ? cpColor('--accent-dim', '#3f7a2e') : '#c2467c';
+
+    const headR = 18;
+    const shoulderW = (isM ? 62 : 54) * wScale;
+    const waistW = (isM ? 40 : 34) * wScale;
+    const skirtFlareW = 70 * wScale;
+    const armW = 15.5 * Math.min(wScale, 1.28);
+    const legW = 18 * Math.min(wScale, 1.28);
+    const legGap = 7;
+    const torsoH = 70;
+    const shoulderY = headR*2 + 6;
+    const hipY = shoulderY + torsoH;
+    const armLen = torsoH * 0.92;
+    const legsStartY = !isM ? hipY + 22 : hipY - 6;
+    const legH = Math.max(66, heightPx - (hipY + 10));
+    const feetY = legsStartY + legH;
+    const legsH = feetY - legsStartY;
+    const totalW = Math.max(150, shoulderW + 40, skirtFlareW + 16);
+    const totalH = feetY + 34;
+    const cx = totalW/2;
+
+    const body = cpBodyShapes(uid, cx, headR, shoulderY, shoulderW, waistW, hipY, legsStartY, legsH, legW, legGap, armLen, armW, isM, skirtFlareW);
+
+    return `
+    <svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="cpBody-${uid}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="${topColor}"/>
+          <stop offset="100%" stop-color="${botColor}"/>
+        </linearGradient>
+      </defs>
+      ${body}
+      <circle cx="${cx-6.5}" cy="${headR+1}" r="2.2" fill="white"/>
+      <circle cx="${cx+6.5}" cy="${headR+1}" r="2.2" fill="white"/>
+      <path d="M ${cx-7.5} ${headR+7} Q ${cx} ${headR+14} ${cx+7.5} ${headR+7} Q ${cx} ${headR+10} ${cx-7.5} ${headR+7} Z" fill="white"/>
+    </svg>`;
+  }
+
+  const cpFigureSvgEl = document.getElementById('cpFigureSvg');
+  const cpHeightReadoutEl = document.getElementById('cpHeightReadout');
+  const cpWeightReadoutEl = document.getElementById('cpWeightReadout');
+
+  function cpRenderFigure(){
+    if(!cpFigureSvgEl) return;
+    const px = heightCmToPx(cpHeightCm);
+    const wScale = weightKgToScale(cpWeightKg);
+    cpFigureSvgEl.innerHTML = cpFigureSVG(cpSex, px, wScale);
+    cpHeightReadoutEl.innerHTML = unitHeight === 'cm'
+      ? Math.round(cpHeightCm) + '<small>cm</small>'
+      : cmToFtIn(cpHeightCm) + '<small>ft/in</small>';
+    cpWeightReadoutEl.innerHTML = unitWeight === 'kg'
+      ? Math.round(cpWeightKg) + '<small>kg</small>'
+      : Math.round(kgToLbRaw(cpWeightKg)) + '<small>lb</small>';
+  }
+
+  // ---------- escribe en los inputs reales que usa el generador ----------
+  function cpPushHeightToForm(){
+    if(unitHeight === 'ft'){
+      const totalIn = cpHeightCm / 2.54;
+      let ft = Math.floor(totalIn / 12);
+      let inch = Math.round(totalIn - ft*12);
+      if(inch === 12){ ft += 1; inch = 0; }
+      if(alturaFtEl){ alturaFtEl.value = ft; fireEvents(alturaFtEl); }
+      if(alturaInEl){ alturaInEl.value = inch; fireEvents(alturaInEl); }
+    } else {
+      alturaInputEl.value = Math.round(cpHeightCm);
+      fireEvents(alturaInputEl);
+    }
+  }
+  function cpPushWeightToForm(){
+    pesoInputEl.value = unitWeight === 'lb'
+      ? Math.round(kgToLbRaw(cpWeightKg))
+      : Math.round(cpWeightKg * 10) / 10;
+    fireEvents(pesoInputEl);
+  }
+  function cpPushAgeToForm(){
+    edadInputEl.value = cpAge;
+    fireEvents(edadInputEl);
+  }
+
+  // ---------- slider vertical: altura ----------
+  const cpHeightTrack = document.getElementById('cpHeightTrack');
+  const cpHeightHandle = document.getElementById('cpHeightHandle');
+  const cpHeightFill = document.getElementById('cpHeightFill');
+
+  function cpHeightTFromCm(cm){ return (cm - MIN_H_CM) / (MAX_H_CM - MIN_H_CM); }
+  function cpPositionHeightHandle(t){
+    cpHeightHandle.style.bottom = (t*100) + '%';
+    cpHeightFill.style.height = (t*100) + '%';
+  }
+  function cpSetHeightFromClientY(clientY){
+    const rect = cpHeightTrack.getBoundingClientRect();
+    let t = 1 - (clientY - rect.top) / rect.height;
+    t = Math.max(0, Math.min(1, t));
+    cpHeightCm = Math.round(MIN_H_CM + t * (MAX_H_CM - MIN_H_CM));
+    cpPositionHeightHandle(t);
+    cpPushHeightToForm();
+    cpRenderFigure();
+  }
+  let cpHeightDragging = false;
+  cpHeightHandle.addEventListener('pointerdown', (e)=>{ cpHeightDragging=true; cpHeightHandle.setPointerCapture(e.pointerId); e.preventDefault(); });
+  window.addEventListener('pointermove', (e)=>{ if(cpHeightDragging){ cpSetHeightFromClientY(e.clientY); e.preventDefault(); } }, {passive:false});
+  window.addEventListener('pointerup', ()=>{ cpHeightDragging=false; });
+  cpHeightTrack.addEventListener('pointerdown', (e)=>{ cpHeightDragging=true; cpSetHeightFromClientY(e.clientY); e.preventDefault(); });
+
+  // ---------- slider horizontal: peso (snap exacto a kg o lb enteros, sin saltos) ----------
+  const cpWeightTrack = document.getElementById('cpWeightTrack');
+  const cpWeightHandle = document.getElementById('cpWeightHandle');
+  const cpWeightFill = document.getElementById('cpWeightFill');
+
+  function cpWeightKgFromT(t){
+    if(unitWeight === 'kg'){
+      return Math.round(MIN_W_KG + t * (MAX_W_KG - MIN_W_KG));
+    }
+    const lbVal = Math.round(MIN_W_LB + t * (MAX_W_LB - MIN_W_LB));
+    return lbToKg(lbVal);
+  }
+  function cpWeightTFromKg(kg){ return (kg - MIN_W_KG) / (MAX_W_KG - MIN_W_KG); }
+  function cpPositionWeightHandle(t){
+    cpWeightHandle.style.left = (t*100) + '%';
+    cpWeightFill.style.width = (t*100) + '%';
+  }
+  function cpSetWeightFromClientX(clientX){
+    const rect = cpWeightTrack.getBoundingClientRect();
+    let t = (clientX - rect.left) / rect.width;
+    t = Math.max(0, Math.min(1, t));
+    cpWeightKg = cpWeightKgFromT(t);
+    cpPositionWeightHandle(t);
+    cpPushWeightToForm();
+    cpRenderFigure();
+  }
+  let cpWeightDragging = false;
+  cpWeightHandle.addEventListener('pointerdown', (e)=>{ cpWeightDragging=true; cpWeightHandle.setPointerCapture(e.pointerId); e.preventDefault(); });
+  window.addEventListener('pointermove', (e)=>{ if(cpWeightDragging){ cpSetWeightFromClientX(e.clientX); e.preventDefault(); } }, {passive:false});
+  window.addEventListener('pointerup', ()=>{ cpWeightDragging=false; });
+  cpWeightTrack.addEventListener('pointerdown', (e)=>{ cpWeightDragging=true; cpSetWeightFromClientX(e.clientX); e.preventDefault(); });
+
+  // Cuando se pulsan los botones REALES de unidad (kg/lb, cm/ft) ya reubicados
+  // arriba, la lógica original convierte el valor en el input; aquí solo
+  // releemos ese valor ya convertido para resincronizar el slider y la figura.
+  if(pesoUnitSwitchEl){
+    pesoUnitSwitchEl.querySelectorAll('.unit-opt').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const t = cpWeightTFromKg(cpWeightKg);
+        cpPositionWeightHandle(t);
+        cpRenderFigure();
+      });
+    });
+  }
+  if(alturaUnitSwitchEl){
+    alturaUnitSwitchEl.querySelectorAll('.unit-opt').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const t = cpHeightTFromCm(cpHeightCm);
+        cpPositionHeightHandle(t);
+        cpRenderFigure();
+      });
+    });
+  }
+
+  // ---------- regla horizontal: edad ----------
+  const cpAgeTrack = document.getElementById('cpAgeTrack');
+  const cpAgeHandle = document.getElementById('cpAgeHandle');
+  const cpAgeTicks = document.getElementById('cpAgeTicks');
+  const cpAgeValueEl = document.getElementById('cpAgeValue');
+
+  function cpBuildAgeTicks(){
+    let html = '';
+    for(let a = MIN_AGE; a <= MAX_AGE; a++){
+      const t = (a - MIN_AGE) / (MAX_AGE - MIN_AGE);
+      const isMajor = a % 10 === 0;
+      html += `<div class="cp-age-tick${isMajor?' major':''}" style="left:${t*100}%; height:${isMajor?'100%':'55%'};"></div>`;
+      if(isMajor) html += `<div class="cp-age-tick-label" style="left:${t*100}%;">${a}</div>`;
+    }
+    cpAgeTicks.innerHTML = html;
+  }
+  cpBuildAgeTicks();
+
+  let cpAgeGrowTimeout = null;
+  function cpSetAgeFromT(t, isDragging){
+    t = Math.max(0, Math.min(1, t));
+    cpAge = Math.round(MIN_AGE + t * (MAX_AGE - MIN_AGE));
+    cpAgeHandle.style.left = (t*100) + '%';
+    cpAgeValueEl.textContent = cpAge;
+    cpPushAgeToForm();
+    if(isDragging){
+      cpAgeValueEl.classList.add('grow');
+      clearTimeout(cpAgeGrowTimeout);
+      cpAgeGrowTimeout = setTimeout(()=> cpAgeValueEl.classList.remove('grow'), 180);
+    }
+  }
+  function cpSetAgeFromClientX(clientX, isDragging){
+    const rect = cpAgeTrack.getBoundingClientRect();
+    const t = (clientX - rect.left) / rect.width;
+    cpSetAgeFromT(t, isDragging);
+  }
+  let cpAgeDragging = false;
+  cpAgeHandle.addEventListener('pointerdown', (e)=>{ cpAgeDragging=true; cpAgeHandle.setPointerCapture(e.pointerId); e.preventDefault(); });
+  window.addEventListener('pointermove', (e)=>{ if(cpAgeDragging){ cpSetAgeFromClientX(e.clientX, true); e.preventDefault(); } }, {passive:false});
+  window.addEventListener('pointerup', ()=>{ if(cpAgeDragging){ cpAgeDragging=false; cpAgeValueEl.classList.remove('grow'); } });
+  cpAgeTrack.addEventListener('pointerdown', (e)=>{ cpAgeDragging=true; cpSetAgeFromClientX(e.clientX, true); e.preventDefault(); });
+
+  // ---------- bloquea el scroll de la página mientras se arrastra cualquier slider ----------
+  document.body.addEventListener('touchmove', (e)=>{
+    if(cpHeightDragging || cpWeightDragging || cpAgeDragging) e.preventDefault();
+  }, {passive:false});
+
+  // ---------- toggle de sexo (avatar grande) <-> segmentado nativo #sexoSeg ----------
+  const cpSexBtns = document.querySelectorAll('#cpSexToggle .cp-sex-btn');
+  cpSexBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const val = btn.dataset.sex;
+      cpSexBtns.forEach(b=>b.classList.toggle('active', b===btn));
+      const otroLinkEl2 = document.getElementById('cpOtroLink');
+      if(otroLinkEl2) otroLinkEl2.classList.remove('active');
+      const nativeBtn = document.querySelector('#sexoSeg .seg-btn[data-val="'+val+'"]');
+      if(nativeBtn) nativeBtn.click(); // dispara la lógica original (embarazo, etc.)
+      cpSex = val;
+      cpRenderFigure();
+    });
+  });
+  // Si el usuario elige "Otro" (u otra opción) desde el control nativo,
+  // reflejarlo aquí: se apaga el resaltado de hombre/mujer del avatar.
+  document.querySelectorAll('#sexoSeg .seg-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const val = btn.dataset.val;
+      if(val === 'hombre' || val === 'mujer'){
+        cpSexBtns.forEach(b=>b.classList.toggle('active', b.dataset.sex===val));
+        cpSex = val;
+      } else {
+        cpSexBtns.forEach(b=>b.classList.remove('active'));
+      }
+      const otroLinkEl = document.getElementById('cpOtroLink');
+      if(otroLinkEl) otroLinkEl.classList.toggle('active', val === 'otro');
+      cpRenderFigure();
+    });
+  });
+  const cpOtroLinkEl = document.getElementById('cpOtroLink');
+  if(cpOtroLinkEl){
+    cpOtroLinkEl.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const nativeOtroBtn = document.querySelector('#sexoSeg .seg-btn[data-val="otro"]');
+      if(nativeOtroBtn) nativeOtroBtn.click();
+    });
+  }
+
+  // ---------- estado inicial ----------
+  cpPositionHeightHandle(cpHeightTFromCm(cpHeightCm));
+  cpPositionWeightHandle(cpWeightTFromKg(cpWeightKg));
+  cpSetAgeFromT((cpAge - MIN_AGE) / (MAX_AGE - MIN_AGE), false);
+  cpPushHeightToForm();
+  cpPushWeightToForm();
+  cpPushAgeToForm();
+  cpRenderFigure();
+
+  // Si cambia el tema (día/noche), el degradado de la figura usa
+  // var(--accent)/var(--pink) vía getComputedStyle, así que re-pintamos
+  // el SVG para que tome el color correcto del tema activo.
+  const cpThemeBtn = document.getElementById('themeToggle');
+  if(cpThemeBtn) cpThemeBtn.addEventListener('click', ()=> setTimeout(cpRenderFigure, 0));
+})();
 
 try{ console.log("COME PRO build", window.COME_PRO_BUILD); }catch(e){}
 </script>
