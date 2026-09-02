@@ -420,7 +420,10 @@
   .cp-sway{ height:100%; display:flex; align-items:flex-end; }
   #cpFigureSvg{ height:100%; width:100%; display:block; overflow:hidden; position:relative; }
   #cpAvatarCanvas{ display:none; }
-  #cpAvatar3D{ width:100%; height:100%; display:block; touch-action:none; }
+  #cpAvatar3D{ width:100%; height:100%; display:block; touch-action:none; position:absolute; inset:0; z-index:1; }
+  #cpFigureSvg{ position:relative; min-height:180px; }
+  .cp-avatar-loading{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; z-index:3; pointer-events:none; font:600 11px Inter,sans-serif; color:var(--muted); opacity:.7; }
+  .cp-avatar-loading.is-hidden{display:none;}
   .cp-avatar-glow{ position:absolute; inset:8% 12% 3%; pointer-events:none; border-radius:50%; background:radial-gradient(ellipse at center, rgba(255,255,255,.72), rgba(255,255,255,0) 68%); }
   [data-theme="dark"] .cp-avatar-glow{ background:radial-gradient(ellipse at center, rgba(255,255,255,.06), rgba(255,255,255,0) 68%); }
 
@@ -656,7 +659,7 @@
                   <div class="cp-readout cp-readout-left" id="cpHeightReadout"></div>
                   <div class="cp-readout cp-readout-right" id="cpWeightReadout"></div>
                   <div class="cp-ground"></div>
-                  <div class="cp-figure-anchor"><div class="cp-breathe"><div class="cp-sway" id="cpFigureSvg"><div class="cp-avatar-glow"></div><canvas id="cpAvatar3D" aria-label="Avatar corporal 3D interactivo"></canvas></div></div></div>
+                  <div class="cp-figure-anchor"><div class="cp-breathe"><div class="cp-sway" id="cpFigureSvg"><div class="cp-avatar-glow"></div><canvas id="cpAvatar3D" aria-label="Avatar corporal 3D interactivo"></canvas><div class="cp-avatar-loading" id="cpAvatarLoading">Cargando tu cuerpo…</div></div></div></div>
                 </div>
                 <div class="cp-weight-rail">
                   <div class="cp-rail-top">
@@ -9670,7 +9673,7 @@ try{ console.log("COME PRO build", window.COME_PRO_BUILD); }catch(e){}
 import * as THREE from 'three';
 import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/loaders/GLTFLoader.js';
 (()=>{
- const host=document.getElementById('cpFigureSvg'), canvas=document.getElementById('cpAvatar3D');
+ const host=document.getElementById('cpFigureSvg'), canvas=document.getElementById('cpAvatar3D'), loading=document.getElementById('cpAvatarLoading');
  if(!host||!canvas)return;
  let renderer,scene,camera,root,model,ready=false;
  let skinMeshes=[], morphs=[], morphNames=[];
@@ -9802,7 +9805,7 @@ import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.184.0/examples/js
  function load(){
    const loader=new GLTFLoader();
    loader.load(
-     'https://three.ws/avatars/parametric-base.glb',
+     'https://raw.githubusercontent.com/nirholas/three.ws/main/public/avatars/parametric-base.glb',
      gltf=>{
        model=gltf.scene;
        root=new THREE.Group(); root.add(model); scene.add(root);
@@ -9810,11 +9813,12 @@ import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.184.0/examples/js
        collectModelData();
        buildHair(); buildShorts();
        ready=true;
+       if(loading) loading.classList.add('is-hidden');
        applyBodyShape(true);
        resize();
      },
      undefined,
-     err=>console.error('Come Pro: no se pudo cargar el avatar 3D',err)
+     err=>{ console.error('Come Pro: no se pudo cargar el avatar 3D',err); if(loading){ loading.textContent='No se pudo cargar el avatar 3D'; loading.style.opacity='.55'; } }
    );
  }
 
