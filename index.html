@@ -9668,203 +9668,123 @@ Promise.resolve(INFLUENCER_READY).catch(function(){ return null; });
 
 try{ console.log("COME PRO build", window.COME_PRO_BUILD); }catch(e){}
 </script>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}</script>
-<script type="module">
-import * as THREE from 'three';
-import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/loaders/GLTFLoader.js';
-(()=>{
- const host=document.getElementById('cpFigureSvg'), canvas=document.getElementById('cpAvatar3D'), loading=document.getElementById('cpAvatarLoading');
- if(!host||!canvas)return;
- let renderer,scene,camera,root,model,ready=false;
- let skinMeshes=[], morphs=[], morphNames=[];
- let hairGroup, shortsGroup;
- let targetHeight=170,targetWeight=70,currentHeight=170,currentWeight=70;
- const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
- const lerp=(a,b,t)=>a+(b-a)*t;
- const state=()=>window.__cpAvatarState||{sex:'hombre',height:170,weight:70,age:27};
- const bones={};
+<script>
+/* COME PRO — Avatar 3D autocontenido (WebGL, sin SVG y sin dependencias externas) */
+(function(){
+  const canvas=document.getElementById('cpAvatar3D');
+  const host=document.getElementById('cpFigureSvg');
+  const loading=document.getElementById('cpAvatarLoading');
+  if(!canvas||!host) return;
+  const gl=canvas.getContext('webgl',{alpha:true,antialias:true,premultipliedAlpha:true});
+  if(!gl){ if(loading) loading.textContent='Tu navegador no permite WebGL'; return; }
 
- function resize(){
-   if(!renderer)return;
-   const w=Math.max(150,host.clientWidth), h=Math.max(220,host.clientHeight);
-   renderer.setSize(w,h,false);
-   camera.aspect=w/h; camera.updateProjectionMatrix();
- }
+  const VS=`
+    attribute vec3 aPos; attribute vec3 aNor;
+    uniform mat4 uMVP; uniform mat4 uModel;
+    varying vec3 vN; varying vec3 vP;
+    void main(){
+      vec4 wp=uModel*vec4(aPos,1.0); vP=wp.xyz;
+      vN=normalize(mat3(uModel)*aNor);
+      gl_Position=uMVP*vec4(aPos,1.0);
+    }`;
+  const FS=`
+    precision mediump float;
+    uniform vec3 uColor; varying vec3 vN; varying vec3 vP;
+    void main(){
+      vec3 n=normalize(vN);
+      vec3 l1=normalize(vec3(-0.45,0.9,0.65));
+      vec3 l2=normalize(vec3(0.7,0.25,0.25));
+      float d=max(dot(n,l1),0.0)*0.72 + max(dot(n,l2),0.0)*0.18 + 0.22;
+      float rim=pow(1.0-max(dot(n,normalize(vec3(0.0,0.05,1.0))),0.0),2.0)*0.12;
+      gl_FragColor=vec4(uColor*(d+rim),1.0);
+    }`;
+  function shader(type,src){const sh=gl.createShader(type);gl.shaderSource(sh,src);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(sh));return sh;}
+  let prog; try{prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,VS));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,FS));gl.linkProgram(prog);if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));}catch(e){if(loading)loading.textContent='No se pudo iniciar el avatar 3D';console.error(e);return;}
+  gl.useProgram(prog);
+  const loc={pos:gl.getAttribLocation(prog,'aPos'),nor:gl.getAttribLocation(prog,'aNor'),mvp:gl.getUniformLocation(prog,'uMVP'),model:gl.getUniformLocation(prog,'uModel'),color:gl.getUniformLocation(prog,'uColor')};
 
- function findMorph(rx){
-   const hit=morphs.find(x=>rx.some(r=>r.test(x.name)));
-   return hit||null;
- }
- function setMorph(rx,value){
-   const q=findMorph(rx); if(q) q.mesh.morphTargetInfluences[q.index]=value;
- }
- function getBodyBounds(){
-   if(!model)return null;
-   return new THREE.Box3().setFromObject(model);
- }
+  function sphere(lat=20,lon=28){
+    const p=[],n=[],idx=[];
+    for(let y=0;y<=lat;y++){const v=y/lat,th=v*Math.PI,st=Math.sin(th),ct=Math.cos(th);for(let x=0;x<=lon;x++){const u=x/lon,ph=u*Math.PI*2,sp=Math.sin(ph),cp=Math.cos(ph);const nx=st*cp,ny=ct,nz=st*sp;p.push(nx,ny,nz);n.push(nx,ny,nz);}}
+    for(let y=0;y<lat;y++)for(let x=0;x<lon;x++){const a=y*(lon+1)+x,b=a+lon+1;idx.push(a,b,a+1,b,b+1,a+1);} return mesh(p,n,idx);
+  }
+  function cylinder(seg=28){
+    const p=[],n=[],idx=[];
+    for(let y=0;y<=1;y++){const yy=y-.5;for(let i=0;i<=seg;i++){const a=i/seg*Math.PI*2,c=Math.cos(a),s=Math.sin(a);p.push(c,yy,s);n.push(c,0,s);}}
+    for(let i=0;i<seg;i++){const a=i,b=i+seg+1;idx.push(a,b,a+1,b,b+1,a+1);} return mesh(p,n,idx);
+  }
+  function mesh(p,n,idx){const vao={};vao.pb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vao.pb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(p),gl.STATIC_DRAW);vao.nb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vao.nb);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(n),gl.STATIC_DRAW);vao.ib=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,vao.ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(idx),gl.STATIC_DRAW);vao.count=idx.length;return vao;}
+  const S=sphere(), C=cylinder();
 
- function applyBodyShape(immediate=false){
-   if(!model)return;
-   const st=state();
-   targetHeight=+st.height||170;
-   targetWeight=+st.weight||70;
-   currentHeight=immediate?targetHeight:lerp(currentHeight,targetHeight,.13);
-   currentWeight=immediate?targetWeight:lerp(currentWeight,targetWeight,.13);
-   const male=st.sex==='hombre', female=st.sex==='mujer';
+  const M={
+    I:()=>[1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
+    mul:(a,b)=>{const o=new Array(16).fill(0);for(let r=0;r<4;r++)for(let c=0;c<4;c++)for(let k=0;k<4;k++)o[c*4+r]+=a[k*4+r]*b[c*4+k];return o;},
+    T:(x,y,z)=>[1,0,0,0,0,1,0,0,0,0,1,0,x,y,z,1],
+    S:(x,y,z)=>[x,0,0,0,0,y,0,0,0,0,z,0,0,0,0,1],
+    Rx:a=>{const c=Math.cos(a),s=Math.sin(a);return [1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1]},
+    Rz:a=>{const c=Math.cos(a),s=Math.sin(a);return [c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1]},
+    persp:(fov,asp,n,f)=>{const t=1/Math.tan(fov/2),q=1/(n-f);return [t/asp,0,0,0,0,t,0,0,0,0,(f+n)*q,-1,0,0,2*f*n*q,0]},
+    look:(eye,target,up)=>{let z=[eye[0]-target[0],eye[1]-target[1],eye[2]-target[2]],zl=Math.hypot(...z);z=z.map(v=>v/zl);let x=[up[1]*z[2]-up[2]*z[1],up[2]*z[0]-up[0]*z[2],up[0]*z[1]-up[1]*z[0]],xl=Math.hypot(...x);x=x.map(v=>v/xl);let y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]];return [x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-(x[0]*eye[0]+x[1]*eye[1]+x[2]*eye[2]),-(y[0]*eye[0]+y[1]*eye[1]+y[2]*eye[2]),-(z[0]*eye[0]+z[1]*eye[1]+z[2]*eye[2]),1]}
+  };
+  function bind(m){gl.bindBuffer(gl.ARRAY_BUFFER,m.pb);gl.enableVertexAttribArray(loc.pos);gl.vertexAttribPointer(loc.pos,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ARRAY_BUFFER,m.nb);gl.enableVertexAttribArray(loc.nor);gl.vertexAttribPointer(loc.nor,3,gl.FLOAT,false,0,0);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.ib);}
+  function draw(mesh,model,color,vp){bind(mesh);gl.uniformMatrix4fv(loc.model,false,new Float32Array(model));gl.uniformMatrix4fv(loc.mvp,false,new Float32Array(M.mul(vp,model)));gl.uniform3fv(loc.color,new Float32Array(color));gl.drawElements(gl.TRIANGLES,mesh.count,gl.UNSIGNED_SHORT,0);}
+  const skin=[0.69,0.43,0.30], skinHi=[0.76,0.49,0.34], dark=[0.045,0.05,0.06], hair=[0.025,0.02,0.018];
+  function part(mesh,x,y,z,sx,sy,sz,color,vp,rz=0,rx=0){let m=M.mul(M.T(x,y,z),M.mul(M.Rz(rz),M.mul(M.Rx(rx),M.S(sx,sy,sz))));draw(mesh,m,color,vp);}
 
-   // Morphs from the parametric humanoid. Unknown names are simply ignored.
-   setMorph([/gender/i], male?1:female?-1:0);
-   setMorph([/weight/i], clamp((currentWeight-72)/42,-1,1));
-   setMorph([/muscle/i], male?0.30:female?0.08:0);
-   setMorph([/height/i], clamp((currentHeight-170)/45,-1,1));
-   setMorph([/shoulder/i], male?0.10:0);
-   setMorph([/hip.*width|hipwidth/i], female?0.12:-0.04);
-   setMorph([/chest/i], male?0.10:female?0.08:0);
-   setMorph([/waist/i], male?0.03:0);
-   setMorph([/age/i], clamp(((+st.age||27)-27)/45,-1,1));
+  let state={sex:'Hombre',height:172,weight:70,age:27};
+  function sync(st){if(st)state=Object.assign(state,st);}
+  window.__cpAvatarRender=sync;
+  if(window.__cpAvatarState) sync(window.__cpAvatarState);
 
-   // Smooth stature change rather than a hard snap.
-   const scaleY=clamp(currentHeight/170,.78,1.22);
-   root.scale.y=lerp(root.scale.y,scaleY,.16);
-   updateAccessories();
- }
+  function resize(){const r=host.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2),w=Math.max(2,Math.round(r.width*d)),h=Math.max(2,Math.round(r.height*d));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}}
+  window.__cpAvatarResize3D=resize;
+  window.addEventListener('resize',resize,{passive:true});
 
- function updateAccessories(){
-   if(!model)return;
-   const b=getBodyBounds(); if(!b)return;
-   const size=b.getSize(new THREE.Vector3()), center=b.getCenter(new THREE.Vector3());
-   const h=size.y||1.7, s=h/1.72;
-   if(hairGroup){
-     hairGroup.position.set(center.x,b.max.y-h*.075,center.z+.025);
-     hairGroup.scale.setScalar(s);
-   }
-   if(shortsGroup){
-     shortsGroup.position.set(center.x,b.min.y+h*.405,center.z+.008);
-     shortsGroup.scale.set(s,s,s);
-   }
- }
-
- function buildHair(){
-   const mat=new THREE.MeshStandardMaterial({color:0x181513,roughness:.72,metalness:0});
-   hairGroup=new THREE.Group();
-   // Short, natural hair cap: several overlapping volumes instead of a flat sphere.
-   const cap=new THREE.Mesh(new THREE.SphereGeometry(.245,40,24,0,Math.PI*2,0,Math.PI*.53),mat);
-   cap.scale.set(1.02,.78,1.02); hairGroup.add(cap);
-   const sideL=new THREE.Mesh(new THREE.SphereGeometry(.115,24,16),mat);
-   sideL.scale.set(.55,1.15,.70); sideL.position.set(-.18,-.015,.015); hairGroup.add(sideL);
-   const sideR=sideL.clone(); sideR.position.x=.18; hairGroup.add(sideR);
-   scene.add(hairGroup);
- }
-
- function buildShorts(){
-   const mat=new THREE.MeshStandardMaterial({color:0x111414,roughness:.68,metalness:.02});
-   shortsGroup=new THREE.Group();
-   // Waist + two leg sections give a cleaner athletic-short silhouette.
-   const waist=new THREE.Mesh(new THREE.CylinderGeometry(.235,.27,.25,32),mat);
-   waist.position.y=.09; shortsGroup.add(waist);
-   for(const x of [-.095,.095]){
-     const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.22,8,20),mat);
-     leg.position.set(x,-.055,0); leg.scale.set(1.05,1,1); shortsGroup.add(leg);
-   }
-   scene.add(shortsGroup);
- }
-
- function collectModelData(){
-   morphs.length=0; morphNames.length=0;
-   model.traverse(o=>{
-     if(o.isBone) bones[o.name.toLowerCase()]=o;
-     if(o.isMesh){
-       o.castShadow=true; o.receiveShadow=true;
-       if(o.morphTargetDictionary&&o.morphTargetInfluences){
-         for(const [name,index] of Object.entries(o.morphTargetDictionary)){
-           morphNames.push(name); morphs.push({name,mesh:o,index});
-         }
-       }
-       // Keep the model's PBR materials, but make them slightly softer/warmer.
-       if(o.material){
-         const mats=Array.isArray(o.material)?o.material:[o.material];
-         mats.forEach(m=>{if('roughness' in m)m.roughness=Math.max(.45,m.roughness||.6);});
-       }
-     }
-   });
- }
-
- function animateSkeleton(t){
-   // Very subtle breathing/idle: chest expands, shoulders settle and head moves naturally.
-   const breath=Math.sin(t*.00135)*.010;
-   const chest=bones['mixamorig:spine2']||bones['spine2']||bones['chest'];
-   const spine=bones['mixamorig:spine']||bones['spine'];
-   const neck=bones['mixamorig:neck']||bones['neck'];
-   const head=bones['mixamorig:head']||bones['head'];
-   if(chest) chest.rotation.x=breath;
-   if(spine) spine.rotation.x=breath*.45;
-   if(neck) neck.rotation.z=Math.sin(t*.00062)*.004;
-   if(head) head.rotation.y=Math.sin(t*.00055)*.010;
- }
-
- function load(){
-   const loader=new GLTFLoader();
-   loader.load(
-     'https://raw.githubusercontent.com/nirholas/three.ws/main/public/avatars/parametric-base.glb',
-     gltf=>{
-       model=gltf.scene;
-       root=new THREE.Group(); root.add(model); scene.add(root);
-       model.rotation.y=Math.PI;
-       collectModelData();
-       buildHair(); buildShorts();
-       ready=true;
-       if(loading) loading.classList.add('is-hidden');
-       applyBodyShape(true);
-       resize();
-     },
-     undefined,
-     err=>{ console.error('Come Pro: no se pudo cargar el avatar 3D',err); if(loading){ loading.textContent='No se pudo cargar el avatar 3D'; loading.style.opacity='.55'; } }
-   );
- }
-
- renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
- renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
- renderer.outputColorSpace=THREE.SRGBColorSpace;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;
- renderer.toneMappingExposure=1.12;
- renderer.shadowMap.enabled=true;
- renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-
- scene=new THREE.Scene();
- camera=new THREE.PerspectiveCamera(22,1,.01,100);
- camera.position.set(0,1.00,3.45);
- camera.lookAt(0,.98,0);
-
- // Soft studio lighting similar to the reference: clean skin, soft highlights, no cartoon outline.
- scene.add(new THREE.HemisphereLight(0xffffff,0x58645c,2.0));
- const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(-2.5,3.8,3.5); key.castShadow=true; scene.add(key);
- const fill=new THREE.DirectionalLight(0xd9e7ff,1.25); fill.position.set(2.5,2.0,2.0); scene.add(fill);
- const rim=new THREE.DirectionalLight(0xb8ffae,.85); rim.position.set(1.5,3.0,-3.0); scene.add(rim);
-
- // Ground shadow makes the figure feel anchored instead of floating.
- const shadowMat=new THREE.ShadowMaterial({opacity:.13});
- const ground=new THREE.Mesh(new THREE.CircleGeometry(.72,48),shadowMat);
- ground.rotation.x=-Math.PI/2; ground.position.y=-.02; ground.receiveShadow=true; scene.add(ground);
-
- window.__cpAvatarRender=st=>{window.__cpAvatarState=st;if(ready)applyBodyShape(false)};
- window.__cpAvatarResize3D=resize;
- window.addEventListener('resize',resize);
- resize(); load();
-
- function loop(t){
-   requestAnimationFrame(loop);
-   if(ready){
-     applyBodyShape(false);
-     animateSkeleton(t);
-     // Micro idle motion; the body itself is not stretched or distorted like an SVG.
-     root.rotation.y=Math.PI+Math.sin(t*.00055)*.008;
-     root.position.y=Math.sin(t*.00125)*.002;
-     if(hairGroup)hairGroup.rotation.y=root.rotation.y-Math.PI;
-     if(shortsGroup)shortsGroup.rotation.y=root.rotation.y-Math.PI;
-   }
-   renderer.render(scene,camera);
- }
- requestAnimationFrame(loop);
+  function frame(t){
+    resize(); gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    const asp=canvas.width/canvas.height, proj=M.persp(34*Math.PI/180,asp,.1,20), view=M.look([0,0.08,5.2],[0,0.05,0],[0,1,0]), vp=M.mul(proj,view);
+    const h=Math.max(145,Math.min(205,+state.height||172)), w=Math.max(42,Math.min(150,+state.weight||70));
+    const hs=h/172, bmi=w/((h/100)*(h/100));
+    const bulk=Math.max(.78,Math.min(1.48,0.82+(bmi-18)*0.025));
+    const male=String(state.sex||'').toLowerCase().startsWith('h')||String(state.sex||'').toLowerCase().includes('male');
+    const shoulder=(male?1.0:.88)*bulk, hip=(male?.82:1.0)*bulk;
+    const breath=1+Math.sin(t*.0017)*.008;
+    const yy=Math.sin(t*.0013)*.008;
+    gl.frontFace(gl.CCW);
+    // legs
+    part(C,-.23*hip,-.92*hs+yy,0,.15*bulk,.74*hs,.15*bulk,skin,vp,.015);
+    part(C,.23*hip,-.92*hs+yy,0,.15*bulk,.74*hs,.15*bulk,skin,vp,-.015);
+    part(S,-.23*hip,-1.70*hs+yy,.03,.16*bulk,.16*hs,.26,skinHi,vp);
+    part(S,.23*hip,-1.70*hs+yy,.03,.16*bulk,.16*hs,.26,skinHi,vp);
+    // shorts pelvis
+    part(S,0,-.48*hs+yy,0,.47*hip,.31*hs,.25,dark,vp);
+    part(C,-.21*hip,-.66*hs+yy,0,.22*hip,.34*hs,.24,dark,vp);
+    part(C,.21*hip,-.66*hs+yy,0,.22*hip,.34*hs,.24,dark,vp);
+    // torso abdomen + chest
+    part(S,0,-.02*hs+yy,0,.42*bulk,.50*hs,.23*bulk,skin,vp);
+    part(S,0,.45*hs+yy,0,.54*shoulder*breath,.42*hs,.27*bulk*breath,skinHi,vp);
+    // chest definition
+    part(S,-.22*shoulder,.50*hs+yy,.22,.23*shoulder,.16*hs,.08,skinHi,vp);
+    part(S,.22*shoulder,.50*hs+yy,.22,.23*shoulder,.16*hs,.08,skinHi,vp);
+    // neck + head
+    part(C,0,.88*hs+yy,0,.14,.28*hs,.14,skin,vp);
+    part(S,0,1.22*hs+yy,.02,.28,.34*hs,.26,skinHi,vp);
+    // jaw subtle
+    part(S,0,1.08*hs+yy,.19,.23,.18*hs,.15,skin,vp);
+    // hair cap
+    part(S,0,1.43*hs+yy,-.02,.29,.13*hs,.27,hair,vp);
+    // ears
+    part(S,-.285,1.22*hs+yy,0,.045,.075*hs,.035,skin,vp); part(S,.285,1.22*hs+yy,0,.045,.075*hs,.035,skin,vp);
+    // arms
+    const armX=.63*shoulder;
+    part(C,-armX,.22*hs+yy,0,.13*bulk,.62*hs,.13*bulk,skin,vp,-.07);
+    part(C,armX,.22*hs+yy,0,.13*bulk,.62*hs,.13*bulk,skin,vp,.07);
+    part(S,-armX-.045,-.43*hs+yy,0,.14*bulk,.15*hs,.14*bulk,skinHi,vp);
+    part(S,armX+.045,-.43*hs+yy,0,.14*bulk,.15*hs,.14*bulk,skinHi,vp);
+    if(loading) loading.style.display='none';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
 })();
 </script>
 </body>
