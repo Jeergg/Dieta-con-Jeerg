@@ -416,12 +416,11 @@
   .cp-readout small{ display:block; font-family:'Inter',sans-serif; font-weight:600; font-size:10.5px; color:var(--muted); margin-top:1px; }
   .cp-readout-left{ left:12px; } .cp-readout-right{ right:12px; text-align:right; }
   .cp-figure-anchor{ position:relative; flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center; min-height:0; }
-  .cp-breathe{ animation:cpBreathe 3.6s ease-in-out infinite; height:100%; display:flex; align-items:flex-end; }
-  @keyframes cpBreathe{ 0%,100%{ transform:translateY(0) scaleY(1);} 50%{ transform:translateY(-2px) scaleY(1.012);} }
-  .cp-sway{ animation:cpSway 4.6s ease-in-out infinite; height:100%; display:flex; align-items:flex-end; }
-  @keyframes cpSway{ 0%,100%{ transform:rotate(-0.6deg);} 50%{ transform:rotate(0.6deg);} }
-  #cpFigureSvg{ height:100%; width:100%; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; position:relative; }
-  #cpAvatarCanvas{ width:100%; height:100%; display:block; touch-action:none; }
+  .cp-breathe{ height:100%; display:flex; align-items:flex-end; }
+  .cp-sway{ height:100%; display:flex; align-items:flex-end; }
+  #cpFigureSvg{ height:100%; width:100%; display:block; overflow:hidden; position:relative; }
+  #cpAvatarCanvas{ display:none; }
+  #cpAvatar3D{ width:100%; height:100%; display:block; touch-action:none; }
   .cp-avatar-glow{ position:absolute; inset:8% 12% 3%; pointer-events:none; border-radius:50%; background:radial-gradient(ellipse at center, rgba(255,255,255,.72), rgba(255,255,255,0) 68%); }
   [data-theme="dark"] .cp-avatar-glow{ background:radial-gradient(ellipse at center, rgba(255,255,255,.06), rgba(255,255,255,0) 68%); }
 
@@ -657,7 +656,7 @@
                   <div class="cp-readout cp-readout-left" id="cpHeightReadout"></div>
                   <div class="cp-readout cp-readout-right" id="cpWeightReadout"></div>
                   <div class="cp-ground"></div>
-                  <div class="cp-figure-anchor"><div class="cp-breathe"><div class="cp-sway" id="cpFigureSvg"><div class="cp-avatar-glow"></div><canvas id="cpAvatarCanvas" aria-label="Avatar corporal interactivo"></canvas></div></div></div>
+                  <div class="cp-figure-anchor"><div class="cp-breathe"><div class="cp-sway" id="cpFigureSvg"><div class="cp-avatar-glow"></div><canvas id="cpAvatar3D" aria-label="Avatar corporal 3D interactivo"></canvas></div></div></div>
                 </div>
                 <div class="cp-weight-rail">
                   <div class="cp-rail-top">
@@ -9414,128 +9413,49 @@ Promise.resolve(INFLUENCER_READY).catch(function(){ return null; });
     return ft + "'" + inch + '"';
   }
 
-  // ---------- AVATAR 2D CANVAS — estilo fitness 3D, sin SVG ni imagen externa ----------
-  // El avatar se dibuja íntegramente con Canvas para poder deformarlo en tiempo real.
-  // Altura modifica la proporción vertical; peso modifica volumen por zonas.
-  const cpAvatarCanvas = document.getElementById('cpAvatarCanvas');
-  const cpFigureSvgEl = document.getElementById('cpFigureSvg'); // contenedor legado
+  // ---------- AVATAR 3D WEBGL — sin SVG ni dibujo 2D ----------
+  // Avatar humano 3D paramétrico. La geometría se deforma con morph targets
+  // para representar altura, peso, musculatura y sexo de forma mucho más natural.
+  const cpFigureSvgEl = document.getElementById('cpFigureSvg');
   const cpHeightReadoutEl = document.getElementById('cpHeightReadout');
   const cpWeightReadoutEl = document.getElementById('cpWeightReadout');
 
   function cpClamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
-  function cpEllipse(ctx,x,y,rx,ry,fill,stroke=null,lw=1){
-    ctx.beginPath(); ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);
-    if(fill){ctx.fillStyle=fill;ctx.fill();} if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}
+  function cmToFtIn(cm){
+    const totalIn = cm / 2.54;
+    let ft = Math.floor(totalIn / 12);
+    let inch = Math.round(totalIn - ft*12);
+    if(inch === 12){ ft += 1; inch = 0; }
+    return ft + "'" + inch + '"';
   }
-  function cpRoundRect(ctx,x,y,w,h,r,fill,stroke=null,lw=1){
-    r=Math.min(r,w/2,h/2); ctx.beginPath();
-    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
-    if(fill){ctx.fillStyle=fill;ctx.fill();} if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}
-  }
-  function cpLimb(ctx,x1,y1,x2,y2,w1,w2,skin,shadow){
-    const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;
-    const g=ctx.createLinearGradient(x1+nx*w1,y1+ny*w1,x1-nx*w1,y1-ny*w1);
-    g.addColorStop(0,shadow); g.addColorStop(.28,skin); g.addColorStop(.58,skin); g.addColorStop(1,shadow);
-    ctx.beginPath(); ctx.moveTo(x1+nx*w1,y1+ny*w1); ctx.lineTo(x2+nx*w2,y2+ny*w2);
-    ctx.quadraticCurveTo(x2+nx*w2*1.05,y2+ny*w2*1.05,x2,y2);
-    ctx.quadraticCurveTo(x2-nx*w2*1.05,y2-ny*w2*1.05,x2-nx*w2,y2-ny*w2);
-    ctx.closePath(); ctx.fillStyle=g; ctx.fill();
-  }
-  function cpSkinGradient(ctx,x,w,skin,hi,shadow){
-    const g=ctx.createLinearGradient(x-w,0,x+w,0); g.addColorStop(0,shadow); g.addColorStop(.28,skin); g.addColorStop(.52,hi); g.addColorStop(.78,skin); g.addColorStop(1,shadow); return g;
-  }
-  function cpDrawMaleAvatar(ctx,W,H,weightScale,heightScale){
-    const cx=W/2;
-    const skin='#c98252', hi='#f2bd8c', sh='#8e4f31';
-    const fat=cpClamp(weightScale,0.80,1.50);
-    const h=cpClamp(heightScale,0.72,1.25);
-    const headR=23*(0.97+0.04*h);
-    const feetY=H-8, top=Math.max(10,feetY- H*.92*h);
-    const shoulderY=top+78*h, chestY=shoulderY+38*h, waistY=shoulderY+116*h, hipY=waistY+34*h;
-    const legTop=hipY+4, kneeY=legTop+78*h;
-    const torsoW=61*fat, shoulderW=92*(0.92+0.10*fat), waistW=43*(0.90+0.22*fat), hipW=58*(0.92+0.12*fat);
-    const armW=10*(0.88+0.22*fat), thighW=18*(0.90+0.25*fat), calfW=11*(0.90+0.22*fat);
-    // shadow on floor
-    ctx.save(); ctx.globalAlpha=.16; cpEllipse(ctx,cx,feetY-2,72*fat,9,'#7f8b83'); ctx.restore();
-    // legs
-    cpLimb(ctx,cx-18,legTop,cx-19,kneeY,thighW,13*(.9+.2*fat),skin,sh);
-    cpLimb(ctx,cx-19,kneeY,cx-21,feetY-15,13,calfW,skin,sh);
-    cpLimb(ctx,cx+18,legTop,cx+19,kneeY,thighW,13*(.9+.2*fat),skin,sh);
-    cpLimb(ctx,cx+19,kneeY,cx+21,feetY-15,13,calfW,skin,sh);
-    // shoes
-    cpRoundRect(ctx,cx-34,feetY-15,30,15,8,'#f7f7f5'); cpRoundRect(ctx,cx+4,feetY-15,30,15,8,'#f7f7f5');
-    ctx.strokeStyle='#c7cbc7';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-29,feetY-10);ctx.lineTo(cx-8,feetY-10);ctx.moveTo(cx+9,feetY-10);ctx.lineTo(cx+30,feetY-10);ctx.stroke();
-    // torso silhouette
-    const tg=cpSkinGradient(ctx,cx,shoulderW,skin,hi,sh);
-    ctx.beginPath();
-    ctx.moveTo(cx-shoulderW/2,shoulderY+2); ctx.quadraticCurveTo(cx-52*fat,chestY,cx-torsoW/2,waistY);
-    ctx.quadraticCurveTo(cx-waistW/2,hipY-8,cx-hipW/2,hipY);
-    ctx.lineTo(cx+hipW/2,hipY); ctx.quadraticCurveTo(cx+waistW/2,hipY-8,cx+torsoW/2,waistY);
-    ctx.quadraticCurveTo(cx+52*fat,chestY,cx+shoulderW/2,shoulderY+2); ctx.closePath(); ctx.fillStyle=tg;ctx.fill();
-    // chest highlights
-    cpEllipse(ctx,cx-23*fat,chestY+4,24*fat,18*fat,'rgba(255,221,187,.28)');
-    cpEllipse(ctx,cx+23*fat,chestY+4,24*fat,18*fat,'rgba(255,221,187,.22)');
-    // abs / center line
-    ctx.strokeStyle='rgba(110,58,37,.32)';ctx.lineWidth=1.7;ctx.beginPath();ctx.moveTo(cx, chestY+18);ctx.lineTo(cx,hipY-14);ctx.stroke();
-    for(let i=0;i<3;i++){ const yy=chestY+25+i*21*h; cpRoundRect(ctx,cx-16*fat,yy,12*fat,8,4,'rgba(255,221,187,.23)'); cpRoundRect(ctx,cx+4*fat,yy,12*fat,8,4,'rgba(255,221,187,.18)'); }
-    // shorts
-    const sw=hipW+10, shh=Math.max(45,55*h); cpRoundRect(ctx,cx-sw/2,hipY-2,sw,shh,13,'#171918');
-    ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,hipY+5);ctx.lineTo(cx,hipY+shh-3);ctx.stroke();
-    // arms behind/along torso
-    cpLimb(ctx,cx-shoulderW/2+4,shoulderY+15,cx-shoulderW/2-9,waistY+15,armW*1.2,armW,skin,sh);
-    cpLimb(ctx,cx+shoulderW/2-4,shoulderY+15,cx+shoulderW/2+9,waistY+15,armW*1.2,armW,skin,sh);
-    cpEllipse(ctx,cx-shoulderW/2-10,waistY+20,8*fat,10*fat,hi); cpEllipse(ctx,cx+shoulderW/2+10,waistY+20,8*fat,10*fat,hi);
-    // neck
-    cpRoundRect(ctx,cx-10,shoulderY-18,20,28,8,cpSkinGradient(ctx,cx,12,skin,hi,sh));
-    // head
-    cpEllipse(ctx,cx,top+headR,headR,headR*1.12,cpSkinGradient(ctx,cx,headR,skin,hi,sh));
-    // ears
-    cpEllipse(ctx,cx-headR-1,top+headR+2,5,8,skin);cpEllipse(ctx,cx+headR+1,top+headR+2,5,8,skin);
-    // hair
-    ctx.fillStyle='#30241f';ctx.beginPath();ctx.moveTo(cx-headR+1,top+headR-7);ctx.quadraticCurveTo(cx-headR+2,top+1,cx,top-2);ctx.quadraticCurveTo(cx+headR+2,top+2,cx+headR-1,top+headR-6);ctx.quadraticCurveTo(cx+10,top+8,cx,top+11);ctx.quadraticCurveTo(cx-11,top+7,cx-headR+1,top+headR-7);ctx.fill();
-    // face
-    ctx.fillStyle='#3b2720';cpEllipse(ctx,cx-8,top+headR+1,2.2,2.7,ctx.fillStyle);cpEllipse(ctx,cx+8,top+headR+1,2.2,2.7,ctx.fillStyle);
-    ctx.strokeStyle='rgba(80,40,25,.5)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(cx-10,top+headR-6);ctx.lineTo(cx-4,top+headR-8);ctx.moveTo(cx+4,top+headR-8);ctx.lineTo(cx+10,top+headR-6);ctx.stroke();
-    ctx.beginPath();ctx.arc(cx,top+headR+10,7,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
-    // subtle contour highlights
-    ctx.strokeStyle='rgba(255,235,210,.32)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-shoulderW/2+14,shoulderY+14);ctx.quadraticCurveTo(cx-28,chestY,cx-22,waistY-8);ctx.stroke();
-  }
-  function cpDrawFemaleAvatar(ctx,W,H,weightScale,heightScale){
-    const cx=W/2, skin='#c9855d', hi='#f3c09b', sh='#925437'; const fat=cpClamp(weightScale,.80,1.50), h=cpClamp(heightScale,.72,1.25);
-    const feetY=H-8, top=Math.max(10,feetY-H*.92*h), headR=22; const shoulderY=top+75*h, bustY=shoulderY+42*h, waistY=shoulderY+112*h, hipY=waistY+30*h, kneeY=hipY+82*h;
-    const shoulderW=78*(.94+.08*fat), waistW=38*(.9+.24*fat), hipW=66*(.94+.15*fat), armW=9*(.9+.2*fat), thighW=18*(.9+.24*fat);
-    ctx.save();ctx.globalAlpha=.16;cpEllipse(ctx,cx,feetY-2,70*fat,9,'#7f8b83');ctx.restore();
-    cpLimb(ctx,cx-17,hipY,cx-18,kneeY,thighW,12,skin,sh);cpLimb(ctx,cx-18,kneeY,cx-20,feetY-15,12,10,skin,sh);
-    cpLimb(ctx,cx+17,hipY,cx+18,kneeY,thighW,12,skin,sh);cpLimb(ctx,cx+18,kneeY,cx+20,feetY-15,12,10,skin,sh);
-    cpRoundRect(ctx,cx-33,feetY-15,29,15,8,'#f7f7f5');cpRoundRect(ctx,cx+4,feetY-15,29,15,8,'#f7f7f5');
-    const tg=cpSkinGradient(ctx,cx,shoulderW,skin,hi,sh);ctx.beginPath();ctx.moveTo(cx-shoulderW/2,shoulderY);ctx.quadraticCurveTo(cx-43,bustY,cx-waistW/2,waistY);ctx.quadraticCurveTo(cx-waistW/2,hipY-4,cx-hipW/2,hipY);ctx.lineTo(cx+hipW/2,hipY);ctx.quadraticCurveTo(cx+waistW/2,hipY-4,cx+waistW/2,waistY);ctx.quadraticCurveTo(cx+43,bustY,cx+shoulderW/2,shoulderY);ctx.closePath();ctx.fillStyle=tg;ctx.fill();
-    cpEllipse(ctx,cx-22*fat,bustY,22*fat,20*fat,'rgba(255,225,196,.28)');cpEllipse(ctx,cx+22*fat,bustY,22*fat,20*fat,'rgba(255,225,196,.22)');
-    cpLimb(ctx,cx-shoulderW/2+4,shoulderY+14,cx-shoulderW/2-7,waistY+20,armW*1.2,armW,skin,sh);cpLimb(ctx,cx+shoulderW/2-4,shoulderY+14,cx+shoulderW/2+7,waistY+20,armW*1.2,armW,skin,sh);
-    const sw=hipW+8;cpRoundRect(ctx,cx-sw/2,hipY,sw,48*h,12,'#171918');ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,hipY+3);ctx.lineTo(cx,hipY+48*h);ctx.stroke();
-    cpRoundRect(ctx,cx-9,shoulderY-17,18,28,7,cpSkinGradient(ctx,cx,12,skin,hi,sh));cpEllipse(ctx,cx,top+headR,headR,headR*1.1,cpSkinGradient(ctx,cx,headR,skin,hi,sh));
-    ctx.fillStyle='#34251f';ctx.beginPath();ctx.moveTo(cx-headR+1,top+headR-5);ctx.quadraticCurveTo(cx-headR+3,top+1,cx,top-3);ctx.quadraticCurveTo(cx+headR+4,top+3,cx+headR-1,top+headR-5);ctx.quadraticCurveTo(cx+11,top+7,cx,top+10);ctx.quadraticCurveTo(cx-11,top+7,cx-headR+1,top+headR-5);ctx.fill();
-    ctx.fillStyle='#3a2720';cpEllipse(ctx,cx-7,top+headR+1,2.1,2.6,ctx.fillStyle);cpEllipse(ctx,cx+7,top+headR+1,2.1,2.6,ctx.fillStyle);ctx.strokeStyle='rgba(80,40,25,.5)';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(cx,top+headR+10,6.5,.15*Math.PI,.85*Math.PI);ctx.stroke();
-  }
-  function cpResizeAvatarCanvas(){
-    if(!cpAvatarCanvas) return;
-    const r=cpAvatarCanvas.getBoundingClientRect(), dpr=Math.min(2,window.devicePixelRatio||1);
-    const w=Math.max(160,Math.floor(r.width)),h=Math.max(190,Math.floor(r.height));
-    cpAvatarCanvas.width=Math.floor(w*dpr);cpAvatarCanvas.height=Math.floor(h*dpr);
-    const ctx=cpAvatarCanvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,W:w,H:h};
-  }
+
+  // El módulo 3D se inicializa al final del documento. Esta función mantiene
+  // la interfaz existente sincronizada con el avatar.
+  window.__cpAvatarState = window.__cpAvatarState || {};
+  window.__cpAvatarRender = window.__cpAvatarRender || null;
+
   function cpRenderFigure(){
-    if(!cpAvatarCanvas) return;
-    const size=cpResizeAvatarCanvas();if(!size)return;const {ctx,W,H}=size;
-    ctx.clearRect(0,0,W,H);
-    const hs=heightCmToPx(cpHeightCm)/210; const ws=weightKgToScale(cpWeightKg);
-    // suelo suave
-    const rg=ctx.createRadialGradient(W/2,H*.88,5,W/2,H*.88,W*.45);rg.addColorStop(0,'rgba(120,130,120,.12)');rg.addColorStop(1,'rgba(120,130,120,0)');ctx.fillStyle=rg;ctx.fillRect(0,0,W,H);
-    if(cpSex==='mujer') cpDrawFemaleAvatar(ctx,W,H,ws,hs); else cpDrawMaleAvatar(ctx,W,H,ws,hs);
-    cpHeightReadoutEl.innerHTML=unitHeight==='cm'?Math.round(cpHeightCm)+'<small>cm</small>':cmToFtIn(cpHeightCm)+'<small>ft/in</small>';
-    cpWeightReadoutEl.innerHTML=unitWeight==='kg'?Math.round(cpWeightKg)+'<small>kg</small>':Math.round(kgToLbRaw(cpWeightKg))+'<small>lb</small>';
+    cpHeightReadoutEl.innerHTML = unitHeight==='cm'
+      ? Math.round(cpHeightCm)+'<small>cm</small>'
+      : cmToFtIn(cpHeightCm)+'<small>ft/in</small>';
+    cpWeightReadoutEl.innerHTML = unitWeight==='kg'
+      ? Math.round(cpWeightKg)+'<small>kg</small>'
+      : Math.round(kgToLbRaw(cpWeightKg))+'<small>lb</small>';
+
+    window.__cpAvatarState = {
+      sex: cpSex,
+      height: cpHeightCm,
+      weight: cpWeightKg,
+      age: cpAge
+    };
+    if(typeof window.__cpAvatarRender === 'function') window.__cpAvatarRender(window.__cpAvatarState);
   }
-  window.addEventListener('resize',()=>{ clearTimeout(window.__cpAvatarResize); window.__cpAvatarResize=setTimeout(cpRenderFigure,80); });
+  window.addEventListener('resize',()=>{
+    clearTimeout(window.__cpAvatarResize);
+    window.__cpAvatarResize=setTimeout(()=>{
+      if(typeof window.__cpAvatarResize3D === 'function') window.__cpAvatarResize3D();
+    },80);
+  });
 
   // ---------- escribe en los inputs reales que usa el generador ----------
   function cpPushHeightToForm(){
@@ -9744,6 +9664,204 @@ Promise.resolve(INFLUENCER_READY).catch(function(){ return null; });
 })();
 
 try{ console.log("COME PRO build", window.COME_PRO_BUILD); }catch(e){}
+</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/loaders/GLTFLoader.js';
+(()=>{
+ const host=document.getElementById('cpFigureSvg'), canvas=document.getElementById('cpAvatar3D');
+ if(!host||!canvas)return;
+ let renderer,scene,camera,root,model,ready=false;
+ let skinMeshes=[], morphs=[], morphNames=[];
+ let hairGroup, shortsGroup;
+ let targetHeight=170,targetWeight=70,currentHeight=170,currentWeight=70;
+ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const lerp=(a,b,t)=>a+(b-a)*t;
+ const state=()=>window.__cpAvatarState||{sex:'hombre',height:170,weight:70,age:27};
+ const bones={};
+
+ function resize(){
+   if(!renderer)return;
+   const w=Math.max(150,host.clientWidth), h=Math.max(220,host.clientHeight);
+   renderer.setSize(w,h,false);
+   camera.aspect=w/h; camera.updateProjectionMatrix();
+ }
+
+ function findMorph(rx){
+   const hit=morphs.find(x=>rx.some(r=>r.test(x.name)));
+   return hit||null;
+ }
+ function setMorph(rx,value){
+   const q=findMorph(rx); if(q) q.mesh.morphTargetInfluences[q.index]=value;
+ }
+ function getBodyBounds(){
+   if(!model)return null;
+   return new THREE.Box3().setFromObject(model);
+ }
+
+ function applyBodyShape(immediate=false){
+   if(!model)return;
+   const st=state();
+   targetHeight=+st.height||170;
+   targetWeight=+st.weight||70;
+   currentHeight=immediate?targetHeight:lerp(currentHeight,targetHeight,.13);
+   currentWeight=immediate?targetWeight:lerp(currentWeight,targetWeight,.13);
+   const male=st.sex==='hombre', female=st.sex==='mujer';
+
+   // Morphs from the parametric humanoid. Unknown names are simply ignored.
+   setMorph([/gender/i], male?1:female?-1:0);
+   setMorph([/weight/i], clamp((currentWeight-72)/42,-1,1));
+   setMorph([/muscle/i], male?0.30:female?0.08:0);
+   setMorph([/height/i], clamp((currentHeight-170)/45,-1,1));
+   setMorph([/shoulder/i], male?0.10:0);
+   setMorph([/hip.*width|hipwidth/i], female?0.12:-0.04);
+   setMorph([/chest/i], male?0.10:female?0.08:0);
+   setMorph([/waist/i], male?0.03:0);
+   setMorph([/age/i], clamp(((+st.age||27)-27)/45,-1,1));
+
+   // Smooth stature change rather than a hard snap.
+   const scaleY=clamp(currentHeight/170,.78,1.22);
+   root.scale.y=lerp(root.scale.y,scaleY,.16);
+   updateAccessories();
+ }
+
+ function updateAccessories(){
+   if(!model)return;
+   const b=getBodyBounds(); if(!b)return;
+   const size=b.getSize(new THREE.Vector3()), center=b.getCenter(new THREE.Vector3());
+   const h=size.y||1.7, s=h/1.72;
+   if(hairGroup){
+     hairGroup.position.set(center.x,b.max.y-h*.075,center.z+.025);
+     hairGroup.scale.setScalar(s);
+   }
+   if(shortsGroup){
+     shortsGroup.position.set(center.x,b.min.y+h*.405,center.z+.008);
+     shortsGroup.scale.set(s,s,s);
+   }
+ }
+
+ function buildHair(){
+   const mat=new THREE.MeshStandardMaterial({color:0x181513,roughness:.72,metalness:0});
+   hairGroup=new THREE.Group();
+   // Short, natural hair cap: several overlapping volumes instead of a flat sphere.
+   const cap=new THREE.Mesh(new THREE.SphereGeometry(.245,40,24,0,Math.PI*2,0,Math.PI*.53),mat);
+   cap.scale.set(1.02,.78,1.02); hairGroup.add(cap);
+   const sideL=new THREE.Mesh(new THREE.SphereGeometry(.115,24,16),mat);
+   sideL.scale.set(.55,1.15,.70); sideL.position.set(-.18,-.015,.015); hairGroup.add(sideL);
+   const sideR=sideL.clone(); sideR.position.x=.18; hairGroup.add(sideR);
+   scene.add(hairGroup);
+ }
+
+ function buildShorts(){
+   const mat=new THREE.MeshStandardMaterial({color:0x111414,roughness:.68,metalness:.02});
+   shortsGroup=new THREE.Group();
+   // Waist + two leg sections give a cleaner athletic-short silhouette.
+   const waist=new THREE.Mesh(new THREE.CylinderGeometry(.235,.27,.25,32),mat);
+   waist.position.y=.09; shortsGroup.add(waist);
+   for(const x of [-.095,.095]){
+     const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.105,.22,8,20),mat);
+     leg.position.set(x,-.055,0); leg.scale.set(1.05,1,1); shortsGroup.add(leg);
+   }
+   scene.add(shortsGroup);
+ }
+
+ function collectModelData(){
+   morphs.length=0; morphNames.length=0;
+   model.traverse(o=>{
+     if(o.isBone) bones[o.name.toLowerCase()]=o;
+     if(o.isMesh){
+       o.castShadow=true; o.receiveShadow=true;
+       if(o.morphTargetDictionary&&o.morphTargetInfluences){
+         for(const [name,index] of Object.entries(o.morphTargetDictionary)){
+           morphNames.push(name); morphs.push({name,mesh:o,index});
+         }
+       }
+       // Keep the model's PBR materials, but make them slightly softer/warmer.
+       if(o.material){
+         const mats=Array.isArray(o.material)?o.material:[o.material];
+         mats.forEach(m=>{if('roughness' in m)m.roughness=Math.max(.45,m.roughness||.6);});
+       }
+     }
+   });
+ }
+
+ function animateSkeleton(t){
+   // Very subtle breathing/idle: chest expands, shoulders settle and head moves naturally.
+   const breath=Math.sin(t*.00135)*.010;
+   const chest=bones['mixamorig:spine2']||bones['spine2']||bones['chest'];
+   const spine=bones['mixamorig:spine']||bones['spine'];
+   const neck=bones['mixamorig:neck']||bones['neck'];
+   const head=bones['mixamorig:head']||bones['head'];
+   if(chest) chest.rotation.x=breath;
+   if(spine) spine.rotation.x=breath*.45;
+   if(neck) neck.rotation.z=Math.sin(t*.00062)*.004;
+   if(head) head.rotation.y=Math.sin(t*.00055)*.010;
+ }
+
+ function load(){
+   const loader=new GLTFLoader();
+   loader.load(
+     'https://three.ws/avatars/parametric-base.glb',
+     gltf=>{
+       model=gltf.scene;
+       root=new THREE.Group(); root.add(model); scene.add(root);
+       model.rotation.y=Math.PI;
+       collectModelData();
+       buildHair(); buildShorts();
+       ready=true;
+       applyBodyShape(true);
+       resize();
+     },
+     undefined,
+     err=>console.error('Come Pro: no se pudo cargar el avatar 3D',err)
+   );
+ }
+
+ renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+ renderer.outputColorSpace=THREE.SRGBColorSpace;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;
+ renderer.toneMappingExposure=1.12;
+ renderer.shadowMap.enabled=true;
+ renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+
+ scene=new THREE.Scene();
+ camera=new THREE.PerspectiveCamera(22,1,.01,100);
+ camera.position.set(0,1.00,3.45);
+ camera.lookAt(0,.98,0);
+
+ // Soft studio lighting similar to the reference: clean skin, soft highlights, no cartoon outline.
+ scene.add(new THREE.HemisphereLight(0xffffff,0x58645c,2.0));
+ const key=new THREE.DirectionalLight(0xffffff,3.0); key.position.set(-2.5,3.8,3.5); key.castShadow=true; scene.add(key);
+ const fill=new THREE.DirectionalLight(0xd9e7ff,1.25); fill.position.set(2.5,2.0,2.0); scene.add(fill);
+ const rim=new THREE.DirectionalLight(0xb8ffae,.85); rim.position.set(1.5,3.0,-3.0); scene.add(rim);
+
+ // Ground shadow makes the figure feel anchored instead of floating.
+ const shadowMat=new THREE.ShadowMaterial({opacity:.13});
+ const ground=new THREE.Mesh(new THREE.CircleGeometry(.72,48),shadowMat);
+ ground.rotation.x=-Math.PI/2; ground.position.y=-.02; ground.receiveShadow=true; scene.add(ground);
+
+ window.__cpAvatarRender=st=>{window.__cpAvatarState=st;if(ready)applyBodyShape(false)};
+ window.__cpAvatarResize3D=resize;
+ window.addEventListener('resize',resize);
+ resize(); load();
+
+ function loop(t){
+   requestAnimationFrame(loop);
+   if(ready){
+     applyBodyShape(false);
+     animateSkeleton(t);
+     // Micro idle motion; the body itself is not stretched or distorted like an SVG.
+     root.rotation.y=Math.PI+Math.sin(t*.00055)*.008;
+     root.position.y=Math.sin(t*.00125)*.002;
+     if(hairGroup)hairGroup.rotation.y=root.rotation.y-Math.PI;
+     if(shortsGroup)shortsGroup.rotation.y=root.rotation.y-Math.PI;
+   }
+   renderer.render(scene,camera);
+ }
+ requestAnimationFrame(loop);
+})();
 </script>
 </body>
 </html>
