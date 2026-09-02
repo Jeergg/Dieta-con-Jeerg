@@ -420,12 +420,10 @@
   @keyframes cpBreathe{ 0%,100%{ transform:translateY(0) scaleY(1);} 50%{ transform:translateY(-2px) scaleY(1.012);} }
   .cp-sway{ animation:cpSway 4.6s ease-in-out infinite; height:100%; display:flex; align-items:flex-end; }
   @keyframes cpSway{ 0%,100%{ transform:rotate(-0.6deg);} 50%{ transform:rotate(0.6deg);} }
-  #cpFigureSvg{ height:100%; width:100%; display:flex; align-items:flex-end; justify-content:center; overflow:visible; }
-  #cpFigureSvg svg{ max-height:100%; max-width:100%; width:auto; height:auto; display:block; }
-  #cpFigureSvg{ transition:transform .12s ease-out, opacity .12s ease-out; }
-  #cpFigureSvg.is-changing{ transform:scale(1.018); opacity:.92; }
-  #cpFigureSvg svg{ transition:all .12s ease-out; transform-origin:bottom center; }
-  #cpFigureSvg svg *{ transition:all .08s linear; }
+  #cpFigureSvg{ height:100%; width:100%; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; position:relative; }
+  #cpAvatarCanvas{ width:100%; height:100%; display:block; touch-action:none; }
+  .cp-avatar-glow{ position:absolute; inset:8% 12% 3%; pointer-events:none; border-radius:50%; background:radial-gradient(ellipse at center, rgba(255,255,255,.72), rgba(255,255,255,0) 68%); }
+  [data-theme="dark"] .cp-avatar-glow{ background:radial-gradient(ellipse at center, rgba(255,255,255,.06), rgba(255,255,255,0) 68%); }
 
   .cp-rail-label{ font-size:10.5px; color:var(--muted); font-weight:700; letter-spacing:.02em; }
   .cp-unit-slot .unit-switch{ margin:0; }
@@ -659,7 +657,7 @@
                   <div class="cp-readout cp-readout-left" id="cpHeightReadout"></div>
                   <div class="cp-readout cp-readout-right" id="cpWeightReadout"></div>
                   <div class="cp-ground"></div>
-                  <div class="cp-figure-anchor"><div class="cp-breathe"><div class="cp-sway" id="cpFigureSvg"></div></div></div>
+                  <div class="cp-figure-anchor"><div class="cp-breathe"><div class="cp-sway" id="cpFigureSvg"><div class="cp-avatar-glow"></div><canvas id="cpAvatarCanvas" aria-label="Avatar corporal interactivo"></canvas></div></div></div>
                 </div>
                 <div class="cp-weight-rail">
                   <div class="cp-rail-top">
@@ -9416,203 +9414,128 @@ Promise.resolve(INFLUENCER_READY).catch(function(){ return null; });
     return ft + "'" + inch + '"';
   }
 
-  // ---------- figura SVG interactiva ----------
-  // La figura responde de forma continua a altura + peso:
-  //   • altura -> cambia la longitud total del cuerpo
-  //   • peso   -> cambia volumen, cintura, cadera, hombros, brazos y piernas
-  // La proporción no es un diagnóstico corporal: es una representación visual
-  // para hacer el formulario más intuitivo.
-  function cpBodyShapes(uid, cx, headR, shoulderY, shoulderW, waistW, hipW,
-                        hipY, legsStartY, legsH, legW, legGap, armLen, armW,
-                        isM, bustW, neckW){
-    const fill = `url(#cpBody-${uid})`;
-    const torsoH = hipY - shoulderY;
-
-    // Silueta del tronco: hombros -> cintura -> cadera.
-    // Usamos curvas en lugar de rectángulos para que el cambio de peso
-    // produzca una forma visible y natural, no solamente "ensanchar" todo.
-    const shoulderHalf = shoulderW / 2;
-    const waistHalf = waistW / 2;
-    const hipHalf = hipW / 2;
-    const chestY = shoulderY + torsoH * 0.18;
-    const waistY = shoulderY + torsoH * 0.70;
-    const bodyBottomY = hipY + (isM ? 7 : 9);
-
-    let s = '';
-
-    // Piernas: el ancho responde al peso, pero se limita para conservar
-    // proporciones creíbles en los extremos del slider.
-    const legX1 = cx - legGap/2 - legW;
-    const legX2 = cx + legGap/2;
-    const legRx = Math.max(legW * .42, 5);
-
-    s += `<path d="M ${legX1+legRx} ${legsStartY}
-                   Q ${legX1} ${legsStartY} ${legX1} ${legsStartY+legRx}
-                   L ${legX1} ${legsStartY+legsH-legRx}
-                   Q ${legX1} ${legsStartY+legsH} ${legX1+legRx} ${legsStartY+legsH}
-                   L ${legX1+legW-legRx} ${legsStartY+legsH}
-                   Q ${legX1+legW} ${legsStartY+legsH} ${legX1+legW} ${legsStartY+legsH-legRx}
-                   L ${legX1+legW} ${legsStartY+legRx}
-                   Q ${legX1+legW} ${legsStartY} ${legX1+legW-legRx} ${legsStartY} Z"
-          fill="${fill}"/>`;
-
-    s += `<path d="M ${legX2+legRx} ${legsStartY}
-                   Q ${legX2} ${legsStartY} ${legX2} ${legsStartY+legRx}
-                   L ${legX2} ${legsStartY+legsH-legRx}
-                   Q ${legX2} ${legsStartY+legsH} ${legX2+legRx} ${legsStartY+legsH}
-                   L ${legX2+legW-legRx} ${legsStartY+legsH}
-                   Q ${legX2+legW} ${legsStartY+legsH} ${legX2+legW} ${legsStartY+legsH-legRx}
-                   L ${legX2+legW} ${legsStartY+legRx}
-                   Q ${legX2+legW} ${legsStartY} ${legX2+legW-legRx} ${legsStartY} Z"
-          fill="${fill}"/>`;
-
-    // Brazos con una ligera curva hacia fuera.
-    const armTopY = shoulderY + 3;
-    const leftArmX = cx - shoulderHalf - armW * .52;
-    const rightArmX = cx + shoulderHalf - armW * .48;
-    s += `<path d="M ${leftArmX} ${armTopY}
-                   Q ${leftArmX-armW*.35} ${armTopY+armLen*.35} ${leftArmX} ${armTopY+armLen}
-                   Q ${leftArmX+armW*.05} ${armTopY+armLen+4} ${leftArmX+armW*.55} ${armTopY+armLen}
-                   L ${leftArmX+armW*.72} ${armTopY+armW}
-                   Q ${leftArmX+armW*.75} ${armTopY} ${leftArmX} ${armTopY} Z"
-          fill="${fill}"/>`;
-    s += `<path d="M ${rightArmX} ${armTopY}
-                   Q ${rightArmX+armW*.35} ${armTopY+armLen*.35} ${rightArmX} ${armTopY+armLen}
-                   Q ${rightArmX-armW*.05} ${armTopY+armLen+4} ${rightArmX-armW*.55} ${armTopY+armLen}
-                   L ${rightArmX-armW*.72} ${armTopY+armW}
-                   Q ${rightArmX-armW*.75} ${armTopY} ${rightArmX} ${armTopY} Z"
-          fill="${fill}"/>`;
-
-    // Tronco con silueta diferenciada por sexo.
-    if(isM){
-      s += `<path d="M ${cx-shoulderHalf} ${shoulderY}
-                     Q ${cx-shoulderHalf*.92} ${chestY} ${cx-waistHalf*1.05} ${waistY}
-                     Q ${cx-waistHalf*.96} ${hipY-2} ${cx-hipHalf} ${bodyBottomY}
-                     Q ${cx} ${bodyBottomY+7} ${cx+hipHalf} ${bodyBottomY}
-                     Q ${cx+waistHalf*.96} ${hipY-2} ${cx+waistHalf*1.05} ${waistY}
-                     Q ${cx+shoulderHalf*.92} ${chestY} ${cx+shoulderHalf} ${shoulderY}
-                     Q ${cx} ${shoulderY-8} ${cx-shoulderHalf} ${shoulderY} Z"
-            fill="${fill}"/>`;
-    }else{
-      // Figura femenina: hombros algo más estrechos y cadera más marcada.
-      s += `<path d="M ${cx-shoulderHalf} ${shoulderY}
-                     Q ${cx-shoulderHalf*.90} ${chestY} ${cx-waistHalf*1.03} ${waistY}
-                     Q ${cx-waistHalf*.98} ${hipY-4} ${cx-hipHalf} ${bodyBottomY}
-                     Q ${cx} ${bodyBottomY+9} ${cx+hipHalf} ${bodyBottomY}
-                     Q ${cx+waistHalf*.98} ${hipY-4} ${cx+waistHalf*1.03} ${waistY}
-                     Q ${cx+shoulderHalf*.90} ${chestY} ${cx+shoulderHalf} ${shoulderY}
-                     Q ${cx} ${shoulderY-7} ${cx-shoulderHalf} ${shoulderY} Z"
-            fill="${fill}"/>`;
-
-      // Pecho sutil para que el cambio de forma no sea solamente horizontal.
-      const bustY = shoulderY + torsoH * .30;
-      s += `<path d="M ${cx-bustW/2} ${bustY}
-                     Q ${cx-bustW*.72} ${bustY-7} ${cx} ${bustY+2}
-                     Q ${cx+bustW*.72} ${bustY-7} ${cx+bustW/2} ${bustY}
-                     Q ${cx} ${bustY+9} ${cx-bustW/2} ${bustY} Z"
-            fill="${fill}" opacity=".96"/>`;
-    }
-
-    // Cuello + cabeza.
-    s += `<rect x="${cx-neckW/2}" y="${headR*2-1}" width="${neckW}" height="${shoulderY-headR*2+9}"
-            rx="${Math.min(neckW/2,6)}" fill="${fill}"/>`;
-    s += `<circle cx="${cx}" cy="${headR+2}" r="${headR}" fill="${fill}"/>`;
-
-    if(!isM){
-      s += `<path d="M ${cx+headR-4} ${headR-4}
-                     Q ${cx+headR+11} ${headR} ${cx+headR+8} ${headR+15}
-                     Q ${cx+headR+16} ${headR+7} ${cx+headR+9} ${headR-2}
-                     Q ${cx+headR+4} ${headR-8} ${cx+headR-4} ${headR-4} Z"
-              fill="${fill}"/>`;
-    }
-
-    return s;
-  }
-
-  function cpFigureSVG(sex, heightPx, wScale){
-    const isM = sex === 'hombre';
-    const uid = isM ? 'm' : 'f';
-    const topColor = isM ? cpColor('--accent', '#7ed957') : cpColor('--pink', '#ec6fa3');
-    const botColor = isM ? cpColor('--accent-dim', '#3f7a2e') : '#c2467c';
-
-    // Normalizamos peso para que el cambio visual sea más orgánico.
-    // wScale sigue viniendo del rango 35–160 kg definido por el widget.
-    const volume = Math.max(0, Math.min(1, (wScale - MIN_W_SCALE) / (MAX_W_SCALE - MIN_W_SCALE)));
-
-    // Altura: la cabeza y el tronco se mantienen relativamente estables;
-    // lo que principalmente crece son las piernas, dando una percepción
-    // más clara de "persona alta/baja".
-    const headR = 18;
-    const torsoH = 70 + volume * 3.5;
-    const shoulderW = (isM ? 58 : 53) * (0.94 + volume * 0.20);
-    const waistW = (isM ? 35 : 31) * (0.90 + volume * 0.42);
-    const hipW = (isM ? 42 : 45) * (0.93 + volume * 0.32);
-    const bustW = (isM ? 0 : 30 * (0.92 + volume * 0.16));
-    const neckW = 12 * (0.98 + volume * 0.10);
-    const armW = 12.5 * (0.90 + volume * 0.32);
-    const legW = 15.5 * (0.90 + volume * 0.30);
-    const legGap = 7;
-
-    const shoulderY = headR*2 + 6;
-    const hipY = shoulderY + torsoH;
-    const armLen = torsoH * 0.92;
-    const legsStartY = !isM ? hipY + 18 : hipY - 2;
-    const legH = Math.max(66, heightPx - (hipY + 10));
-    const feetY = legsStartY + legH;
-    const legsH = feetY - legsStartY;
-
-    const totalW = Math.max(150, shoulderW + armW*2 + 34, hipW + 42);
-    const totalH = feetY + 34;
-    const cx = totalW/2;
-
-    const body = cpBodyShapes(
-      uid, cx, headR, shoulderY, shoulderW, waistW, hipW, hipY,
-      legsStartY, legsH, legW, legGap, armLen, armW,
-      isM, bustW, neckW
-    );
-
-    return `
-    <svg width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}"
-         xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <defs>
-        <linearGradient id="cpBody-${uid}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${topColor}"/>
-          <stop offset="100%" stop-color="${botColor}"/>
-        </linearGradient>
-      </defs>
-      ${body}
-      <circle cx="${cx-6.5}" cy="${headR+1}" r="2.2" fill="white"/>
-      <circle cx="${cx+6.5}" cy="${headR+1}" r="2.2" fill="white"/>
-      <path d="M ${cx-7.5} ${headR+7}
-               Q ${cx} ${headR+14} ${cx+7.5} ${headR+7}
-               Q ${cx} ${headR+10} ${cx-7.5} ${headR+7} Z" fill="white"/>
-    </svg>`;
-  }
-
-  const cpFigureSvgEl = document.getElementById('cpFigureSvg');
+  // ---------- AVATAR 2D CANVAS — estilo fitness 3D, sin SVG ni imagen externa ----------
+  // El avatar se dibuja íntegramente con Canvas para poder deformarlo en tiempo real.
+  // Altura modifica la proporción vertical; peso modifica volumen por zonas.
+  const cpAvatarCanvas = document.getElementById('cpAvatarCanvas');
+  const cpFigureSvgEl = document.getElementById('cpFigureSvg'); // contenedor legado
   const cpHeightReadoutEl = document.getElementById('cpHeightReadout');
   const cpWeightReadoutEl = document.getElementById('cpWeightReadout');
 
-  let cpFigureChangeTimer = null;
-  function cpRenderFigure(){
-    if(!cpFigureSvgEl) return;
-    const px = heightCmToPx(cpHeightCm);
-    const wScale = weightKgToScale(cpWeightKg);
-
-    cpFigureSvgEl.classList.remove('is-changing');
-    void cpFigureSvgEl.offsetWidth;
-    cpFigureSvgEl.classList.add('is-changing');
-    clearTimeout(cpFigureChangeTimer);
-    cpFigureChangeTimer = setTimeout(()=>cpFigureSvgEl.classList.remove('is-changing'), 140);
-
-    cpFigureSvgEl.innerHTML = cpFigureSVG(cpSex, px, wScale);
-    cpHeightReadoutEl.innerHTML = unitHeight === 'cm'
-      ? Math.round(cpHeightCm) + '<small>cm</small>'
-      : cmToFtIn(cpHeightCm) + '<small>ft/in</small>';
-    cpWeightReadoutEl.innerHTML = unitWeight === 'kg'
-      ? Math.round(cpWeightKg) + '<small>kg</small>'
-      : Math.round(kgToLbRaw(cpWeightKg)) + '<small>lb</small>';
+  function cpClamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+  function cpEllipse(ctx,x,y,rx,ry,fill,stroke=null,lw=1){
+    ctx.beginPath(); ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);
+    if(fill){ctx.fillStyle=fill;ctx.fill();} if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}
   }
+  function cpRoundRect(ctx,x,y,w,h,r,fill,stroke=null,lw=1){
+    r=Math.min(r,w/2,h/2); ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+    if(fill){ctx.fillStyle=fill;ctx.fill();} if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();}
+  }
+  function cpLimb(ctx,x1,y1,x2,y2,w1,w2,skin,shadow){
+    const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L;
+    const g=ctx.createLinearGradient(x1+nx*w1,y1+ny*w1,x1-nx*w1,y1-ny*w1);
+    g.addColorStop(0,shadow); g.addColorStop(.28,skin); g.addColorStop(.58,skin); g.addColorStop(1,shadow);
+    ctx.beginPath(); ctx.moveTo(x1+nx*w1,y1+ny*w1); ctx.lineTo(x2+nx*w2,y2+ny*w2);
+    ctx.quadraticCurveTo(x2+nx*w2*1.05,y2+ny*w2*1.05,x2,y2);
+    ctx.quadraticCurveTo(x2-nx*w2*1.05,y2-ny*w2*1.05,x2-nx*w2,y2-ny*w2);
+    ctx.closePath(); ctx.fillStyle=g; ctx.fill();
+  }
+  function cpSkinGradient(ctx,x,w,skin,hi,shadow){
+    const g=ctx.createLinearGradient(x-w,0,x+w,0); g.addColorStop(0,shadow); g.addColorStop(.28,skin); g.addColorStop(.52,hi); g.addColorStop(.78,skin); g.addColorStop(1,shadow); return g;
+  }
+  function cpDrawMaleAvatar(ctx,W,H,weightScale,heightScale){
+    const cx=W/2;
+    const skin='#c98252', hi='#f2bd8c', sh='#8e4f31';
+    const fat=cpClamp(weightScale,0.80,1.50);
+    const h=cpClamp(heightScale,0.72,1.25);
+    const headR=23*(0.97+0.04*h);
+    const feetY=H-8, top=Math.max(10,feetY- H*.92*h);
+    const shoulderY=top+78*h, chestY=shoulderY+38*h, waistY=shoulderY+116*h, hipY=waistY+34*h;
+    const legTop=hipY+4, kneeY=legTop+78*h;
+    const torsoW=61*fat, shoulderW=92*(0.92+0.10*fat), waistW=43*(0.90+0.22*fat), hipW=58*(0.92+0.12*fat);
+    const armW=10*(0.88+0.22*fat), thighW=18*(0.90+0.25*fat), calfW=11*(0.90+0.22*fat);
+    // shadow on floor
+    ctx.save(); ctx.globalAlpha=.16; cpEllipse(ctx,cx,feetY-2,72*fat,9,'#7f8b83'); ctx.restore();
+    // legs
+    cpLimb(ctx,cx-18,legTop,cx-19,kneeY,thighW,13*(.9+.2*fat),skin,sh);
+    cpLimb(ctx,cx-19,kneeY,cx-21,feetY-15,13,calfW,skin,sh);
+    cpLimb(ctx,cx+18,legTop,cx+19,kneeY,thighW,13*(.9+.2*fat),skin,sh);
+    cpLimb(ctx,cx+19,kneeY,cx+21,feetY-15,13,calfW,skin,sh);
+    // shoes
+    cpRoundRect(ctx,cx-34,feetY-15,30,15,8,'#f7f7f5'); cpRoundRect(ctx,cx+4,feetY-15,30,15,8,'#f7f7f5');
+    ctx.strokeStyle='#c7cbc7';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-29,feetY-10);ctx.lineTo(cx-8,feetY-10);ctx.moveTo(cx+9,feetY-10);ctx.lineTo(cx+30,feetY-10);ctx.stroke();
+    // torso silhouette
+    const tg=cpSkinGradient(ctx,cx,shoulderW,skin,hi,sh);
+    ctx.beginPath();
+    ctx.moveTo(cx-shoulderW/2,shoulderY+2); ctx.quadraticCurveTo(cx-52*fat,chestY,cx-torsoW/2,waistY);
+    ctx.quadraticCurveTo(cx-waistW/2,hipY-8,cx-hipW/2,hipY);
+    ctx.lineTo(cx+hipW/2,hipY); ctx.quadraticCurveTo(cx+waistW/2,hipY-8,cx+torsoW/2,waistY);
+    ctx.quadraticCurveTo(cx+52*fat,chestY,cx+shoulderW/2,shoulderY+2); ctx.closePath(); ctx.fillStyle=tg;ctx.fill();
+    // chest highlights
+    cpEllipse(ctx,cx-23*fat,chestY+4,24*fat,18*fat,'rgba(255,221,187,.28)');
+    cpEllipse(ctx,cx+23*fat,chestY+4,24*fat,18*fat,'rgba(255,221,187,.22)');
+    // abs / center line
+    ctx.strokeStyle='rgba(110,58,37,.32)';ctx.lineWidth=1.7;ctx.beginPath();ctx.moveTo(cx, chestY+18);ctx.lineTo(cx,hipY-14);ctx.stroke();
+    for(let i=0;i<3;i++){ const yy=chestY+25+i*21*h; cpRoundRect(ctx,cx-16*fat,yy,12*fat,8,4,'rgba(255,221,187,.23)'); cpRoundRect(ctx,cx+4*fat,yy,12*fat,8,4,'rgba(255,221,187,.18)'); }
+    // shorts
+    const sw=hipW+10, shh=Math.max(45,55*h); cpRoundRect(ctx,cx-sw/2,hipY-2,sw,shh,13,'#171918');
+    ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,hipY+5);ctx.lineTo(cx,hipY+shh-3);ctx.stroke();
+    // arms behind/along torso
+    cpLimb(ctx,cx-shoulderW/2+4,shoulderY+15,cx-shoulderW/2-9,waistY+15,armW*1.2,armW,skin,sh);
+    cpLimb(ctx,cx+shoulderW/2-4,shoulderY+15,cx+shoulderW/2+9,waistY+15,armW*1.2,armW,skin,sh);
+    cpEllipse(ctx,cx-shoulderW/2-10,waistY+20,8*fat,10*fat,hi); cpEllipse(ctx,cx+shoulderW/2+10,waistY+20,8*fat,10*fat,hi);
+    // neck
+    cpRoundRect(ctx,cx-10,shoulderY-18,20,28,8,cpSkinGradient(ctx,cx,12,skin,hi,sh));
+    // head
+    cpEllipse(ctx,cx,top+headR,headR,headR*1.12,cpSkinGradient(ctx,cx,headR,skin,hi,sh));
+    // ears
+    cpEllipse(ctx,cx-headR-1,top+headR+2,5,8,skin);cpEllipse(ctx,cx+headR+1,top+headR+2,5,8,skin);
+    // hair
+    ctx.fillStyle='#30241f';ctx.beginPath();ctx.moveTo(cx-headR+1,top+headR-7);ctx.quadraticCurveTo(cx-headR+2,top+1,cx,top-2);ctx.quadraticCurveTo(cx+headR+2,top+2,cx+headR-1,top+headR-6);ctx.quadraticCurveTo(cx+10,top+8,cx,top+11);ctx.quadraticCurveTo(cx-11,top+7,cx-headR+1,top+headR-7);ctx.fill();
+    // face
+    ctx.fillStyle='#3b2720';cpEllipse(ctx,cx-8,top+headR+1,2.2,2.7,ctx.fillStyle);cpEllipse(ctx,cx+8,top+headR+1,2.2,2.7,ctx.fillStyle);
+    ctx.strokeStyle='rgba(80,40,25,.5)';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(cx-10,top+headR-6);ctx.lineTo(cx-4,top+headR-8);ctx.moveTo(cx+4,top+headR-8);ctx.lineTo(cx+10,top+headR-6);ctx.stroke();
+    ctx.beginPath();ctx.arc(cx,top+headR+10,7,0.15*Math.PI,0.85*Math.PI);ctx.stroke();
+    // subtle contour highlights
+    ctx.strokeStyle='rgba(255,235,210,.32)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx-shoulderW/2+14,shoulderY+14);ctx.quadraticCurveTo(cx-28,chestY,cx-22,waistY-8);ctx.stroke();
+  }
+  function cpDrawFemaleAvatar(ctx,W,H,weightScale,heightScale){
+    const cx=W/2, skin='#c9855d', hi='#f3c09b', sh='#925437'; const fat=cpClamp(weightScale,.80,1.50), h=cpClamp(heightScale,.72,1.25);
+    const feetY=H-8, top=Math.max(10,feetY-H*.92*h), headR=22; const shoulderY=top+75*h, bustY=shoulderY+42*h, waistY=shoulderY+112*h, hipY=waistY+30*h, kneeY=hipY+82*h;
+    const shoulderW=78*(.94+.08*fat), waistW=38*(.9+.24*fat), hipW=66*(.94+.15*fat), armW=9*(.9+.2*fat), thighW=18*(.9+.24*fat);
+    ctx.save();ctx.globalAlpha=.16;cpEllipse(ctx,cx,feetY-2,70*fat,9,'#7f8b83');ctx.restore();
+    cpLimb(ctx,cx-17,hipY,cx-18,kneeY,thighW,12,skin,sh);cpLimb(ctx,cx-18,kneeY,cx-20,feetY-15,12,10,skin,sh);
+    cpLimb(ctx,cx+17,hipY,cx+18,kneeY,thighW,12,skin,sh);cpLimb(ctx,cx+18,kneeY,cx+20,feetY-15,12,10,skin,sh);
+    cpRoundRect(ctx,cx-33,feetY-15,29,15,8,'#f7f7f5');cpRoundRect(ctx,cx+4,feetY-15,29,15,8,'#f7f7f5');
+    const tg=cpSkinGradient(ctx,cx,shoulderW,skin,hi,sh);ctx.beginPath();ctx.moveTo(cx-shoulderW/2,shoulderY);ctx.quadraticCurveTo(cx-43,bustY,cx-waistW/2,waistY);ctx.quadraticCurveTo(cx-waistW/2,hipY-4,cx-hipW/2,hipY);ctx.lineTo(cx+hipW/2,hipY);ctx.quadraticCurveTo(cx+waistW/2,hipY-4,cx+waistW/2,waistY);ctx.quadraticCurveTo(cx+43,bustY,cx+shoulderW/2,shoulderY);ctx.closePath();ctx.fillStyle=tg;ctx.fill();
+    cpEllipse(ctx,cx-22*fat,bustY,22*fat,20*fat,'rgba(255,225,196,.28)');cpEllipse(ctx,cx+22*fat,bustY,22*fat,20*fat,'rgba(255,225,196,.22)');
+    cpLimb(ctx,cx-shoulderW/2+4,shoulderY+14,cx-shoulderW/2-7,waistY+20,armW*1.2,armW,skin,sh);cpLimb(ctx,cx+shoulderW/2-4,shoulderY+14,cx+shoulderW/2+7,waistY+20,armW*1.2,armW,skin,sh);
+    const sw=hipW+8;cpRoundRect(ctx,cx-sw/2,hipY,sw,48*h,12,'#171918');ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,hipY+3);ctx.lineTo(cx,hipY+48*h);ctx.stroke();
+    cpRoundRect(ctx,cx-9,shoulderY-17,18,28,7,cpSkinGradient(ctx,cx,12,skin,hi,sh));cpEllipse(ctx,cx,top+headR,headR,headR*1.1,cpSkinGradient(ctx,cx,headR,skin,hi,sh));
+    ctx.fillStyle='#34251f';ctx.beginPath();ctx.moveTo(cx-headR+1,top+headR-5);ctx.quadraticCurveTo(cx-headR+3,top+1,cx,top-3);ctx.quadraticCurveTo(cx+headR+4,top+3,cx+headR-1,top+headR-5);ctx.quadraticCurveTo(cx+11,top+7,cx,top+10);ctx.quadraticCurveTo(cx-11,top+7,cx-headR+1,top+headR-5);ctx.fill();
+    ctx.fillStyle='#3a2720';cpEllipse(ctx,cx-7,top+headR+1,2.1,2.6,ctx.fillStyle);cpEllipse(ctx,cx+7,top+headR+1,2.1,2.6,ctx.fillStyle);ctx.strokeStyle='rgba(80,40,25,.5)';ctx.lineWidth=1.1;ctx.beginPath();ctx.arc(cx,top+headR+10,6.5,.15*Math.PI,.85*Math.PI);ctx.stroke();
+  }
+  function cpResizeAvatarCanvas(){
+    if(!cpAvatarCanvas) return;
+    const r=cpAvatarCanvas.getBoundingClientRect(), dpr=Math.min(2,window.devicePixelRatio||1);
+    const w=Math.max(160,Math.floor(r.width)),h=Math.max(190,Math.floor(r.height));
+    cpAvatarCanvas.width=Math.floor(w*dpr);cpAvatarCanvas.height=Math.floor(h*dpr);
+    const ctx=cpAvatarCanvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,W:w,H:h};
+  }
+  function cpRenderFigure(){
+    if(!cpAvatarCanvas) return;
+    const size=cpResizeAvatarCanvas();if(!size)return;const {ctx,W,H}=size;
+    ctx.clearRect(0,0,W,H);
+    const hs=heightCmToPx(cpHeightCm)/210; const ws=weightKgToScale(cpWeightKg);
+    // suelo suave
+    const rg=ctx.createRadialGradient(W/2,H*.88,5,W/2,H*.88,W*.45);rg.addColorStop(0,'rgba(120,130,120,.12)');rg.addColorStop(1,'rgba(120,130,120,0)');ctx.fillStyle=rg;ctx.fillRect(0,0,W,H);
+    if(cpSex==='mujer') cpDrawFemaleAvatar(ctx,W,H,ws,hs); else cpDrawMaleAvatar(ctx,W,H,ws,hs);
+    cpHeightReadoutEl.innerHTML=unitHeight==='cm'?Math.round(cpHeightCm)+'<small>cm</small>':cmToFtIn(cpHeightCm)+'<small>ft/in</small>';
+    cpWeightReadoutEl.innerHTML=unitWeight==='kg'?Math.round(cpWeightKg)+'<small>kg</small>':Math.round(kgToLbRaw(cpWeightKg))+'<small>lb</small>';
+  }
+  window.addEventListener('resize',()=>{ clearTimeout(window.__cpAvatarResize); window.__cpAvatarResize=setTimeout(cpRenderFigure,80); });
 
   // ---------- escribe en los inputs reales que usa el generador ----------
   function cpPushHeightToForm(){
