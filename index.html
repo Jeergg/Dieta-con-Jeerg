@@ -1101,7 +1101,73 @@ body.cp-premium-ui{
 }
 </style>
 
+
+<style id="cp-ref-v3-day-night-and-target">
+/* COME PRO v3 — modo día/noche real sobre el rediseño de referencia */
+body.cp-premium-ui{transition:background .25s ease,color .25s ease;}
+body.cp-premium-ui[data-theme="light"]{
+  --ref-green:#57b934;--ref-green2:#70cf42;
+  --bg:#f4f7f3!important;--surface:#ffffff!important;--surface2:#f0f4ee!important;--card:#ffffff!important;
+  --line:#d9e1d8!important;--text:#172019!important;--muted:#6a776d!important;
+  background:radial-gradient(circle at 72% 18%,rgba(99,190,64,.08),transparent 34%),#f4f7f3!important;
+  color:#172019!important;
+}
+body.cp-premium-ui[data-theme="light"] .topbar,
+body.cp-premium-ui[data-theme="light"] .app-grid{background:transparent!important;}
+body.cp-premium-ui[data-theme="light"] .step-pane[data-step="1"]>.card,
+body.cp-premium-ui[data-theme="light"] .cp-ref-controls,
+body.cp-premium-ui[data-theme="light"] .cp-ref-body .cp-figure-well,
+body.cp-premium-ui[data-theme="light"] .card,
+body.cp-premium-ui[data-theme="light"] #summaryCol .card{
+  background:#ffffff!important;border-color:#d8e1d8!important;color:#172019!important;
+  box-shadow:0 14px 38px rgba(30,54,35,.07)!important;
+}
+body.cp-premium-ui[data-theme="light"] .card-head h3,
+body.cp-premium-ui[data-theme="light"] .cp-ref-control-title,
+body.cp-premium-ui[data-theme="light"] .cp-ref-section-title,
+body.cp-premium-ui[data-theme="light"] .cp-body-title{color:#182019!important;}
+body.cp-premium-ui[data-theme="light"] .cp-ref-subtitle,
+body.cp-premium-ui[data-theme="light"] label,
+body.cp-premium-ui[data-theme="light"] .cp-ref-minmax{color:#6e7a70!important;}
+body.cp-premium-ui[data-theme="light"] .step-pane[data-step="1"] input,
+body.cp-premium-ui[data-theme="light"] .step-pane[data-step="1"] select,
+body.cp-premium-ui[data-theme="light"] .cp-sex-btn,
+body.cp-premium-ui[data-theme="light"] .cp-ref-controls .seg-btn,
+body.cp-premium-ui[data-theme="light"] .cp-ref-unit-switch{
+  background:#f8faf7!important;border-color:#d6ded5!important;color:#1a231b!important;
+}
+body.cp-premium-ui[data-theme="light"] .cp-sex-btn.active,
+body.cp-premium-ui[data-theme="light"] .cp-ref-controls .seg-btn.active{
+  background:linear-gradient(180deg,rgba(101,199,60,.19),rgba(85,178,48,.10))!important;
+  border-color:#62bf39!important;color:#1d2b1d!important;
+}
+body.cp-premium-ui[data-theme="light"] .cp-ref-body .cp-figure-well{
+  background:radial-gradient(circle at 62% 43%,rgba(102,196,64,.14),transparent 38%),linear-gradient(180deg,#f9fbf8,#f2f7f0)!important;
+}
+body.cp-premium-ui[data-theme="light"] .cp-ref-body .cp-weight-card,
+body.cp-premium-ui[data-theme="light"] .cp-ref-bmi-card{
+  background:rgba(255,255,255,.94)!important;border-color:#d8e1d8!important;color:#324036!important;
+}
+body.cp-premium-ui[data-theme="light"] .cp-ref-bmi-card strong{color:#162018!important;}
+body.cp-premium-ui[data-theme="light"] .cp-bmi-legend span{color:#526157!important;}
+body.cp-premium-ui[data-theme="light"] .icon-btn,
+body.cp-premium-ui[data-theme="light"] .lang-pill{
+  background:#ffffff!important;border-color:#d8e1d8!important;color:#1a231b!important;box-shadow:0 5px 15px rgba(20,50,25,.06)!important;
+}
+body.cp-premium-ui[data-theme="light"] .cp-bottom-nav{
+  background:rgba(255,255,255,.96)!important;border-top-color:#dbe3da!important;box-shadow:0 -8px 24px rgba(20,50,25,.07)!important;
+}
+body.cp-premium-ui[data-theme="light"] .cp-nav-item{color:#657269!important;}
+body.cp-premium-ui[data-theme="light"] .cp-nav-item.active{color:#55b733!important;}
+body.cp-premium-ui[data-theme="light"] .cp-ref-range{background:linear-gradient(90deg,#5fbd37 var(--p,50%),#d7dfd6 var(--p,50%))!important;}
+
+.cp-healthy-status{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 9px;border-radius:999px;background:rgba(100,199,58,.12);color:var(--accent);font-size:11px;font-weight:750;}
+.cp-healthy-status::before{content:"●";font-size:8px;}
+@media(max-width:560px){.cp-healthy-grid{grid-template-columns:1fr 1fr}.cp-healthy-metric.primary{grid-column:1/-1}.cp-healthy-title{font-size:19px}.cp-healthy-metric strong{font-size:19px}.cp-healthy-metric.primary strong{font-size:24px}}
+</style>
+
 </head>
+<!-- VISUAL-ONLY BUILD: no diet formulas or result-generation logic modified in this pass. -->
 <body data-theme="dark" class="cp-premium-ui">
 
 <div class="wrap">
@@ -10354,6 +10420,7 @@ try{ console.log("COME PRO build", window.COME_PRO_BUILD); }catch(e){}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(init,80));else setTimeout(init,80);
 })();
 </script>
+
 
 </body>
 </html>
