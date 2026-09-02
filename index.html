@@ -1694,6 +1694,263 @@ body.cp-premium-ui[data-theme="light"] .cp-ref-range{background:linear-gradient(
 }
 </style>
 
+
+<style id="cp-mobile-comfort-final">
+/* ============================================================
+   COME PRO — AJUSTE FINAL MÓVIL
+   SOLO interfaz/estética y representación visual del avatar.
+   No modifica fórmulas nutricionales ni generación de resultados.
+   ============================================================ */
+
+@media (max-width:760px){
+
+  /* La cabecera del formulario respira más */
+  .cp-ref-top-fields{
+    grid-template-columns:1fr 1fr !important;
+    gap:8px !important;
+    margin-bottom:8px !important;
+  }
+  .cp-ref-sex-wrap{
+    margin:6px 0 10px !important;
+  }
+
+  /* Dos columnas, pero sin sensación de "pantalla de escritorio encogida".
+     Izquierda compacta / derecha visual y estable. */
+  .cp-ref-main{
+    display:grid !important;
+    grid-template-columns:minmax(0, 43%) minmax(0, 57%) !important;
+    gap:7px !important;
+    align-items:start !important;
+    overflow:visible !important;
+  }
+
+  .cp-ref-controls{
+    padding:7px 6px !important;
+    border-radius:12px !important;
+    min-width:0 !important;
+    overflow:visible !important;
+  }
+
+  /* El avatar permanece visible mientras se recorren los controles.
+     Es más natural en teléfono y evita una figura gigantesca. */
+  .cp-ref-body{
+    position:sticky !important;
+    top:82px !important;
+    align-self:start !important;
+    min-width:0 !important;
+    height:auto !important;
+    z-index:4 !important;
+  }
+
+  .cp-ref-body .cp-figure-well{
+    height:455px !important;
+    min-height:455px !important;
+    max-height:455px !important;
+    overflow:hidden !important;
+    border-radius:13px !important;
+  }
+
+  /* Avatar contenido COMPLETO en su panel */
+  .cp-ref-body #cpFigureSvg{
+    position:absolute !important;
+    left:29px !important;
+    right:4px !important;
+    top:35px !important;
+    bottom:112px !important;
+    width:auto !important;
+    height:auto !important;
+    overflow:hidden !important;
+  }
+
+  .cp-ref-body #cpAvatarImage{
+    left:50% !important;
+    bottom:2px !important;
+    width:100% !important;
+    height:100% !important;
+    max-width:100% !important;
+    max-height:100% !important;
+    object-fit:contain !important;
+    object-position:center bottom !important;
+    transform:
+      translateX(-50%)
+      scaleX(var(--avatar-weight-scale,1))
+      scaleY(var(--avatar-height-scale,1)) !important;
+    transform-origin:50% 100% !important;
+    transition:
+      opacity .16s ease,
+      transform .20s cubic-bezier(.2,.75,.2,1),
+      filter .20s ease !important;
+  }
+
+  .cp-ref-body .cp-body-title{
+    top:10px !important;
+    left:8px !important;
+    right:30px !important;
+    font-size:9px !important;
+    white-space:nowrap !important;
+  }
+
+  .cp-ref-body .cp-height-ruler{
+    left:3px !important;
+    top:42px !important;
+    bottom:116px !important;
+    transform:scale(.56) !important;
+    transform-origin:left center !important;
+  }
+
+  .cp-ref-body .cp-height-badge{
+    right:4px !important;
+    font-size:6.8px !important;
+    padding:3px 4px !important;
+    border-radius:5px !important;
+  }
+
+  .cp-ref-body .cp-ground{
+    bottom:105px !important;
+  }
+
+  /* Peso e IMC en una franja inferior limpia, sin tapar piernas */
+  .cp-ref-body .cp-weight-card{
+    left:5px !important;
+    bottom:46px !important;
+    width:57% !important;
+    height:48px !important;
+    padding:5px 6px !important;
+    border-radius:9px !important;
+    gap:4px !important;
+  }
+  .cp-ref-body .cp-weight-card strong{
+    font-size:14px !important;
+  }
+  .cp-ref-body .cp-weight-card span{
+    font-size:6.5px !important;
+  }
+
+  .cp-ref-bmi-card{
+    right:5px !important;
+    bottom:46px !important;
+    width:35% !important;
+    height:48px !important;
+    padding:4px !important;
+    border-radius:9px !important;
+  }
+  .cp-ref-bmi-card strong{
+    font-size:13px !important;
+  }
+  .cp-ref-bmi-card span,
+  .cp-ref-bmi-card small{
+    font-size:6px !important;
+  }
+
+  .cp-ref-bmi-bar{
+    left:5px !important;
+    right:5px !important;
+    bottom:24px !important;
+    height:5px !important;
+  }
+  .cp-ref-body .cp-bmi-legend{
+    left:4px !important;
+    right:4px !important;
+    bottom:5px !important;
+  }
+  .cp-ref-body .cp-bmi-legend span{
+    font-size:4.8px !important;
+  }
+
+  /* Controles más pequeños pero todavía tocables */
+  .cp-ref-control{
+    padding:6px 4px !important;
+  }
+  .cp-ref-control-title,
+  .cp-ref-section-title,
+  .cp-extra-title{
+    font-size:8.5px !important;
+    line-height:1.15 !important;
+  }
+  .cp-ref-control-value span{
+    font-size:17px !important;
+  }
+  .cp-ref-control-value small{
+    font-size:7.5px !important;
+  }
+  .cp-ref-minmax{
+    font-size:6.7px !important;
+  }
+
+  .cp-ref-controls #actSeg,
+  .cp-ref-controls #tipoSeg{
+    grid-template-columns:repeat(5,minmax(0,1fr)) !important;
+    gap:2px !important;
+  }
+  .cp-ref-controls #goalSeg{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:2px !important;
+  }
+
+  .cp-ref-controls .seg-btn{
+    min-height:38px !important;
+    padding:2px 1px !important;
+    font-size:6.5px !important;
+    line-height:1 !important;
+    border-radius:6px !important;
+  }
+
+  /* Días, minutos e intensidad siguen horizontales.
+     En vez de desbordar, se deslizan con el dedo. */
+  .cp-extra-training{
+    margin-top:6px !important;
+    gap:6px !important;
+  }
+  .cp-extra-block{
+    padding-top:6px !important;
+    overflow:hidden !important;
+  }
+  .cp-extra-title{
+    margin-bottom:4px !important;
+  }
+  .cp-extra-title .cp-extra-value{
+    font-size:8px !important;
+  }
+  .cp-hscroll{
+    width:100% !important;
+    max-width:100% !important;
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    gap:3px !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    -webkit-overflow-scrolling:touch !important;
+    scroll-snap-type:x proximity !important;
+    padding:1px 0 4px !important;
+  }
+  .cp-hbtn{
+    flex:0 0 36px !important;
+    min-width:36px !important;
+    min-height:31px !important;
+    padding:3px !important;
+    font-size:6.5px !important;
+    border-radius:6px !important;
+    scroll-snap-align:start !important;
+  }
+
+  /* El botón continuar no queda escondido por la barra inferior */
+  .cp-ref-continue{
+    margin-bottom:96px !important;
+  }
+
+  /* navegación fija algo más baja en móvil */
+  .cp-bottom-nav{
+    height:72px !important;
+  }
+  .cp-bottom-nav-inner{
+    min-height:72px !important;
+  }
+  .cp-nav-privacy{
+    display:none !important;
+  }
+}
+</style>
+
 </head>
 <!-- VISUAL-ONLY BUILD: no diet formulas or result-generation logic modified in this pass. -->
 <body data-theme="dark" class="cp-premium-ui">
@@ -10884,8 +11141,14 @@ try{ console.log("COME PRO build", window.COME_PRO_BUILD); }catch(e){}
       pre.src=src;
     }
     // Altura: escala visual moderada sin deformar el ancho.
-    const heightScale=clamp(0.88 + (h-150)/70*0.22,0.82,1.12);
+    const heightScale=clamp(0.82 + (h-130)/80*0.34,0.82,1.16);
     imgEl.style.setProperty('--avatar-height-scale',heightScale.toFixed(3));
+
+    // Cambio visual CONTINUO del volumen corporal.
+    // Esto NO interviene en cálculos/resultados: solo cambia cómo se representa el avatar.
+    const bmiVisual=w/Math.pow(h/100,2);
+    const weightScale=clamp(0.82 + ((bmiVisual-16)/22)*0.38,0.78,1.23);
+    imgEl.style.setProperty('--avatar-weight-scale',weightScale.toFixed(3));
 
     if(hBadge){
       hBadge.textContent=Math.round(h)+' cm';
