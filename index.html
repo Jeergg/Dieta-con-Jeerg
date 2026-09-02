@@ -1166,6 +1166,285 @@ body.cp-premium-ui[data-theme="light"] .cp-ref-range{background:linear-gradient(
 @media(max-width:560px){.cp-healthy-grid{grid-template-columns:1fr 1fr}.cp-healthy-metric.primary{grid-column:1/-1}.cp-healthy-title{font-size:19px}.cp-healthy-metric strong{font-size:19px}.cp-healthy-metric.primary strong{font-size:24px}}
 </style>
 
+
+<style id="cp-left-controls-layout-fix">
+/* SOLO VISUAL: mantiene todos los controles/botones a la izquierda
+   y el avatar a la derecha, siguiendo la referencia del usuario.
+   No modifica fórmulas, cálculos ni resultados. */
+
+.cp-ref-main{
+  display:grid !important;
+  grid-template-columns:minmax(0, 46%) minmax(0, 54%) !important;
+  gap:18px !important;
+  align-items:stretch !important;
+}
+
+.cp-ref-controls{
+  order:1 !important;
+  min-width:0 !important;
+}
+
+.cp-ref-body{
+  order:2 !important;
+  min-width:0 !important;
+  position:relative !important;
+}
+
+.cp-ref-body .cp-figure-well{
+  height:100% !important;
+  min-height:690px !important;
+}
+
+/* En móvil conserva la misma composición izquierda/derecha de la foto
+   en vez de apilar el avatar debajo. */
+@media (max-width: 760px){
+  .step-pane[data-step="1"] .card{
+    padding-left:12px !important;
+    padding-right:12px !important;
+  }
+
+  .cp-ref-main{
+    grid-template-columns:minmax(0, 47%) minmax(0, 53%) !important;
+    gap:8px !important;
+  }
+
+  .cp-ref-controls{
+    padding:10px 8px 10px !important;
+    border-radius:13px !important;
+  }
+
+  .cp-ref-control{
+    padding:9px 7px !important;
+  }
+
+  .cp-ref-control-title,
+  .cp-ref-section-title{
+    font-size:11px !important;
+  }
+
+  .cp-ref-control-value span{
+    font-size:22px !important;
+  }
+
+  .cp-ref-control-value small{
+    font-size:11px !important;
+  }
+
+  .cp-ref-minmax{
+    font-size:9px !important;
+  }
+
+  .cp-ref-controls #actSeg,
+  .cp-ref-controls #tipoSeg{
+    grid-template-columns:repeat(5, minmax(0,1fr)) !important;
+    gap:3px !important;
+  }
+
+  .cp-ref-controls #goalSeg{
+    grid-template-columns:repeat(3, minmax(0,1fr)) !important;
+    gap:4px !important;
+  }
+
+  .cp-ref-controls .seg-btn{
+    min-height:49px !important;
+    padding:4px 1px !important;
+    border-radius:7px !important;
+    font-size:7.8px !important;
+    gap:2px !important;
+  }
+
+  .cp-ref-controls .seg-btn .cp-ref-icon{
+    font-size:14px !important;
+  }
+
+  .cp-ref-body .cp-figure-well{
+    height:100% !important;
+    min-height:590px !important;
+    border-radius:13px !important;
+  }
+
+  .cp-ref-body .cp-body-title{
+    top:12px !important;
+    font-size:11px !important;
+  }
+
+  .cp-ref-body #cpFigureSvg{
+    left:37px !important;
+    right:6px !important;
+    top:42px !important;
+    bottom:148px !important;
+  }
+
+  .cp-ref-body .cp-height-ruler{
+    left:7px !important;
+    top:48px !important;
+    bottom:150px !important;
+    transform:scale(.72) !important;
+    transform-origin:left center !important;
+  }
+
+  .cp-ref-body .cp-height-badge{
+    right:5px !important;
+    font-size:8px !important;
+    padding:4px 5px !important;
+  }
+
+  .cp-ref-body .cp-ground{
+    bottom:141px !important;
+  }
+
+  .cp-ref-body .cp-weight-card{
+    left:7px !important;
+    bottom:63px !important;
+    width:58% !important;
+    height:62px !important;
+    padding:7px 8px !important;
+    gap:6px !important;
+  }
+
+  .cp-ref-body .cp-weight-card strong{
+    font-size:18px !important;
+  }
+
+  .cp-ref-bmi-card{
+    right:7px !important;
+    bottom:63px !important;
+    width:34% !important;
+    height:62px !important;
+    padding:7px 5px !important;
+  }
+
+  .cp-ref-bmi-card strong{
+    font-size:17px !important;
+  }
+
+  .cp-ref-bmi-card small{
+    font-size:7px !important;
+  }
+
+  .cp-ref-bmi-bar{
+    left:7px !important;
+    right:7px !important;
+    bottom:36px !important;
+    height:6px !important;
+  }
+
+  .cp-ref-body .cp-bmi-legend{
+    left:5px !important;
+    right:5px !important;
+    bottom:8px !important;
+    gap:2px !important;
+  }
+
+  .cp-ref-body .cp-bmi-legend span{
+    font-size:6.3px !important;
+  }
+
+  .cp-ref-sex-wrap{
+    margin-bottom:8px !important;
+  }
+}
+</style>
+
+
+<style id="cp-training-controls-visual">
+/* SOLO VISUAL: panel izquierdo más compacto + nuevos controles visuales de entrenamiento.
+   No modifica fórmulas ni la lógica de resultados existente. */
+.cp-ref-main{
+  grid-template-columns:minmax(0, 39%) minmax(0, 61%) !important;
+  gap:14px !important;
+}
+.cp-ref-controls{
+  padding:12px 10px !important;
+}
+.cp-extra-training{
+  margin-top:10px;
+  display:grid;
+  gap:10px;
+}
+.cp-extra-block{
+  border-top:1px solid rgba(255,255,255,.08);
+  padding-top:10px;
+}
+.cp-extra-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  font-size:12px;
+  font-weight:700;
+  margin-bottom:7px;
+}
+.cp-extra-title .cp-extra-value{
+  color:#6dd53c;
+  font-size:14px;
+}
+.cp-hscroll{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  padding-bottom:2px;
+}
+.cp-hscroll::-webkit-scrollbar{ display:none; }
+.cp-hbtn{
+  flex:0 0 auto;
+  min-width:54px;
+  min-height:42px;
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:9px;
+  background:rgba(255,255,255,.025);
+  color:inherit;
+  padding:6px 8px;
+  font:inherit;
+  font-size:10px;
+  line-height:1.05;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  cursor:pointer;
+}
+.cp-hbtn.active{
+  border-color:#74df39;
+  background:linear-gradient(180deg,rgba(98,202,47,.38),rgba(40,101,24,.38));
+  box-shadow:inset 0 0 18px rgba(87,206,44,.16);
+}
+.cp-hbtn strong{
+  font-size:12px;
+}
+.cp-hidden-training-input{
+  position:absolute !important;
+  left:-9999px !important;
+  width:1px !important;
+  height:1px !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+
+@media (max-width:760px){
+  .cp-ref-main{
+    grid-template-columns:minmax(0, 42%) minmax(0, 58%) !important;
+    gap:7px !important;
+  }
+  .cp-ref-controls{ padding:8px 6px !important; }
+  .cp-extra-training{ gap:7px; margin-top:7px; }
+  .cp-extra-block{ padding-top:7px; }
+  .cp-extra-title{ font-size:9px; margin-bottom:5px; }
+  .cp-extra-title .cp-extra-value{ font-size:10px; }
+  .cp-hscroll{ gap:4px; }
+  .cp-hbtn{
+    min-width:43px;
+    min-height:36px;
+    border-radius:7px;
+    padding:4px 5px;
+    font-size:7.5px;
+  }
+  .cp-hbtn strong{ font-size:9px; }
+}
+</style>
+
 </head>
 <!-- VISUAL-ONLY BUILD: no diet formulas or result-generation logic modified in this pass. -->
 <body data-theme="dark" class="cp-premium-ui">
@@ -1374,6 +1653,52 @@ body.cp-premium-ui[data-theme="light"] .cp-ref-range{background:linear-gradient(
             <div class="seg-btn active" data-val="bulk" data-i18n="goalBulk"></div>
             <div class="seg-btn" data-val="cut" data-i18n="goalCut"></div>
             <div class="seg-btn" data-val="recomp" data-i18n="goalRecomp"></div>
+<div class="cp-extra-training" id="cpExtraTrainingVisual">
+  <div class="cp-extra-block">
+    <div class="cp-extra-title">
+      <span>Días de entrenamiento</span>
+      <span class="cp-extra-value" id="cpDaysVisualValue">4 días</span>
+    </div>
+    <div class="cp-hscroll" id="cpDaysVisual">
+      <button type="button" class="cp-hbtn" data-value="1">1</button>
+      <button type="button" class="cp-hbtn" data-value="2">2</button>
+      <button type="button" class="cp-hbtn" data-value="3">3</button>
+      <button type="button" class="cp-hbtn active" data-value="4">4</button>
+      <button type="button" class="cp-hbtn" data-value="5">5</button>
+      <button type="button" class="cp-hbtn" data-value="6">6</button>
+      <button type="button" class="cp-hbtn" data-value="7">7</button>
+    </div>
+  </div>
+
+  <div class="cp-extra-block">
+    <div class="cp-extra-title">
+      <span>Minutos por sesión</span>
+      <span class="cp-extra-value" id="cpMinutesVisualValue">60 min</span>
+    </div>
+    <div class="cp-hscroll" id="cpMinutesVisual">
+      <button type="button" class="cp-hbtn" data-value="30">30</button>
+      <button type="button" class="cp-hbtn" data-value="45">45</button>
+      <button type="button" class="cp-hbtn active" data-value="60">60</button>
+      <button type="button" class="cp-hbtn" data-value="75">75</button>
+      <button type="button" class="cp-hbtn" data-value="90">90</button>
+      <button type="button" class="cp-hbtn" data-value="120">120</button>
+    </div>
+  </div>
+
+  <div class="cp-extra-block">
+    <div class="cp-extra-title">
+      <span>Intensidad</span>
+      <span class="cp-extra-value" id="cpIntensityVisualValue">Moderada</span>
+    </div>
+    <div class="cp-hscroll" id="cpIntensityVisual">
+      <button type="button" class="cp-hbtn" data-value="Baja">Baja</button>
+      <button type="button" class="cp-hbtn active" data-value="Moderada">Moderada</button>
+      <button type="button" class="cp-hbtn" data-value="Alta">Alta</button>
+      <button type="button" class="cp-hbtn" data-value="Muy alta">Muy alta</button>
+    </div>
+  </div>
+</div>
+
           </div>
         </div>
 
@@ -10421,6 +10746,53 @@ try{ console.log("COME PRO build", window.COME_PRO_BUILD); }catch(e){}
 })();
 </script>
 
+
+
+<script id="cp-training-controls-sync">
+(function(){
+  function q(sel){ return document.querySelector(sel); }
+  function all(sel){ return Array.from(document.querySelectorAll(sel)); }
+  function setActive(groupId, btn){
+    all('#'+groupId+' .cp-hbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  function trySync(value, selectors){
+    for (const sel of selectors){
+      const el = q(sel);
+      if (!el) continue;
+      if ('value' in el){
+        el.value = value;
+        el.dispatchEvent(new Event('input',{bubbles:true}));
+        el.dispatchEvent(new Event('change',{bubbles:true}));
+        return true;
+      }
+    }
+    return false;
+  }
+  function bind(groupId, valueId, suffix, selectors){
+    all('#'+groupId+' .cp-hbtn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        setActive(groupId,btn);
+        const v = btn.dataset.value;
+        const out = q('#'+valueId);
+        if(out) out.textContent = suffix ? (v + suffix) : v;
+        trySync(v, selectors);
+      });
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    bind('cpDaysVisual','cpDaysVisualValue',' días',[
+      '#diasEntrenamiento','#dias','#trainingDays','#dias_semana','input[name="dias"]'
+    ]);
+    bind('cpMinutesVisual','cpMinutesVisualValue',' min',[
+      '#minutosEntrenamiento','#duracion','#trainingMinutes','#minutos','input[name="duracion"]'
+    ]);
+    bind('cpIntensityVisual','cpIntensityVisualValue','',[
+      '#intensidad','#trainingIntensity','select[name="intensidad"]','input[name="intensidad"]'
+    ]);
+  });
+})();
+</script>
 
 </body>
 </html>
