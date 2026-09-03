@@ -630,6 +630,49 @@
 }
 </style>
 
+
+<style id="cp-avatar-layer-order">
+#cpAvatarFallbackCanvas{display:block !important;z-index:1;transition:opacity .25s ease}
+#cpAvatar3DCanvas{display:none;z-index:2}
+#cpAvatar3DStatus{z-index:3}
+</style>
+
+
+<style id="cp-avatar-critical-layout-fix">
+/* Corrección crítica del host del avatar.
+   Sin esto, .cp-breathe y .cp-sway podían colapsar a 0px de ancho
+   porque los canvas hijos están position:absolute. */
+.cp-figure-anchor,
+.cp-breathe,
+.cp-sway,
+#cpFigureSvg{
+  width:100% !important;
+  min-width:0 !important;
+  height:100% !important;
+}
+.cp-breathe,
+.cp-sway{
+  flex:1 1 auto !important;
+}
+#cpFigureSvg{
+  position:relative !important;
+  display:block !important;
+  overflow:hidden !important;
+}
+#cpAvatarFallbackCanvas,
+#cpAvatar3DCanvas{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+}
+#cpAvatarFallbackCanvas{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1;
+}
+</style>
+
 </head>
 <body data-theme="light">
 
@@ -702,7 +745,11 @@
                   <div class="cp-readout cp-readout-left" id="cpHeightReadout"></div>
                   <div class="cp-readout cp-readout-right" id="cpWeightReadout"></div>
                   <div class="cp-ground"></div>
-                  <div class="cp-figure-anchor"><div class="cp-breathe"><div class="cp-sway" id="cpFigureSvg"></div></div></div>
+                  <div class="cp-figure-anchor"><div class="cp-breathe"><div class="cp-sway" id="cpFigureSvg">
+  <canvas id="cpAvatarFallbackCanvas" aria-label="Avatar corporal compatible"></canvas>
+  <canvas id="cpAvatar3DCanvas" aria-label="Avatar corporal 3D"></canvas>
+  <div id="cpAvatar3DStatus" class="show">Preparando avatar…</div>
+</div></div></div>
                 </div>
                 <div class="cp-weight-rail">
                   <div class="cp-rail-top">
@@ -9541,14 +9588,6 @@ Promise.resolve(INFLUENCER_READY).catch(function(){ return null; });
   function cpRenderFigure(){
     if(!cpFigureSvgEl) return;
 
-    // Crea el host del avatar una sola vez. NO usa SVG.
-    if(!document.getElementById('cpAvatar3DCanvas')){
-      cpFigureSvgEl.innerHTML = `
-        <canvas id="cpAvatar3DCanvas" aria-label="Avatar corporal 3D"></canvas>
-        <canvas id="cpAvatarFallbackCanvas" aria-label="Avatar corporal de compatibilidad"></canvas>
-        <div id="cpAvatar3DStatus"></div>`;
-    }
-
     // Solo comunica el estado visual al renderer 3D/fallback.
     // No participa en fórmulas nutricionales ni generación de resultados.
     window.__cpAvatarState = {
@@ -9778,214 +9817,176 @@ Promise.resolve(INFLUENCER_READY).catch(function(){ return null; });
 try{ console.log("COME PRO build", window.COME_PRO_BUILD); }catch(e){}
 </script>
 
-<!-- COME PRO AVATAR 3D: solo afecta el área del avatar -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<!-- COME PRO AVATAR: fallback inmediato + actualización 3D progresiva -->
 <script>
 (function(){
   'use strict';
 
-  var modelURLs = [
-    './assets/parametric-base.glb',
-    'https://three.ws/avatars/parametric-base.glb',
-    'https://raw.githubusercontent.com/nirholas/three.ws/main/public/avatars/parametric-base.glb'
-  ];
-
-  var state = {sex:'hombre',height:170,weight:70,age:30};
-  var renderer=null, scene=null, camera=null, avatar=null, morphs=[], raf=0;
-  var fallbackCtx=null, fallbackCanvas=null, canvas=null, statusEl=null;
-  var mode='pending';
+  var state = window.__cpAvatarState || {sex:'hombre',height:170,weight:70,age:30};
+  var fallback = document.getElementById('cpAvatarFallbackCanvas');
+  var glCanvas = document.getElementById('cpAvatar3DCanvas');
+  var statusEl = document.getElementById('cpAvatar3DStatus');
+  var ctx = fallback && fallback.getContext('2d');
+  var threeReady = false, renderer, scene, camera, avatar, morphs=[], rafId=0;
 
   function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-  function status(msg,show){
-    statusEl=document.getElementById('cpAvatar3DStatus');
+  function setStatus(t,show){
     if(!statusEl) return;
-    statusEl.textContent=msg||'';
+    statusEl.textContent=t||'';
     statusEl.classList.toggle('show',!!show);
   }
-
-  function canWebGL(){
-    try{
-      var c=document.createElement('canvas');
-      return !!(window.WebGLRenderingContext &&
-        (c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl')));
-    }catch(e){ return false; }
+  function fitCanvas(c){
+    if(!c || !c.parentElement) return null;
+    var r=c.parentElement.getBoundingClientRect();
+    var d=Math.min(window.devicePixelRatio||1,2);
+    var w=Math.max(2,Math.round(r.width*d)), h=Math.max(2,Math.round(r.height*d));
+    if(c.width!==w) c.width=w;
+    if(c.height!==h) c.height=h;
+    return {w:r.width,h:r.height,d:d};
   }
-
-  function sizeCanvas(c){
-    if(!c) return;
-    var r=c.parentElement ? c.parentElement.getBoundingClientRect() : c.getBoundingClientRect();
-    var dpr=Math.min(window.devicePixelRatio||1,2);
-    var w=Math.max(2,Math.round(r.width*dpr));
-    var h=Math.max(2,Math.round(r.height*dpr));
-    if(c.width!==w || c.height!==h){ c.width=w; c.height=h; }
-    return {w:w,h:h,dpr:dpr,cssW:r.width,cssH:r.height};
-  }
-
-  // ---------- Canvas fallback: NO SVG ----------
-  function initFallback(reason){
-    mode='fallback';
-    canvas=document.getElementById('cpAvatar3DCanvas');
-    fallbackCanvas=document.getElementById('cpAvatarFallbackCanvas');
-    if(canvas) canvas.style.display='none';
-    if(!fallbackCanvas) return;
-    fallbackCanvas.style.display='block';
-    fallbackCtx=fallbackCanvas.getContext('2d');
-    status(reason || 'Modo compatible', true);
-    drawFallback();
-  }
-
-  function roundedRect(ctx,x,y,w,h,r){
+  function rr(c,x,y,w,h,r){
     r=Math.min(r,w/2,h/2);
-    ctx.beginPath();
-    ctx.moveTo(x+r,y);
-    ctx.arcTo(x+w,y,x+w,y+h,r);
-    ctx.arcTo(x+w,y+h,x,y+h,r);
-    ctx.arcTo(x,y+h,x,y,r);
-    ctx.arcTo(x,y,x+w,y,r);
-    ctx.closePath();
+    c.beginPath(); c.moveTo(x+r,y);
+    c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+    c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
   }
 
+  // Always-visible non-SVG fallback. This is only the compatibility layer.
   function drawFallback(){
-    if(mode!=='fallback' || !fallbackCanvas || !fallbackCtx) return;
-    var s=sizeCanvas(fallbackCanvas); if(!s) return;
-    var ctx=fallbackCtx, W=s.w, H=s.h, d=s.dpr;
-    ctx.clearRect(0,0,W,H);
-    ctx.save(); ctx.scale(d,d);
-    var w=s.cssW,h=s.cssH;
+    if(!ctx || !fallback) return;
+    var s=fitCanvas(fallback); if(!s) return;
+    var c=ctx, W=s.w, H=s.h, d=s.d;
+    c.setTransform(d,0,0,d,0,0);
+    c.clearRect(0,0,W,H);
 
     var cm=clamp(+state.height||170,130,210);
     var kg=clamp(+state.weight||70,35,160);
-    var female=state.sex==='mujer';
+    var female=String(state.sex).toLowerCase()==='mujer';
     var bmi=kg/Math.pow(cm/100,2);
-    var ht=clamp(.74 + (cm-130)/80*.22,.74,.96);
-    var bodyH=h*ht;
-    var y0=h-10, top=y0-bodyH;
-    var cx=w*.5;
-    var widthFactor=clamp(.70+(bmi-16)/24*.58,.66,1.28);
 
-    var skin=female?'#d0a17f':'#c89470';
-    var dark=female?'#251b18':'#201816';
-    var shorts='#171b1a';
+    var bodyH=H*clamp(.72+(cm-130)/80*.24,.72,.96);
+    var floor=H-5, top=floor-bodyH, cx=W*.5;
+    var volume=clamp(.72+(bmi-16)/24*.62,.68,1.30);
 
-    // shadow
-    ctx.globalAlpha=.18;
-    ctx.fillStyle='#0b2412';
-    ctx.beginPath(); ctx.ellipse(cx,y0-2,w*.20,5,0,0,Math.PI*2); ctx.fill();
-    ctx.globalAlpha=1;
+    var skin=female?'#d6a280':'#c99470';
+    var shadow='#8e614b', shorts='#171b19', hair='#201815';
+    var headR=Math.max(7,bodyH*.046);
+    var shoulderY=top+headR*2.65;
+    var hipY=top+bodyH*.50, crotchY=top+bodyH*.60;
+    var shoulderW=bodyH*(female?.17:.215)*volume;
+    var waistW=bodyH*(female?.105:.125)*volume;
+    var hipW=bodyH*(female?.18:.145)*volume;
+    var armW=bodyH*(female?.040:.050)*clamp(volume,.8,1.18);
+    var legW=bodyH*(female?.060:.066)*clamp(volume,.8,1.18);
 
-    // head/hair
-    var headR=Math.max(8,bodyH*.045);
-    ctx.fillStyle=skin;
-    ctx.beginPath(); ctx.arc(cx,top+headR*1.25,headR,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle=dark;
-    ctx.beginPath(); ctx.arc(cx,top+headR*.95,headR*.98,Math.PI,Math.PI*2); ctx.fill();
+    c.globalAlpha=.15; c.fillStyle='#318a32';
+    c.beginPath(); c.ellipse(cx,floor-1,W*.20,4,0,0,Math.PI*2); c.fill(); c.globalAlpha=1;
 
-    var shoulderY=top+headR*2.6;
-    var hipY=top+bodyH*.50;
-    var crotchY=top+bodyH*.59;
-    var shoulderW=bodyH*(female?.18:.22)*widthFactor;
-    var waistW=bodyH*(female?.115:.13)*widthFactor;
-    var hipW=bodyH*(female?.17:.145)*widthFactor;
-    var armW=bodyH*(female?.042:.050)*clamp(widthFactor,.8,1.15);
-    var legW=bodyH*(female?.060:.066)*clamp(widthFactor,.8,1.18);
+    // head
+    c.fillStyle=skin; c.beginPath(); c.arc(cx,top+headR*1.25,headR,0,Math.PI*2); c.fill();
+    c.fillStyle=hair; c.beginPath(); c.arc(cx,top+headR*.92,headR*.96,Math.PI,Math.PI*2); c.fill();
 
-    // torso with realistic taper
-    var grad=ctx.createLinearGradient(cx-shoulderW/2,0,cx+shoulderW/2,0);
-    grad.addColorStop(0,'#a87457'); grad.addColorStop(.48,skin); grad.addColorStop(1,'#9b694f');
-    ctx.fillStyle=grad;
-    ctx.beginPath();
-    ctx.moveTo(cx-shoulderW/2,shoulderY);
-    ctx.bezierCurveTo(cx-shoulderW*.46,shoulderY+bodyH*.10,cx-waistW*.55,hipY-bodyH*.07,cx-hipW/2,hipY);
-    ctx.lineTo(cx+hipW/2,hipY);
-    ctx.bezierCurveTo(cx+waistW*.55,hipY-bodyH*.07,cx+shoulderW*.46,shoulderY+bodyH*.10,cx+shoulderW/2,shoulderY);
-    ctx.closePath(); ctx.fill();
+    // neck
+    c.fillStyle=skin; rr(c,cx-headR*.34,top+headR*2.0,headR*.68,headR*.85,headR*.2); c.fill();
+
+    // torso
+    var g=c.createLinearGradient(cx-shoulderW/2,0,cx+shoulderW/2,0);
+    g.addColorStop(0,shadow); g.addColorStop(.48,skin); g.addColorStop(1,shadow);
+    c.fillStyle=g; c.beginPath();
+    c.moveTo(cx-shoulderW/2,shoulderY);
+    c.bezierCurveTo(cx-shoulderW*.48,shoulderY+bodyH*.11,cx-waistW*.58,hipY-bodyH*.06,cx-hipW/2,hipY);
+    c.lineTo(cx+hipW/2,hipY);
+    c.bezierCurveTo(cx+waistW*.58,hipY-bodyH*.06,cx+shoulderW*.48,shoulderY+bodyH*.11,cx+shoulderW/2,shoulderY);
+    c.closePath(); c.fill();
 
     // arms
-    ctx.strokeStyle=skin; ctx.lineCap='round'; ctx.lineWidth=armW;
-    ctx.beginPath();
-    ctx.moveTo(cx-shoulderW*.48,shoulderY+armW*.3);
-    ctx.lineTo(cx-shoulderW*.62,top+bodyH*.43); ctx.lineTo(cx-shoulderW*.58,top+bodyH*.57);
-    ctx.moveTo(cx+shoulderW*.48,shoulderY+armW*.3);
-    ctx.lineTo(cx+shoulderW*.62,top+bodyH*.43); ctx.lineTo(cx+shoulderW*.58,top+bodyH*.57);
-    ctx.stroke();
+    c.strokeStyle=skin; c.lineCap='round'; c.lineWidth=armW;
+    c.beginPath();
+    c.moveTo(cx-shoulderW*.48,shoulderY+armW*.25); c.lineTo(cx-shoulderW*.62,top+bodyH*.42); c.lineTo(cx-shoulderW*.58,top+bodyH*.57);
+    c.moveTo(cx+shoulderW*.48,shoulderY+armW*.25); c.lineTo(cx+shoulderW*.62,top+bodyH*.42); c.lineTo(cx+shoulderW*.58,top+bodyH*.57);
+    c.stroke();
 
     // shorts
-    ctx.fillStyle=shorts;
-    roundedRect(ctx,cx-hipW*.57,hipY-bodyH*.015,hipW*1.14,bodyH*.10,Math.max(4,bodyH*.02)); ctx.fill();
+    c.fillStyle=shorts; rr(c,cx-hipW*.58,hipY-bodyH*.01,hipW*1.16,bodyH*.105,Math.max(3,bodyH*.018)); c.fill();
 
     // legs
-    ctx.strokeStyle=skin; ctx.lineWidth=legW; ctx.lineCap='round';
-    ctx.beginPath();
-    ctx.moveTo(cx-legW*.72,crotchY); ctx.lineTo(cx-legW*.78,y0-bodyH*.13); ctx.lineTo(cx-legW*.85,y0-8);
-    ctx.moveTo(cx+legW*.72,crotchY); ctx.lineTo(cx+legW*.78,y0-bodyH*.13); ctx.lineTo(cx+legW*.85,y0-8);
-    ctx.stroke();
+    c.strokeStyle=skin; c.lineWidth=legW; c.lineCap='round'; c.beginPath();
+    c.moveTo(cx-legW*.75,crotchY); c.lineTo(cx-legW*.78,floor-bodyH*.13); c.lineTo(cx-legW*.85,floor-7);
+    c.moveTo(cx+legW*.75,crotchY); c.lineTo(cx+legW*.78,floor-bodyH*.13); c.lineTo(cx+legW*.85,floor-7);
+    c.stroke();
 
-    // subtle body definition
-    ctx.globalAlpha=.18; ctx.strokeStyle='#593a2e'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(cx,shoulderY+bodyH*.04); ctx.lineTo(cx,hipY-bodyH*.05); ctx.stroke();
-    ctx.globalAlpha=1;
-    ctx.restore();
+    // definition
+    c.globalAlpha=.16; c.strokeStyle='#56392c'; c.lineWidth=1;
+    c.beginPath(); c.moveTo(cx,shoulderY+bodyH*.04); c.lineTo(cx,hipY-bodyH*.06); c.stroke();
+    c.globalAlpha=1;
   }
 
-  // ---------- 3D ----------
-  function initThree(){
-    canvas=document.getElementById('cpAvatar3DCanvas');
-    if(!canvas) return false;
-    if(!canWebGL() || !window.THREE || !THREE.GLTFLoader){
-      initFallback('Modo compatible: 3D no disponible');
-      return false;
+  function webglOK(){
+    try{
+      var c=document.createElement('canvas');
+      return !!(window.WebGLRenderingContext &&
+        (c.getContext('webgl2')||c.getContext('webgl')||c.getContext('experimental-webgl')));
+    }catch(e){ return false; }
+  }
+
+  function loadScript(src){
+    return new Promise(function(resolve,reject){
+      var s=document.createElement('script');
+      s.src=src; s.async=true; s.onload=resolve; s.onerror=reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function upgradeTo3D(){
+    if(!webglOK()){
+      setStatus('Avatar compatible activo',true);
+      return;
     }
     try{
-      renderer=new THREE.WebGLRenderer({
-        canvas:canvas, antialias:true, alpha:true,
-        powerPreference:'high-performance', preserveDrawingBuffer:false
-      });
+      setStatus('Cargando 3D…',true);
+      if(!window.THREE){
+        await loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js');
+      }
+      if(!THREE.GLTFLoader){
+        await loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js');
+      }
+
+      renderer=new THREE.WebGLRenderer({canvas:glCanvas,alpha:true,antialias:true,powerPreference:'high-performance'});
       renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
       renderer.setClearColor(0x000000,0);
       if('outputEncoding' in renderer) renderer.outputEncoding=THREE.sRGBEncoding;
 
       scene=new THREE.Scene();
       camera=new THREE.PerspectiveCamera(27,1,.01,100);
-      camera.position.set(0,1.08,4.1);
+      camera.position.set(0,1.05,4.1);
+      scene.add(new THREE.HemisphereLight(0xffffff,0x243128,1.55));
+      var key=new THREE.DirectionalLight(0xffffff,2.1); key.position.set(2.5,4,3.2); scene.add(key);
+      var rim=new THREE.DirectionalLight(0x76ef5a,.7); rim.position.set(-2,2,-3); scene.add(rim);
 
-      scene.add(new THREE.HemisphereLight(0xffffff,0x283329,1.55));
-      var key=new THREE.DirectionalLight(0xffffff,2.2); key.position.set(2.5,4,3.5); scene.add(key);
-      var fill=new THREE.DirectionalLight(0xb9d9ff,.8); fill.position.set(-2,1.5,2.5); scene.add(fill);
-      var rim=new THREE.DirectionalLight(0x8eea6b,.75); rim.position.set(-2.5,2,-3); scene.add(rim);
-
-      mode='3d-loading';
-      status('Cargando avatar 3D…',true);
       resize3D();
-      loadModelAt(0);
-      loop();
-      return true;
-    }catch(e){
-      console.warn('COME PRO avatar WebGL init failed',e);
-      initFallback('Modo compatible');
-      return false;
-    }
-  }
 
-  function loadModelAt(i){
-    if(i>=modelURLs.length){
-      initFallback('Modo compatible: modelo 3D no disponible');
-      return;
-    }
-    var loader=new THREE.GLTFLoader();
-    loader.load(modelURLs[i],function(gltf){
-      avatar=gltf.scene;
-      morphs=[];
+      var urls=[
+        './assets/parametric-base.glb',
+        'https://three.ws/avatars/parametric-base.glb',
+        'https://raw.githubusercontent.com/nirholas/three.ws/main/public/avatars/parametric-base.glb'
+      ];
+
+      async function loadModel(i){
+        if(i>=urls.length) throw new Error('model unavailable');
+        return new Promise(function(resolve,reject){
+          new THREE.GLTFLoader().load(urls[i],resolve,undefined,function(){ reject(new Error('load')); });
+        }).catch(function(){ return loadModel(i+1); });
+      }
+
+      var gltf=await loadModel(0);
+      avatar=gltf.scene; morphs=[];
       avatar.traverse(function(o){
         if(o.isMesh){
           if(o.material){ o.material.side=THREE.DoubleSide; o.material.needsUpdate=true; }
-          if(o.morphTargetDictionary && o.morphTargetInfluences){
+          if(o.morphTargetDictionary&&o.morphTargetInfluences){
             Object.keys(o.morphTargetDictionary).forEach(function(name){
-              morphs.push({
-                mesh:o,
-                index:o.morphTargetDictionary[name],
-                key:String(name).toLowerCase().replace(/[\s_.-]/g,'')
-              });
+              morphs.push({mesh:o,index:o.morphTargetDictionary[name],key:String(name).toLowerCase().replace(/[\s_.-]/g,'')});
             });
           }
         }
@@ -9995,140 +9996,116 @@ try{ console.log("COME PRO build", window.COME_PRO_BUILD); }catch(e){}
       var box=new THREE.Box3().setFromObject(avatar);
       avatar.position.y-=box.min.y;
 
-      mode='3d';
-      status('',false);
-      apply3DState();
-    },undefined,function(){
-      loadModelAt(i+1);
-    });
+      threeReady=true;
+      glCanvas.style.display='block';
+      fallback.style.opacity='0';
+      setStatus('',false);
+      apply3D();
+      loop3D();
+    }catch(e){
+      console.warn('3D upgrade failed; fallback remains visible',e);
+      setStatus('Modo compatible',true);
+      fallback.style.opacity='1';
+      glCanvas.style.display='none';
+    }
   }
 
-  function setMorph(patterns,value){
-    for(var i=0;i<morphs.length;i++){
-      var m=morphs[i];
-      for(var j=0;j<patterns.length;j++){
-        if(m.key.indexOf(patterns[j])!==-1){
-          m.mesh.morphTargetInfluences[m.index]=value;
-          break;
+  function setMorph(patterns,val){
+    morphs.forEach(function(m){
+      for(var i=0;i<patterns.length;i++){
+        if(m.key.indexOf(patterns[i])!==-1){
+          m.mesh.morphTargetInfluences[m.index]=val; break;
         }
       }
-    }
-  }
-
-  function resetRelevantMorphs(){
-    var terms=['gender','female','male','femin','mascul','weight','heavy','fat','thin','slim',
-      'muscle','height','tall','short','waist','belly','stomach','abdomen','hip','pelvis',
-      'glute','shoulder','arm','thigh','calf','chest','breast','age'];
-    morphs.forEach(function(m){
-      if(terms.some(function(t){return m.key.indexOf(t)!==-1;})){
-        m.mesh.morphTargetInfluences[m.index]=0;
-      }
     });
   }
-
-  function apply3DState(){
-    if(!avatar || mode!=='3d') return;
-
-    var cm=clamp(+state.height||170,130,210);
-    var kg=clamp(+state.weight||70,35,160);
-    var age=clamp(+state.age||30,15,90);
-    var female=state.sex==='mujer';
+  function resetMorphs(){
+    var terms=['female','male','femin','mascul','weight','heavy','fat','thin','slim','height','tall','short',
+      'waist','belly','stomach','abdomen','hip','pelvis','glute','shoulder','arm','thigh','calf','chest','breast','age'];
+    morphs.forEach(function(m){
+      if(terms.some(function(t){return m.key.indexOf(t)!==-1;})) m.mesh.morphTargetInfluences[m.index]=0;
+    });
+  }
+  function apply3D(){
+    if(!threeReady||!avatar) return;
+    var cm=clamp(+state.height||170,130,210), kg=clamp(+state.weight||70,35,160);
+    var female=String(state.sex).toLowerCase()==='mujer';
     var bmi=kg/Math.pow(cm/100,2);
+    var heavy=clamp((bmi-18)/18,0,1), thin=clamp((20-bmi)/8,0,1);
 
-    resetRelevantMorphs();
-
-    var weight=clamp((bmi-18)/18,0,1);
-    var thin=clamp((20-bmi)/8,0,1);
-    var ageN=clamp((age-18)/60,0,1);
-
+    resetMorphs();
     if(female){
-      setMorph(['female','femin','genderfemale','genderf'],1);
-      setMorph(['hip','pelvis'],clamp(.32+weight*.35,0,1));
-      setMorph(['breast'],clamp(.35+weight*.20,0,1));
-      setMorph(['shoulder'],.18);
+      setMorph(['female','femin','genderfemale'],1);
+      setMorph(['hip','pelvis'],clamp(.28+heavy*.35,0,1));
+      setMorph(['breast'],clamp(.33+heavy*.20,0,1));
     }else{
-      setMorph(['male','mascul','gendermale','genderm'],1);
-      setMorph(['shoulder'],clamp(.28+(1-weight)*.12,0,1));
-      setMorph(['chest'],.28);
+      setMorph(['male','mascul','gendermale'],1);
+      setMorph(['shoulder'],.34);
+      setMorph(['chest'],.25);
     }
-
-    setMorph(['weight','heavy','fat'],weight);
+    setMorph(['weight','heavy','fat'],heavy);
     setMorph(['thin','slim'],thin);
-    setMorph(['belly','stomach','abdomen'],clamp(weight*.80,0,1));
-    setMorph(['waist'],clamp(weight*.60,0,1));
-    setMorph(['arm'],clamp(.18+weight*.28,0,1));
-    setMorph(['thigh'],clamp(.18+weight*.36,0,1));
-    setMorph(['calf'],clamp(.12+weight*.22,0,1));
-    setMorph(['glute','butt'],clamp((female?.30:.16)+weight*.28,0,1));
-    setMorph(['age'],ageN);
+    setMorph(['belly','stomach','abdomen'],heavy*.8);
+    setMorph(['waist'],heavy*.58);
+    setMorph(['arm'],.16+heavy*.24);
+    setMorph(['thigh'],.18+heavy*.32);
 
-    // Guaranteed visible response even if the model exposes different morph names.
-    var heightScale=clamp(cm/170,.78,1.22);
-    var widthScale=clamp(.86+(bmi-18)/25*.30,.78,1.22);
-    avatar.scale.set(widthScale,heightScale,widthScale*.96);
+    var sy=clamp(cm/170,.78,1.22);
+    var sx=clamp(.85+(bmi-18)/25*.31,.76,1.23);
+    avatar.scale.set(sx,sy,sx*.96);
 
-    // Recenter after scaling.
     var box=new THREE.Box3().setFromObject(avatar);
     avatar.position.y-=box.min.y;
-
-    // Framing follows stature so the full body stays visible.
-    camera.position.y=1.02*heightScale;
-    camera.position.z=4.05 + Math.max(0,heightScale-1)*.9 + Math.max(0,widthScale-1)*.5;
-    camera.lookAt(0,.95*heightScale,0);
+    camera.position.set(0,1.02*sy,4.05+Math.max(0,sx-1)*.55+Math.max(0,sy-1)*.8);
+    camera.lookAt(0,.93*sy,0);
   }
-
   function resize3D(){
-    if(mode==='fallback'){ drawFallback(); return; }
-    if(!renderer || !camera || !canvas) return;
-    var r=canvas.parentElement.getBoundingClientRect();
-    var w=Math.max(2,r.width), h=Math.max(2,r.height);
-    renderer.setSize(w,h,false);
-    camera.aspect=w/h;
+    if(!renderer||!camera||!glCanvas||!glCanvas.parentElement) return;
+    var r=glCanvas.parentElement.getBoundingClientRect();
+    renderer.setSize(Math.max(2,r.width),Math.max(2,r.height),false);
+    camera.aspect=Math.max(.1,r.width/Math.max(2,r.height));
     camera.updateProjectionMatrix();
   }
-
-  function loop(){
-    if(raf) cancelAnimationFrame(raf);
+  function loop3D(){
+    cancelAnimationFrame(rafId);
     function frame(t){
-      raf=requestAnimationFrame(frame);
-      if(mode==='3d' && renderer && scene && camera){
-        if(avatar){
-          avatar.rotation.y=Math.sin(t*.00045)*.025;
-          avatar.rotation.z=Math.sin(t*.0007)*.003;
-        }
+      rafId=requestAnimationFrame(frame);
+      if(threeReady&&renderer&&scene&&camera){
+        if(avatar) avatar.rotation.y=Math.sin(t*.00045)*.025;
         renderer.render(scene,camera);
       }
     }
     frame(0);
   }
 
+  // Preserve original app logic. We only observe the visual avatar state.
+  var previousRender=window.__cpAvatarRender;
   window.__cpAvatarRender=function(next){
     state=Object.assign({},state,next||{});
-    if(mode==='3d') apply3DState();
-    else if(mode==='fallback') drawFallback();
-  };
-  window.__cpAvatarResize3D=function(){
-    resize3D();
-    if(mode==='fallback') drawFallback();
+    drawFallback();
+    if(threeReady) apply3D();
+    if(typeof previousRender==='function'){
+      try{ previousRender(next); }catch(e){}
+    }
   };
 
   function boot(){
-    // cpRenderFigure creates the canvases during original app initialization.
-    var tries=0;
-    (function waitHost(){
-      canvas=document.getElementById('cpAvatar3DCanvas');
-      if(canvas){ initThree(); window.__cpAvatarRender(window.__cpAvatarState||state); return; }
-      if(++tries<80) setTimeout(waitHost,50);
-    })();
+    fallback=document.getElementById('cpAvatarFallbackCanvas');
+    glCanvas=document.getElementById('cpAvatar3DCanvas');
+    statusEl=document.getElementById('cpAvatar3DStatus');
+    ctx=fallback&&fallback.getContext('2d');
+    if(!fallback||!ctx) return;
+    glCanvas.style.display='none';
+    fallback.style.display='block';
+    fallback.style.opacity='1';
+    drawFallback();
+    setStatus('Modo compatible',true);
+    setTimeout(upgradeTo3D,100);
   }
 
   window.addEventListener('resize',function(){
-    clearTimeout(window.__cpAvatarResizeTimer);
-    window.__cpAvatarResizeTimer=setTimeout(function(){
-      resize3D(); drawFallback();
-    },80);
+    drawFallback(); resize3D();
   });
-
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot);
   else boot();
 })();
