@@ -1,0 +1,6 @@
+cd ruta/a/tu/repo/come-pro.github.io
+mkdir ejercicios
+# copia los 348 .jpg descomprimidos dentro de esa carpeta ejercicios/
+git add ejercicios/
+git commit -m "Agregar imágenes de ejercicios"
+git push
