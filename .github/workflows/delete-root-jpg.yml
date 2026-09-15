@@ -1,0 +1,29 @@
+name: Borrar JPG de la carpeta principal
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Borrar JPG solamente de la carpeta principal
+        run: |
+          find . -maxdepth 1 -type f -iname "*.jpg" -print
+          find . -maxdepth 1 -type f -iname "*.jpg" -delete
+
+      - name: Guardar cambios
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "Eliminar imágenes JPG subidas por error"
+          git push
